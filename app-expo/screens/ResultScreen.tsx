@@ -221,9 +221,11 @@ const styles = StyleSheet.create({
   },
   emoji: {
     fontSize: 130,
-    lineHeight: 130,
+    lineHeight: 170,
     marginBottom: 18,
+    paddingTop: 12,
     textAlign: 'center',
+    includeFontPadding: false,
   },
   name: {
     textAlign: 'center',
