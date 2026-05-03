@@ -7,6 +7,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { MoodDecoration } from '../components/MoodDecoration';
 import { getTheme, MOOD_THEMES, MoodTheme, ALL_THEME } from '../lib/moodSystem';
 import { SUBTITLES } from '../lib/mealPicker';
+import { useDiceGyroMotion } from '../lib/useDiceGyroMotion';
 import type { MoodId, Selection } from '../lib/types';
 
 type Props = {
@@ -21,6 +22,7 @@ export function HomeScreen({
 }: Props) {
   const theme: MoodTheme = getTheme(selectedMood);
   const useMoodType = !!selectedMood && selectedMood !== 'all';
+  const diceMotion = useDiceGyroMotion(theme.decoration === 'dice');
 
   const subtitleOpacity = useRef(new Animated.Value(0.6)).current;
   const [displayedSubtitle, setDisplayedSubtitle] = useState(
@@ -67,7 +69,7 @@ export function HomeScreen({
         end={theme.gradient.end}
         style={StyleSheet.absoluteFill}
       />
-      <MoodDecoration theme={theme} />
+      <MoodDecoration theme={theme} diceMotion={diceMotion} />
 
       <ScrollView
         contentContainerStyle={styles.scroll}

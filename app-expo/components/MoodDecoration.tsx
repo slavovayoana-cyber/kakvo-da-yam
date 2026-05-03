@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
 import Svg, { Path, G, Circle, Ellipse } from 'react-native-svg';
 import type { MoodTheme } from '../lib/moodSystem';
+import type { DieMotionStyle, DiceGyroMotion } from '../lib/useDiceGyroMotion';
 
 type FloatingDieProps = {
   fontSize: number;
@@ -9,9 +10,10 @@ type FloatingDieProps = {
   baseRotate: number;
   duration: number;
   style: { top?: number; left?: number; right?: number; bottom?: number };
+  motion?: DieMotionStyle;
 };
 
-function FloatingDie({ fontSize, opacity, baseRotate, duration, style }: FloatingDieProps) {
+function FloatingDie({ fontSize, opacity, baseRotate, duration, style, motion }: FloatingDieProps) {
   const t = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -35,10 +37,16 @@ function FloatingDie({ fontSize, opacity, baseRotate, duration, style }: Floatin
     return () => loop.stop();
   }, [t, duration]);
 
-  const translateY = t.interpolate({ inputRange: [0, 1], outputRange: [-6, 6] });
-  const rotate = t.interpolate({
+  const bobY = t.interpolate({ inputRange: [0, 1], outputRange: [-6, 6] });
+  const swayRotate = t.interpolate({
     inputRange: [0, 1],
     outputRange: [`${baseRotate - 4}deg`, `${baseRotate + 4}deg`],
+  });
+
+  const translateX = motion ? motion.translateX : new Animated.Value(0);
+  const translateY = motion ? Animated.add(bobY, motion.translateY) : bobY;
+  const motionRotate = motion ? motion.rotateZ : new Animated.Value(0).interpolate({
+    inputRange: [0, 1], outputRange: ['0deg', '0deg'],
   });
 
   return (
@@ -46,7 +54,14 @@ function FloatingDie({ fontSize, opacity, baseRotate, duration, style }: Floatin
       style={[
         { position: 'absolute', fontSize, opacity },
         style,
-        { transform: [{ translateY }, { rotate }] },
+        {
+          transform: [
+            { translateX },
+            { translateY },
+            { rotate: swayRotate },
+            { rotate: motionRotate },
+          ],
+        },
       ]}
     >
       🎲
@@ -54,9 +69,9 @@ function FloatingDie({ fontSize, opacity, baseRotate, duration, style }: Floatin
   );
 }
 
-type Props = { theme: MoodTheme; scale?: number };
+type Props = { theme: MoodTheme; scale?: number; diceMotion?: DiceGyroMotion };
 
-export function MoodDecoration({ theme, scale = 1 }: Props) {
+export function MoodDecoration({ theme, scale = 1, diceMotion }: Props) {
   if (!theme || theme.decoration === 'none') return null;
   const c = theme.colorDeep;
 
@@ -122,6 +137,7 @@ export function MoodDecoration({ theme, scale = 1 }: Props) {
           baseRotate={-14}
           duration={4200}
           style={{ top: 60, left: 24 }}
+          motion={diceMotion?.die1}
         />
         <FloatingDie
           fontSize={110 * scale}
@@ -129,6 +145,7 @@ export function MoodDecoration({ theme, scale = 1 }: Props) {
           baseRotate={22}
           duration={5400}
           style={{ top: 180, right: -8 }}
+          motion={diceMotion?.die2}
         />
       </View>
     );
