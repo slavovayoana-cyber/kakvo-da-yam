@@ -194,7 +194,7 @@
     },
     {
       "id": "steak",
-      "emoji": "🥩",
+      "emoji": "🥩🔥",
       "name": "Стек",
       "moods": ["fancy"],
       "reasons": {
@@ -230,7 +230,7 @@
     },
     {
       "id": "cappuccino_plus",
-      "emoji": "☕",
+      "emoji": "☕🍪",
       "name": "Капучино + нещо малко",
       "moods": ["fancy"],
       "reasons": {
@@ -242,7 +242,7 @@
     },
     {
       "id": "wine_only",
-      "emoji": "🍷",
+      "emoji": "🍷🤷",
       "name": "Вино + нищо конкретно",
       "moods": ["fancy"],
       "reasons": {
@@ -360,7 +360,7 @@
     },
     {
       "id": "leftover_pizza",
-      "emoji": "🍕",
+      "emoji": "🥶🍕",
       "name": "Пица от вчера",
       "moods": ["honest"],
       "reasons": {
@@ -439,7 +439,7 @@
     },
     {
       "id": "musaka",
-      "emoji": "🍲",
+      "emoji": "🍆",
       "name": "Мусака",
       "moods": ["comfort", "bulgarian"],
       "reasons": {
@@ -549,7 +549,7 @@
     },
     {
       "id": "shopska",
-      "emoji": "🥗",
+      "emoji": "🍅🧀",
       "name": "Шопска салата",
       "moods": ["bulgarian"],
       "reasons": {
@@ -585,7 +585,7 @@
     },
     {
       "id": "bob_chorba",
-      "emoji": "🍲",
+      "emoji": "🫘",
       "name": "Боб чорба",
       "moods": ["bulgarian"],
       "reasons": {
@@ -672,7 +672,7 @@
     },
     {
       "id": "ice_cream_dinner",
-      "emoji": "🍦",
+      "emoji": "🍦🌙",
       "name": "Сладолед за вечеря",
       "moods": ["honest"],
       "reasons": {
@@ -685,7 +685,7 @@
     },
     {
       "id": "avocado_toast",
-      "emoji": "🥑",
+      "emoji": "🥑🍞",
       "name": "Авокадо тост",
       "moods": ["fancy", "healthy_ish"],
       "reasons": {
@@ -702,7 +702,7 @@
     },
     {
       "id": "gas_station_hot_dog",
-      "emoji": "🌭",
+      "emoji": "🌭⛽",
       "name": "Хот дог от бензиностанция",
       "moods": ["honest"],
       "reasons": {
@@ -771,7 +771,7 @@
     },
     {
       "id": "frozen_pizza",
-      "emoji": "🍕",
+      "emoji": "❄️🍕",
       "name": "Замразена пица",
       "moods": ["honest"],
       "reasons": {
@@ -816,7 +816,7 @@
     },
     {
       "id": "burrito",
-      "emoji": "🌯",
+      "emoji": "🫔",
       "name": "Бурито",
       "moods": ["honest"],
       "reasons": {
@@ -858,7 +858,7 @@
     },
     {
       "id": "risotto",
-      "emoji": "🥘",
+      "emoji": "🍚",
       "name": "Ризото",
       "moods": ["fancy", "comfort"],
       "reasons": {
@@ -890,7 +890,7 @@
     },
     {
       "id": "thai_curry",
-      "emoji": "🍛",
+      "emoji": "🍛🌶️",
       "name": "Тайландско къри",
       "moods": ["fancy", "comfort"],
       "reasons": {
@@ -922,7 +922,7 @@
     },
     {
       "id": "eggs_benedict",
-      "emoji": "🥞",
+      "emoji": "🥚🍞",
       "name": "Eggs Benedict",
       "moods": ["fancy"],
       "reasons": {
@@ -965,7 +965,7 @@
     },
     {
       "id": "snejanka",
-      "emoji": "🥚",
+      "emoji": "🥒🧄",
       "name": "Снежанка",
       "moods": ["bulgarian", "healthy_ish"],
       "reasons": {
@@ -1080,7 +1080,7 @@
     },
     {
       "id": "tulumbas",
-      "emoji": "🍰",
+      "emoji": "🍯🍰",
       "name": "Тулумба / кадаиф",
       "moods": ["bulgarian"],
       "reasons": {
@@ -1108,7 +1108,7 @@
     },
     {
       "id": "kapama",
-      "emoji": "🥩",
+      "emoji": "🥩🥬",
       "name": "Капама",
       "moods": ["bulgarian", "comfort"],
       "reasons": {
