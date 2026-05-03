@@ -42,7 +42,7 @@ export default function App() {
   });
 
   const [screen, setScreen] = useState<'home' | 'result'>('home');
-  const [selectedMood, setSelectedMood] = useState<Selection>(null);
+  const [selectedMood, setSelectedMood] = useState<Selection>('all');
   const [result, setResult] = useState<PickResult | null>(null);
   const [rerollCount, setRerollCount] = useState(0);
   const [animKey, setAnimKey] = useState(0);
