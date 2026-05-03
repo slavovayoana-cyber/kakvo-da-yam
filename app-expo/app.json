@@ -14,10 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.kakvodayam.app",
-      "infoPlist": {
-        "NSMotionUsageDescription": "Заровете на началния екран се движат лекичко спрямо как държиш телефона."
-      }
+      "bundleIdentifier": "com.kakvodayam.app"
     },
     "android": {
       "package": "com.kakvodayam.app",
