@@ -1,4 +1,4 @@
-import type { Meal, MoodId, PickResult } from './types';
+import type { Meal, MoodId, PickResult, Selection } from './types';
 
 function pickRandom<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
@@ -8,12 +8,14 @@ const MAIN_MOODS: MoodId[] = ['healthy_ish', 'fancy', 'honest', 'comfort'];
 
 export function pickMeal(
   meals: Meal[],
-  moodId: MoodId | null,
+  selection: Selection,
   avoidId: string | null,
 ): PickResult {
   let pool: Meal[];
-  if (moodId) {
-    pool = meals.filter((m) => m.moods.includes(moodId));
+  if (selection === 'all') {
+    pool = meals;
+  } else if (selection) {
+    pool = meals.filter((m) => m.moods.includes(selection));
   } else {
     pool = meals.filter((m) => m.moods.some((x) => MAIN_MOODS.includes(x)));
   }
@@ -25,8 +27,12 @@ export function pickMeal(
 
   const meal = pickRandom(candidates);
 
-  let reasonMood: MoodId = moodId ?? meal.moods[0];
-  if (!moodId) {
+  let reasonMood: MoodId;
+  if (selection === 'all') {
+    reasonMood = pickRandom(meal.moods);
+  } else if (selection) {
+    reasonMood = selection;
+  } else {
     const nonBg = meal.moods.filter((x) => x !== 'bulgarian');
     reasonMood = nonBg.length ? pickRandom(nonBg) : meal.moods[0];
   }
@@ -64,7 +70,7 @@ export function formatShareText(
 export const SUBTITLES = [
   'Защото пак не знаеш',
   'Не съм диетолог, аз съм приятел',
-  'Реши вместо теб',
+  'Решавам вместо теб',
   'Хладилникът няма да се отвори сам',
   'Стига си гледала телефона гладна',
 ];

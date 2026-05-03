@@ -5,6 +5,8 @@ export type MoodId =
   | 'comfort'
   | 'bulgarian';
 
+export type Selection = MoodId | 'all' | null;
+
 export type Meal = {
   id: string;
   emoji: string;

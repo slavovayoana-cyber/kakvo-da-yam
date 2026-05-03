@@ -162,7 +162,7 @@ export const NEUTRAL_THEME: MoodTheme = {
   decoration: 'none',
 };
 
-export function getTheme(moodId: MoodId | null): MoodTheme {
-  if (!moodId) return NEUTRAL_THEME;
+export function getTheme(moodId: MoodId | 'all' | null): MoodTheme {
+  if (!moodId || moodId === 'all') return NEUTRAL_THEME;
   return MOOD_THEMES[moodId] || NEUTRAL_THEME;
 }

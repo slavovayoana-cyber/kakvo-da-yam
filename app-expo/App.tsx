@@ -19,7 +19,7 @@ import { HomeScreen } from './screens/HomeScreen';
 import { ResultScreen } from './screens/ResultScreen';
 import { pickMeal, formatShareText } from './lib/mealPicker';
 import { getTheme } from './lib/moodSystem';
-import type { MealsData, MoodId, PickResult } from './lib/types';
+import type { MealsData, PickResult, Selection } from './lib/types';
 
 import mealsJson from './data/meals.json';
 
@@ -39,7 +39,7 @@ export default function App() {
   });
 
   const [screen, setScreen] = useState<'home' | 'result'>('home');
-  const [selectedMood, setSelectedMood] = useState<MoodId | null>(null);
+  const [selectedMood, setSelectedMood] = useState<Selection>(null);
   const [result, setResult] = useState<PickResult | null>(null);
   const [rerollCount, setRerollCount] = useState(0);
   const [animKey, setAnimKey] = useState(0);

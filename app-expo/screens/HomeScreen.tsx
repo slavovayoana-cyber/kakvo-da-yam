@@ -1,17 +1,17 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
-  View, Text, Pressable, StyleSheet, ScrollView,
+  View, Text, Pressable, StyleSheet, ScrollView, Animated,
   useWindowDimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MoodDecoration } from '../components/MoodDecoration';
-import { getTheme, MOOD_THEMES, MoodTheme } from '../lib/moodSystem';
+import { getTheme, MOOD_THEMES, MoodTheme, NEUTRAL_THEME } from '../lib/moodSystem';
 import { SUBTITLES } from '../lib/mealPicker';
-import type { MoodId } from '../lib/types';
+import type { MoodId, Selection } from '../lib/types';
 
 type Props = {
-  selectedMood: MoodId | null;
-  setSelectedMood: (m: MoodId | null) => void;
+  selectedMood: Selection;
+  setSelectedMood: (m: Selection) => void;
   onPick: () => void;
   subtitleIdx: number;
 };
@@ -20,8 +20,27 @@ export function HomeScreen({
   selectedMood, setSelectedMood, onPick, subtitleIdx,
 }: Props) {
   const theme: MoodTheme = getTheme(selectedMood);
-  const subtitle = SUBTITLES[subtitleIdx % SUBTITLES.length];
-  const useMoodType = !!selectedMood;
+  const useMoodType = !!selectedMood && selectedMood !== 'all';
+
+  const subtitleOpacity = useRef(new Animated.Value(0.6)).current;
+  const [displayedSubtitle, setDisplayedSubtitle] = useState(
+    SUBTITLES[subtitleIdx % SUBTITLES.length],
+  );
+  const isFirstRender = useRef(true);
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    Animated.timing(subtitleOpacity, {
+      toValue: 0, duration: 280, useNativeDriver: true,
+    }).start(() => {
+      setDisplayedSubtitle(SUBTITLES[subtitleIdx % SUBTITLES.length]);
+      Animated.timing(subtitleOpacity, {
+        toValue: 0.6, duration: 380, useNativeDriver: true,
+      }).start();
+    });
+  }, [subtitleIdx, subtitleOpacity]);
   const { height } = useWindowDimensions();
 
   const titleFont = useMoodType ? theme.titleFontFamily : 'Geist_700Bold';
@@ -76,12 +95,11 @@ export function HomeScreen({
           >
             Какво{'\n'}да ям<Text style={{ color: theme.accent }}>?</Text>
           </Text>
-          <Text
-            key={subtitle}
-            style={[styles.subtitle, { color: theme.ink, opacity: 0.6 }]}
+          <Animated.Text
+            style={[styles.subtitle, { color: theme.ink, opacity: subtitleOpacity }]}
           >
-            {subtitle}
-          </Text>
+            {displayedSubtitle}
+          </Animated.Text>
         </View>
 
         {/* Mood chips section */}
@@ -131,6 +149,37 @@ export function HomeScreen({
                 </Pressable>
               );
             })}
+            {(() => {
+              const active = selectedMood === 'all';
+              return (
+                <Pressable
+                  key="all"
+                  onPress={() => setSelectedMood(active ? null : 'all')}
+                  style={({ pressed }) => [
+                    styles.chip,
+                    {
+                      borderColor: active ? NEUTRAL_THEME.colorDeep : 'rgba(0,0,0,0.08)',
+                      backgroundColor: active ? NEUTRAL_THEME.accent : 'rgba(255,255,255,0.55)',
+                      opacity: pressed ? 0.85 : 1,
+                      borderStyle: active ? 'solid' : 'dashed',
+                    },
+                  ]}
+                >
+                  <Text style={styles.chipEmoji}>🎲</Text>
+                  <Text
+                    style={[
+                      styles.chipText,
+                      {
+                        color: active ? '#fff' : theme.ink,
+                        fontWeight: active ? '600' : '500',
+                      },
+                    ]}
+                  >
+                    Всички
+                  </Text>
+                </Pressable>
+              );
+            })()}
           </View>
 
           {/* Main button */}
@@ -159,7 +208,11 @@ export function HomeScreen({
               },
             ]}
           >
-            {selectedMood ? `„${theme.tagline}"` : 'или random измежду всички 4'}
+            {selectedMood === 'all'
+              ? 'миксирам всичките 5 настроения'
+              : selectedMood
+                ? `„${theme.tagline}"`
+                : 'или random измежду всички 4'}
           </Text>
         </View>
       </ScrollView>
