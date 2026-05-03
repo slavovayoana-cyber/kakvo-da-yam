@@ -65,7 +65,7 @@ export function MoodDecoration({ theme, scale = 1 }: Props) {
   if (theme.decoration === 'shevitsa') {
     const count = 18;
     return (
-      <View pointerEvents="none" style={[styles.abs, { top: 130, left: 0, right: 0, height: 28, opacity: 0.5 }]}>
+      <View pointerEvents="none" style={[styles.abs, { top: 110, left: 0, right: 0, height: 28, opacity: 0.5 }]}>
         <Svg width="100%" height={28} viewBox="0 0 360 28" preserveAspectRatio="xMidYMid slice">
           <G fill={c}>
             {Array.from({ length: count }).map((_, i) => (
