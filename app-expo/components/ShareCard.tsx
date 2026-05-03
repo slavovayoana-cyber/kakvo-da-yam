@@ -51,9 +51,14 @@ export const ShareCard = forwardRef<View, Props>(
           </Text>
         </View>
 
-        <Text style={[styles.watermark, { color: theme.ink }]}>
-          какво да ям<Text style={{ color: theme.accent }}>?</Text>
-        </Text>
+        <View style={styles.footer}>
+          <Text style={[styles.cta, { color: theme.ink }]}>
+            Ако се чудиш какво да ядеш и искаш да се посмееш — пробвай това приложение
+          </Text>
+          <Text style={[styles.watermark, { color: theme.ink }]}>
+            какво да ям<Text style={{ color: theme.accent }}>?</Text>
+          </Text>
+        </View>
       </View>
     );
   },
@@ -72,8 +77,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 50,
-    paddingTop: 80,
-    paddingBottom: 110,
+    paddingTop: 60,
+    paddingBottom: 180,
     zIndex: 2,
   },
   emoji: {
@@ -98,17 +103,30 @@ const styles = StyleSheet.create({
     opacity: 0.8,
     maxWidth: CARD_WIDTH - 120,
   },
-  watermark: {
+  footer: {
     position: 'absolute',
-    bottom: 50,
-    alignSelf: 'center',
-    width: '100%',
-    textAlign: 'center',
-    fontFamily: 'Geist_500Medium',
-    fontSize: 16,
-    letterSpacing: 16 * 0.18,
-    textTransform: 'uppercase',
-    opacity: 0.55,
+    bottom: 40,
+    left: 50,
+    right: 50,
+    alignItems: 'center',
     zIndex: 2,
+    gap: 12,
+  },
+  cta: {
+    fontFamily: 'Geist_400Regular',
+    fontSize: 18,
+    lineHeight: 18 * 1.4,
+    textAlign: 'center',
+    fontStyle: 'italic',
+    opacity: 0.6,
+    maxWidth: 440,
+  },
+  watermark: {
+    fontFamily: 'Geist_600SemiBold',
+    fontSize: 18,
+    letterSpacing: 18 * 0.16,
+    textTransform: 'uppercase',
+    textAlign: 'center',
+    opacity: 0.7,
   },
 });
