@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Share, StatusBar, Platform } from 'react-native';
+import { captureRef } from 'react-native-view-shot';
+import * as Sharing from 'expo-sharing';
 import { useFonts } from 'expo-font';
 import {
   Geist_400Regular,
@@ -17,6 +19,7 @@ import {
 } from '@expo-google-fonts/instrument-serif';
 import { HomeScreen } from './screens/HomeScreen';
 import { ResultScreen } from './screens/ResultScreen';
+import { ShareCard } from './components/ShareCard';
 import { pickMeal, formatShareText } from './lib/mealPicker';
 import { getTheme } from './lib/moodSystem';
 import type { MealsData, PickResult, Selection } from './lib/types';
@@ -44,6 +47,7 @@ export default function App() {
   const [rerollCount, setRerollCount] = useState(0);
   const [animKey, setAnimKey] = useState(0);
   const [subtitleIdx, setSubtitleIdx] = useState(0);
+  const cardRef = useRef<View>(null);
 
   const subtitleTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   useEffect(() => {
@@ -92,6 +96,29 @@ export default function App() {
     if (!result) return;
     const theme = getTheme(result.moodId);
     const text = formatShareText(result.meal, result.reason, theme.emoji);
+
+    try {
+      if (cardRef.current) {
+        const uri = await captureRef(cardRef, {
+          format: 'png',
+          quality: 1,
+          result: 'tmpfile',
+          width: 1080,
+          height: 1920,
+        });
+        if (await Sharing.isAvailableAsync()) {
+          await Sharing.shareAsync(uri, {
+            mimeType: 'image/png',
+            dialogTitle: 'Какво да ям?',
+            UTI: 'public.png',
+          });
+          return;
+        }
+      }
+    } catch {
+      // capture failed — fall through to text share
+    }
+
     try {
       await Share.share(
         Platform.OS === 'ios'
@@ -125,6 +152,17 @@ export default function App() {
           onHome={goHome}
         />
       )}
+
+      {result && (
+        <View style={styles.offscreen} pointerEvents="none">
+          <ShareCard
+            ref={cardRef}
+            meal={result.meal}
+            reason={result.reason}
+            theme={getTheme(result.moodId)}
+          />
+        </View>
+      )}
     </View>
   );
 }
@@ -140,5 +178,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     letterSpacing: 1.8,
     textTransform: 'uppercase',
+  },
+  offscreen: {
+    position: 'absolute',
+    left: -10000,
+    top: 0,
   },
 });
