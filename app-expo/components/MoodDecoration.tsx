@@ -1,7 +1,58 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
 import Svg, { Path, G, Circle, Ellipse } from 'react-native-svg';
 import type { MoodTheme } from '../lib/moodSystem';
+
+type FloatingDieProps = {
+  fontSize: number;
+  opacity: number;
+  baseRotate: number;
+  duration: number;
+  style: { top?: number; left?: number; right?: number; bottom?: number };
+};
+
+function FloatingDie({ fontSize, opacity, baseRotate, duration, style }: FloatingDieProps) {
+  const t = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(t, {
+          toValue: 1,
+          duration,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+        Animated.timing(t, {
+          toValue: 0,
+          duration,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [t, duration]);
+
+  const translateY = t.interpolate({ inputRange: [0, 1], outputRange: [-6, 6] });
+  const rotate = t.interpolate({
+    inputRange: [0, 1],
+    outputRange: [`${baseRotate - 4}deg`, `${baseRotate + 4}deg`],
+  });
+
+  return (
+    <Animated.Text
+      style={[
+        { position: 'absolute', fontSize, opacity },
+        style,
+        { transform: [{ translateY }, { rotate }] },
+      ]}
+    >
+      🎲
+    </Animated.Text>
+  );
+}
 
 type Props = { theme: MoodTheme; scale?: number };
 
@@ -65,8 +116,20 @@ export function MoodDecoration({ theme, scale = 1 }: Props) {
   if (theme.decoration === 'dice') {
     return (
       <View pointerEvents="none" style={[StyleSheet.absoluteFill, { overflow: 'hidden' }]}>
-        <Text style={{ position: 'absolute', top: 60, left: 24, fontSize: 84 * scale, opacity: 0.18, transform: [{ rotate: '-14deg' }] }}>🎲</Text>
-        <Text style={{ position: 'absolute', top: 180, right: -8, fontSize: 110 * scale, opacity: 0.14, transform: [{ rotate: '22deg' }] }}>🎲</Text>
+        <FloatingDie
+          fontSize={84 * scale}
+          opacity={0.18}
+          baseRotate={-14}
+          duration={4200}
+          style={{ top: 60, left: 24 }}
+        />
+        <FloatingDie
+          fontSize={110 * scale}
+          opacity={0.14}
+          baseRotate={22}
+          duration={5400}
+          style={{ top: 180, right: -8 }}
+        />
       </View>
     );
   }
