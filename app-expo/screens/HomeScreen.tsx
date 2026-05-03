@@ -114,72 +114,107 @@ export function HomeScreen({
           </Text>
 
           <View style={styles.chipsRow}>
-            {Object.values(MOOD_THEMES).map((m) => {
-              const active = selectedMood === m.id;
-              return (
-                <Pressable
-                  key={m.id}
-                  onPress={() => setSelectedMood(active ? null : (m.id as MoodId))}
-                  style={({ pressed }) => [
-                    styles.chip,
-                    {
-                      borderColor: active ? m.colorDeep : 'rgba(0,0,0,0.08)',
-                      backgroundColor: active ? m.color : 'rgba(255,255,255,0.55)',
-                      opacity: pressed ? 0.85 : 1,
-                    },
-                  ]}
-                >
-                  <Text style={styles.chipEmoji}>{m.emoji}</Text>
-                  <Text
-                    style={[
-                      styles.chipText,
+            {Object.values(MOOD_THEMES)
+              .filter((m) => m.id !== 'bulgarian')
+              .map((m) => {
+                const active = selectedMood === m.id;
+                return (
+                  <Pressable
+                    key={m.id}
+                    onPress={() => setSelectedMood(active ? null : (m.id as MoodId))}
+                    style={({ pressed }) => [
+                      styles.chip,
                       {
-                        color: active ? '#fff' : theme.ink,
-                        fontWeight: active ? '600' : '500',
+                        borderColor: active ? m.colorDeep : 'rgba(0,0,0,0.08)',
+                        backgroundColor: active ? m.color : 'rgba(255,255,255,0.55)',
+                        opacity: pressed ? 0.85 : 1,
                       },
                     ]}
                   >
-                    {m.name}
-                  </Text>
-                  {m.isBonus && !active && (
-                    <View style={[styles.bgPill, { backgroundColor: m.color }]}>
-                      <Text style={styles.bgPillText}>BG</Text>
-                    </View>
-                  )}
-                </Pressable>
-              );
-            })}
-            {(() => {
-              const active = selectedMood === 'all';
-              return (
-                <Pressable
-                  key="all"
-                  onPress={() => setSelectedMood(active ? null : 'all')}
-                  style={({ pressed }) => [
-                    styles.chip,
-                    {
-                      borderColor: active ? NEUTRAL_THEME.colorDeep : 'rgba(0,0,0,0.08)',
-                      backgroundColor: active ? NEUTRAL_THEME.accent : 'rgba(255,255,255,0.55)',
-                      opacity: pressed ? 0.85 : 1,
-                      borderStyle: active ? 'solid' : 'dashed',
-                    },
-                  ]}
-                >
-                  <Text style={styles.chipEmoji}>🎲</Text>
-                  <Text
-                    style={[
-                      styles.chipText,
+                    <Text style={styles.chipEmoji}>{m.emoji}</Text>
+                    <Text
+                      style={[
+                        styles.chipText,
+                        {
+                          color: active ? '#fff' : theme.ink,
+                          fontWeight: active ? '600' : '500',
+                        },
+                      ]}
+                    >
+                      {m.name}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            {/* Bulgarian + Всички always pair together on the same row */}
+            <View style={styles.chipPair}>
+              {(() => {
+                const m = MOOD_THEMES.bulgarian;
+                const active = selectedMood === m.id;
+                return (
+                  <Pressable
+                    key={m.id}
+                    onPress={() => setSelectedMood(active ? null : (m.id as MoodId))}
+                    style={({ pressed }) => [
+                      styles.chip,
                       {
-                        color: active ? '#fff' : theme.ink,
-                        fontWeight: active ? '600' : '500',
+                        borderColor: active ? m.colorDeep : 'rgba(0,0,0,0.08)',
+                        backgroundColor: active ? m.color : 'rgba(255,255,255,0.55)',
+                        opacity: pressed ? 0.85 : 1,
                       },
                     ]}
                   >
-                    Всички
-                  </Text>
-                </Pressable>
-              );
-            })()}
+                    <Text style={styles.chipEmoji}>{m.emoji}</Text>
+                    <Text
+                      style={[
+                        styles.chipText,
+                        {
+                          color: active ? '#fff' : theme.ink,
+                          fontWeight: active ? '600' : '500',
+                        },
+                      ]}
+                    >
+                      {m.name}
+                    </Text>
+                    {m.isBonus && !active && (
+                      <View style={[styles.bgPill, { backgroundColor: m.color }]}>
+                        <Text style={styles.bgPillText}>BG</Text>
+                      </View>
+                    )}
+                  </Pressable>
+                );
+              })()}
+              {(() => {
+                const active = selectedMood === 'all';
+                return (
+                  <Pressable
+                    key="all"
+                    onPress={() => setSelectedMood(active ? null : 'all')}
+                    style={({ pressed }) => [
+                      styles.chip,
+                      {
+                        borderColor: active ? NEUTRAL_THEME.colorDeep : 'rgba(0,0,0,0.08)',
+                        backgroundColor: active ? NEUTRAL_THEME.accent : 'rgba(255,255,255,0.55)',
+                        opacity: pressed ? 0.85 : 1,
+                      },
+                    ]}
+                  >
+                    <Text style={styles.chipEmoji}>🎲</Text>
+                    <Text
+                      style={[
+                        styles.chipText,
+                        {
+                          color: active ? '#fff' : theme.ink,
+                          fontWeight: active ? '600' : '500',
+                        },
+                      ]}
+                    >
+                      Всички
+                    </Text>
+                  </Pressable>
+                );
+              })()}
+            </View>
           </View>
 
           {/* Main button */}
@@ -267,6 +302,10 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8,
     marginBottom: 22,
+  },
+  chipPair: {
+    flexDirection: 'row',
+    gap: 8,
   },
   chip: {
     flexDirection: 'row',
