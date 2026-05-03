@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="bg">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Какво да ям? — Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+<style>
+  html, body { margin: 0; padding: 0; background: #1a1614; min-height: 100vh; font-family: 'Geist', system-ui, sans-serif; color: #f0e8dc; }
+  * { box-sizing: border-box; }
+
+  /* Bg texture */
+  body {
+    background:
+      radial-gradient(ellipse at 20% 0%, #2a201b 0%, #161210 60%),
+      #161210;
+    min-height: 100vh;
+  }
+
+  .stage {
+    min-height: 100vh;
+    padding: 36px 28px 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 28px;
+  }
+
+  .header {
+    width: 100%;
+    max-width: 1100px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .brand-mark {
+    font-family: 'Geist', sans-serif;
+    font-size: 38px;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    color: #fbf2e3;
+    line-height: 1;
+  }
+  .brand-mark .q { color: #C8645A; }
+  .brand-sub {
+    font-family: 'Geist Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #a89881;
+    margin-top: 8px;
+  }
+  .brand-meta {
+    font-family: 'Geist', sans-serif;
+    font-size: 13px;
+    color: #a89881;
+    text-align: right;
+    line-height: 1.5;
+    max-width: 360px;
+  }
+  .brand-meta b { color: #f0e8dc; font-weight: 500; }
+
+  .frames-row {
+    display: flex;
+    gap: 56px;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-start;
+  }
+  .frame-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+  }
+  .frame-label {
+    font-family: 'Geist Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #c4b39a;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .frame-label .dot {
+    width: 6px; height: 6px; border-radius: 3px; background: #C8645A;
+  }
+
+  .controls-strip {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 6px;
+  }
+  .ctrl-btn {
+    font-family: 'Geist', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: #2a221d;
+    color: #d4c4ad;
+    border: 1px solid #3a2f27;
+    cursor: pointer;
+    transition: all 180ms ease;
+  }
+  .ctrl-btn:hover { background: #352a23; color: #f0e8dc; }
+  .ctrl-btn.active { background: #C8645A; color: #fff; border-color: #C8645A; }
+
+  /* Result animations */
+  @keyframes kdy-emoji-pop {
+    0% { transform: scale(0.4) rotate(-8deg); opacity: 0; }
+    60% { transform: scale(1.1) rotate(2deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0); opacity: 1; }
+  }
+  @keyframes kdy-rise {
+    from { transform: translateY(12px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  @keyframes kdy-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes kdy-sheet-rise {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+
+  /* Notes block */
+  .notes {
+    max-width: 880px;
+    width: 100%;
+    background: #221b16;
+    border: 1px solid #3a2f27;
+    border-radius: 18px;
+    padding: 24px 28px;
+    color: #d4c4ad;
+    font-family: 'Geist', sans-serif;
+    font-size: 13.5px;
+    line-height: 1.55;
+  }
+  .notes h3 {
+    font-size: 13px;
+    font-family: 'Geist Mono', monospace;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #C8645A;
+    margin: 0 0 10px;
+    font-weight: 500;
+  }
+  .notes ul { padding-left: 20px; margin: 0; }
+  .notes li { margin-bottom: 6px; }
+  .notes code {
+    font-family: 'Geist Mono', monospace;
+    font-size: 12px;
+    background: #2c241e;
+    padding: 1px 6px;
+    border-radius: 4px;
+    color: #f0e8dc;
+  }
+</style>
+</head>
+<body>
+
+<div id="root">
+  <div class="stage">
+    <div style="color:#a89881; font-family: 'Geist Mono', monospace; font-size: 12px; letter-spacing: 0.15em; text-transform: uppercase;">
+      Зареждане…
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<!-- Frames + tweaks -->
+<script type="text/babel" src="frames/ios-frame.jsx"></script>
+<script type="text/babel" src="frames/android-frame.jsx"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+
+<!-- App pieces -->
+<script type="text/babel" src="app/moodSystem.jsx"></script>
+<script type="text/babel" src="app/mealPicker.jsx"></script>
+<script type="text/babel" src="app/HomeScreen.jsx"></script>
+<script type="text/babel" src="app/ResultScreen.jsx"></script>
+<script type="text/babel" src="app/ShareSheet.jsx"></script>
+<script type="text/babel" src="app/KakvoDaYamApp.jsx"></script>
+
+<script type="text/babel" data-presets="env,react">
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "showFrames": "both",
+  "moodTypeStrength": "bold",
+  "showShareCardInSheet": true,
+  "darkStatusBar": "ios",
+  "previewState": "home"
+}/*EDITMODE-END*/;
+
+const MEALS_URL = 'data/meals.json';
+
+function App() {
+  const [tweaks, setTweak] = useTweaks(TWEAK_DEFAULTS);
+  const [mealsData, setMealsData] = React.useState(null);
+  const [err, setErr] = React.useState(null);
+
+  React.useEffect(() => {
+    fetch(MEALS_URL)
+      .then((r) => r.json())
+      .then(setMealsData)
+      .catch((e) => setErr(String(e)));
+  }, []);
+
+  if (err) return (
+    <div style={{ padding: 40, color: '#f0e8dc', fontFamily: 'Geist Mono, monospace' }}>
+      Failed to load meals.json: {err}
+    </div>
+  );
+  if (!mealsData) return (
+    <div className="stage">
+      <div style={{ color: '#a89881', fontFamily: 'Geist Mono, monospace', fontSize: 12, letterSpacing: '0.15em', textTransform: 'uppercase' }}>
+        Зареждане на менюто…
+      </div>
+    </div>
+  );
+
+  const showIOS = tweaks.showFrames === 'both' || tweaks.showFrames === 'ios';
+  const showAndroid = tweaks.showFrames === 'both' || tweaks.showFrames === 'android';
+
+  return (
+    <div className="stage">
+      <div className="header">
+        <div>
+          <div className="brand-mark">Какво да ям<span className="q">?</span></div>
+          <div className="brand-sub">v1 · Interactive prototype</div>
+        </div>
+        <div className="brand-meta">
+          <b>{mealsData.meals.length} ястия · 5 настроения · 1 гладен потребител.</b><br/>
+          Натисни <i>"Избери за мен"</i>, избери настроение, разклати докато не се появи нещо вкусно.
+        </div>
+      </div>
+
+      <div className="frames-row">
+        {showIOS && (
+          <div className="frame-block">
+            <div className="frame-label"><span className="dot"></span>iOS · iPhone 15 Pro</div>
+            <IOSDevice width={390} height={844} dark={false}>
+              <KakvoDaYamApp platform="ios" tweaks={tweaks} mealsData={mealsData} />
+            </IOSDevice>
+          </div>
+        )}
+        {showAndroid && (
+          <div className="frame-block">
+            <div className="frame-label"><span className="dot" style={{background:'#9CAF88'}}></span>Android · Pixel 8</div>
+            <AndroidDevice width={390} height={844} dark={false}>
+              <KakvoDaYamApp platform="android" tweaks={tweaks} mealsData={mealsData} />
+            </AndroidDevice>
+          </div>
+        )}
+      </div>
+
+      <div className="notes">
+        <h3>Какво е готово в v1</h3>
+        <ul>
+          <li>Home екран със заглавие, ротиращо подзаглавие, 5 mood-чипа и primary бутон.</li>
+          <li>Random selection: random измежду 4 основни ако няма избрано настроение; BG = бонус.</li>
+          <li>Резултат екран: емоджи (pop animation), име, причина, mood pill, back.</li>
+          <li>Reroll със сас — 6 different съобщения, не повтаря последното ястие.</li>
+          <li>Native-style share sheet (iOS / Android вариант), точен share формат от brief 6.3.</li>
+          <li>5 настроения = 5 различни визуални светове: цвят + фон + типография + декорация.</li>
+          <li>v1.1 share-card preview (1080×1920) видим в share sheet-а — toggle "Card".</li>
+        </ul>
+        <h3 style={{ marginTop: 18 }}>За handoff към Expo</h3>
+        <ul>
+          <li>Bundle ID: <code>com.kakvodayam.app</code></li>
+          <li>Структура: <code>app/(tabs)/index.tsx</code> = Home, <code>app/result.tsx</code> = Result, <code>data/meals.json</code> е готов.</li>
+          <li>Share текстът от <code>formatShareText()</code> отива в <code>react-native-share</code>.</li>
+          <li>Reroll messages вече са в правилния ред — копирай <code>REROLL_MESSAGES</code> в <code>lib/rerollMessages.ts</code>.</li>
+          <li>Type: Geist (тук) ↔ Inter / SF Pro / Roboto на устройство; serif accent = Fraunces / Instrument Serif.</li>
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+function TweaksUI() {
+  const [tweaks, setTweak] = useTweaks(TWEAK_DEFAULTS);
+  return (
+    <TweaksPanel title="Tweaks">
+      <TweakSection title="Layout">
+        <TweakRadio label="Frames" value={tweaks.showFrames} onChange={(v) => setTweak('showFrames', v)} options={[
+          { value: 'both', label: 'Both' },
+          { value: 'ios', label: 'iOS' },
+          { value: 'android', label: 'Android' },
+        ]} />
+      </TweakSection>
+      <TweakSection title="Mood personality">
+        <TweakRadio label="Type strength" value={tweaks.moodTypeStrength} onChange={(v) => setTweak('moodTypeStrength', v)} options={[
+          { value: 'subtle', label: 'Subtle' },
+          { value: 'bold', label: 'Bold' },
+        ]} />
+      </TweakSection>
+      <TweakSection title="Share">
+        <TweakToggle label="Show v1.1 card preview by default" value={tweaks.showShareCardInSheet} onChange={(v) => setTweak('showShareCardInSheet', v)} />
+      </TweakSection>
+    </TweaksPanel>
+  );
+}
+
+// Mount: app + tweaks share the same useTweaks hook, so we need a single root.
+function Root() {
+  return (
+    <>
+      <App />
+      <TweaksUI />
+    </>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<Root />);
+</script>
+
+</body>
+</html>
