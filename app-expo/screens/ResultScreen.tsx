@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View, Text, Pressable, StyleSheet, Animated, Easing,
 } from 'react-native';
@@ -22,41 +22,93 @@ export function ResultScreen({
   result, rerollCount, animKey,
   onReroll, onShare, onChangeMood, onHome,
 }: Props) {
-  const { meal, reason, moodId } = result;
+  const [displayed, setDisplayed] = useState<PickResult>(result);
+  const { meal, reason, moodId } = displayed;
   const theme = getTheme(moodId);
   const rerollMsg = getRerollMessage(rerollCount);
 
-  const emojiAnim = useRef(new Animated.Value(0)).current;
-  const nameAnim = useRef(new Animated.Value(0)).current;
-  const reasonAnim = useRef(new Animated.Value(0)).current;
+  // Entry transforms (pop / rise) — separate from opacity
+  const emojiEntry = useRef(new Animated.Value(0)).current;
+  const nameEntry = useRef(new Animated.Value(0)).current;
+  const reasonEntry = useRef(new Animated.Value(0)).current;
+  // Presence (opacity) — drives crossfade in/out
+  const emojiPresence = useRef(new Animated.Value(0)).current;
+  const namePresence = useRef(new Animated.Value(0)).current;
+  const reasonPresence = useRef(new Animated.Value(0)).current;
+
+  const lastAnimKey = useRef<number>(-1);
 
   useEffect(() => {
-    emojiAnim.setValue(0);
-    nameAnim.setValue(0);
-    reasonAnim.setValue(0);
-    Animated.sequence([
-      Animated.timing(emojiAnim, {
-        toValue: 1, duration: 600,
-        easing: Easing.bezier(0.34, 1.56, 0.64, 1),
-        useNativeDriver: true,
+    const enter = () => {
+      Animated.parallel([
+        Animated.timing(emojiPresence, {
+          toValue: 1, duration: 380,
+          easing: Easing.out(Easing.cubic), useNativeDriver: true,
+        }),
+        Animated.timing(emojiEntry, {
+          toValue: 1, duration: 600,
+          easing: Easing.bezier(0.34, 1.56, 0.64, 1),
+          useNativeDriver: true,
+        }),
+        Animated.timing(namePresence, {
+          toValue: 1, duration: 380, delay: 90,
+          easing: Easing.out(Easing.cubic), useNativeDriver: true,
+        }),
+        Animated.timing(nameEntry, {
+          toValue: 1, duration: 500, delay: 90,
+          easing: Easing.out(Easing.cubic), useNativeDriver: true,
+        }),
+        Animated.timing(reasonPresence, {
+          toValue: 1, duration: 380, delay: 170,
+          easing: Easing.out(Easing.cubic), useNativeDriver: true,
+        }),
+        Animated.timing(reasonEntry, {
+          toValue: 1, duration: 500, delay: 170,
+          easing: Easing.out(Easing.cubic), useNativeDriver: true,
+        }),
+      ]).start();
+    };
+
+    if (lastAnimKey.current === -1) {
+      // First mount — just play entry without fade-out
+      lastAnimKey.current = animKey;
+      setDisplayed(result);
+      enter();
+      return;
+    }
+    if (lastAnimKey.current === animKey) return;
+    lastAnimKey.current = animKey;
+
+    // Fade out current content, swap, then play entry
+    Animated.parallel([
+      Animated.timing(emojiPresence, {
+        toValue: 0, duration: 240,
+        easing: Easing.in(Easing.cubic), useNativeDriver: true,
       }),
-    ]).start();
-    Animated.timing(nameAnim, {
-      toValue: 1, duration: 500, delay: 100,
-      easing: Easing.out(Easing.cubic), useNativeDriver: true,
-    }).start();
-    Animated.timing(reasonAnim, {
-      toValue: 1, duration: 500, delay: 200,
-      easing: Easing.out(Easing.cubic), useNativeDriver: true,
-    }).start();
-  }, [animKey, emojiAnim, nameAnim, reasonAnim]);
+      Animated.timing(namePresence, {
+        toValue: 0, duration: 240,
+        easing: Easing.in(Easing.cubic), useNativeDriver: true,
+      }),
+      Animated.timing(reasonPresence, {
+        toValue: 0, duration: 240,
+        easing: Easing.in(Easing.cubic), useNativeDriver: true,
+      }),
+    ]).start(({ finished }) => {
+      if (!finished) return;
+      setDisplayed(result);
+      emojiEntry.setValue(0);
+      nameEntry.setValue(0);
+      reasonEntry.setValue(0);
+      enter();
+    });
+  }, [animKey, result, emojiEntry, nameEntry, reasonEntry, emojiPresence, namePresence, reasonPresence]);
 
   const emojiTransform = {
     transform: [
-      { scale: emojiAnim.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0.4, 1.1, 1] }) },
-      { rotate: emojiAnim.interpolate({ inputRange: [0, 0.6, 1], outputRange: ['-8deg', '2deg', '0deg'] }) },
+      { scale: emojiEntry.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0.6, 1.08, 1] }) },
+      { rotate: emojiEntry.interpolate({ inputRange: [0, 0.6, 1], outputRange: ['-6deg', '2deg', '0deg'] }) },
     ],
-    opacity: emojiAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, 1, 1] }),
+    opacity: emojiPresence,
   };
 
   const nameSize = meal.name.length > 18 ? 26 : 32;
@@ -108,11 +160,11 @@ export function ResultScreen({
             { fontSize: nameSize, color: theme.ink },
             nameStyle,
             {
-              opacity: nameAnim,
+              opacity: namePresence,
               transform: [
                 {
-                  translateY: nameAnim.interpolate({
-                    inputRange: [0, 1], outputRange: [12, 0],
+                  translateY: nameEntry.interpolate({
+                    inputRange: [0, 1], outputRange: [14, 0],
                   }),
                 },
               ],
@@ -124,13 +176,13 @@ export function ResultScreen({
         <Animated.Text
           style={[
             styles.reason,
-            { color: theme.ink, opacity: 0.78 },
+            { color: theme.ink },
             {
-              opacity: reasonAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 0.78] }),
+              opacity: reasonPresence.interpolate({ inputRange: [0, 1], outputRange: [0, 0.78] }),
               transform: [
                 {
-                  translateY: reasonAnim.interpolate({
-                    inputRange: [0, 1], outputRange: [12, 0],
+                  translateY: reasonEntry.interpolate({
+                    inputRange: [0, 1], outputRange: [14, 0],
                   }),
                 },
               ],
