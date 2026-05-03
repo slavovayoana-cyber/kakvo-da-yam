@@ -1,52 +1,7 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import Svg, { Path, G, Circle, Ellipse, Rect } from 'react-native-svg';
+import { View, Text, StyleSheet } from 'react-native';
+import Svg, { Path, G, Circle, Ellipse } from 'react-native-svg';
 import type { MoodTheme } from '../lib/moodSystem';
-
-type DieProps = {
-  size: number;
-  rotate: number;
-  opacity: number;
-  color: string;
-  dots: 1 | 2 | 3 | 4 | 5 | 6;
-};
-
-const DOT_LAYOUT: Record<DieProps['dots'], [number, number][]> = {
-  1: [[20, 20]],
-  2: [[12, 12], [28, 28]],
-  3: [[12, 12], [20, 20], [28, 28]],
-  4: [[12, 12], [28, 12], [12, 28], [28, 28]],
-  5: [[12, 12], [28, 12], [20, 20], [12, 28], [28, 28]],
-  6: [[12, 11], [28, 11], [12, 20], [28, 20], [12, 29], [28, 29]],
-};
-
-function OutlineDie({ size, rotate, opacity, color, dots }: DieProps) {
-  return (
-    <View
-      pointerEvents="none"
-      style={{
-        opacity,
-        transform: [{ rotate: `${rotate}deg` }],
-      }}
-    >
-      <Svg width={size} height={size} viewBox="0 0 40 40">
-        <Rect
-          x={3}
-          y={3}
-          width={34}
-          height={34}
-          rx={7}
-          stroke={color}
-          strokeWidth={1.6}
-          fill="none"
-        />
-        {DOT_LAYOUT[dots].map(([x, y], i) => (
-          <Circle key={i} cx={x} cy={y} r={1.6} fill={color} />
-        ))}
-      </Svg>
-    </View>
-  );
-}
 
 type Props = { theme: MoodTheme; scale?: number };
 
@@ -110,21 +65,11 @@ export function MoodDecoration({ theme, scale = 1 }: Props) {
   if (theme.decoration === 'dice') {
     return (
       <View pointerEvents="none" style={[StyleSheet.absoluteFill, { overflow: 'hidden' }]}>
-        <View style={{ position: 'absolute', top: 60, left: 24 }}>
-          <OutlineDie size={84 * scale} rotate={-14} opacity={0.28} color={c} dots={5} />
-        </View>
-        <View style={{ position: 'absolute', top: 180, right: -8 }}>
-          <OutlineDie size={110 * scale} rotate={22} opacity={0.22} color={c} dots={3} />
-        </View>
-        <View style={{ position: 'absolute', top: 360, left: 70 }}>
-          <OutlineDie size={60 * scale} rotate={38} opacity={0.3} color={c} dots={2} />
-        </View>
-        <View style={{ position: 'absolute', bottom: 220, right: 40 }}>
-          <OutlineDie size={70 * scale} rotate={-26} opacity={0.24} color={c} dots={4} />
-        </View>
-        <View style={{ position: 'absolute', bottom: 320, left: -12 }}>
-          <OutlineDie size={50 * scale} rotate={12} opacity={0.26} color={c} dots={1} />
-        </View>
+        <Text style={{ position: 'absolute', top: 60, left: 24, fontSize: 84 * scale, opacity: 0.18, transform: [{ rotate: '-14deg' }] }}>🎲</Text>
+        <Text style={{ position: 'absolute', top: 180, right: -8, fontSize: 110 * scale, opacity: 0.14, transform: [{ rotate: '22deg' }] }}>🎲</Text>
+        <Text style={{ position: 'absolute', top: 360, left: 70, fontSize: 60 * scale, opacity: 0.16, transform: [{ rotate: '38deg' }] }}>🎲</Text>
+        <Text style={{ position: 'absolute', bottom: 220, right: 40, fontSize: 70 * scale, opacity: 0.13, transform: [{ rotate: '-26deg' }] }}>🎲</Text>
+        <Text style={{ position: 'absolute', bottom: 320, left: -12, fontSize: 50 * scale, opacity: 0.12, transform: [{ rotate: '12deg' }] }}>🎲</Text>
       </View>
     );
   }
