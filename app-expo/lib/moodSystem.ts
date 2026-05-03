@@ -22,7 +22,7 @@ export type MoodTheme = {
   nameFontWeight: '400' | '500' | '600' | '700' | '800';
   nameLetterSpacing: number;
   nameTransform?: 'uppercase' | 'none';
-  decoration: 'leaves' | 'sparkles' | 'underline' | 'soft-blob' | 'shevitsa' | 'none';
+  decoration: 'leaves' | 'sparkles' | 'underline' | 'soft-blob' | 'shevitsa' | 'dice' | 'none';
   voice?: string;
   isBonus?: boolean;
 };
@@ -162,7 +162,34 @@ export const NEUTRAL_THEME: MoodTheme = {
   decoration: 'none',
 };
 
+export const ALL_THEME: MoodTheme = {
+  id: null,
+  emoji: '🎲',
+  name: 'Всички',
+  tagline: 'Изненадай ме',
+  color: '#D87A52',
+  colorDeep: '#A85530',
+  bg: '#FCEBDD',
+  gradient: {
+    colors: ['#FCEBDD', '#F8D7BE', '#F5C2A3'],
+    locations: [0, 0.55, 1],
+    start: { x: 0.2, y: 0 },
+    end: { x: 0.8, y: 1 },
+  },
+  chipBg: '#F5D7C0',
+  chipText: '#5C2E1A',
+  ink: '#42201A',
+  accent: '#C57247',
+  titleFontFamily: 'Geist_700Bold',
+  titleFontWeight: '700',
+  titleLetterSpacing: -0.04 * 56,
+  nameFontWeight: '700',
+  nameLetterSpacing: -0.035 * 32,
+  decoration: 'dice',
+};
+
 export function getTheme(moodId: MoodId | 'all' | null): MoodTheme {
-  if (!moodId || moodId === 'all') return NEUTRAL_THEME;
+  if (moodId === 'all') return ALL_THEME;
+  if (!moodId) return NEUTRAL_THEME;
   return MOOD_THEMES[moodId] || NEUTRAL_THEME;
 }

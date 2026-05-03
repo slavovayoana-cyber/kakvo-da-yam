@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import Svg, { Path, G, Circle, Ellipse } from 'react-native-svg';
 import type { MoodTheme } from '../lib/moodSystem';
 
@@ -62,6 +62,17 @@ export function MoodDecoration({ theme, scale = 1 }: Props) {
     );
   }
 
+  if (theme.decoration === 'dice') {
+    return (
+      <View pointerEvents="none" style={[StyleSheet.absoluteFill, { overflow: 'hidden' }]}>
+        <Text style={{ position: 'absolute', top: 60, left: 24, fontSize: 84 * scale, opacity: 0.18, transform: [{ rotate: '-14deg' }] }}>🎲</Text>
+        <Text style={{ position: 'absolute', top: 180, right: -8, fontSize: 110 * scale, opacity: 0.14, transform: [{ rotate: '22deg' }] }}>🎲</Text>
+        <Text style={{ position: 'absolute', top: 360, left: 70, fontSize: 60 * scale, opacity: 0.16, transform: [{ rotate: '38deg' }] }}>🎲</Text>
+        <Text style={{ position: 'absolute', bottom: 220, right: 40, fontSize: 70 * scale, opacity: 0.13, transform: [{ rotate: '-26deg' }] }}>🎲</Text>
+        <Text style={{ position: 'absolute', bottom: 320, left: -12, fontSize: 50 * scale, opacity: 0.12, transform: [{ rotate: '12deg' }] }}>🎲</Text>
+      </View>
+    );
+  }
   if (theme.decoration === 'shevitsa') {
     const count = 18;
     return (

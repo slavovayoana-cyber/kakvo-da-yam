@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MoodDecoration } from '../components/MoodDecoration';
-import { getTheme, MOOD_THEMES, MoodTheme, NEUTRAL_THEME } from '../lib/moodSystem';
+import { getTheme, MOOD_THEMES, MoodTheme, ALL_THEME } from '../lib/moodSystem';
 import { SUBTITLES } from '../lib/mealPicker';
 import type { MoodId, Selection } from '../lib/types';
 
@@ -218,8 +218,8 @@ export function HomeScreen({
                     style={({ pressed }) => [
                       styles.chip,
                       {
-                        borderColor: active ? NEUTRAL_THEME.colorDeep : 'rgba(0,0,0,0.08)',
-                        backgroundColor: active ? NEUTRAL_THEME.accent : 'rgba(255,255,255,0.55)',
+                        borderColor: active ? ALL_THEME.colorDeep : 'rgba(0,0,0,0.08)',
+                        backgroundColor: active ? ALL_THEME.accent : 'rgba(255,255,255,0.55)',
                         opacity: pressed ? 0.85 : 1,
                       },
                     ]}
