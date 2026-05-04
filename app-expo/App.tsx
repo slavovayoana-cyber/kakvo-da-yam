@@ -47,7 +47,13 @@ export default function App() {
   const [rerollCount, setRerollCount] = useState(0);
   const [animKey, setAnimKey] = useState(0);
   const [subtitleIdx, setSubtitleIdx] = useState(0);
+  const [recentIds, setRecentIds] = useState<string[]>([]);
   const cardRef = useRef<View>(null);
+
+  const MAX_RECENT = 10;
+  const trackPick = (id: string) => {
+    setRecentIds((prev) => [...prev, id].slice(-MAX_RECENT));
+  };
 
   const subtitleTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   useEffect(() => {
@@ -73,8 +79,9 @@ export default function App() {
   }
 
   const doPick = () => {
-    const r = pickMeal(mealsData.meals, selectedMood, null);
+    const r = pickMeal(mealsData.meals, selectedMood, recentIds);
     setResult(r);
+    trackPick(r.meal.id);
     setRerollCount(0);
     setAnimKey((k) => k + 1);
     setScreen('result');
@@ -82,8 +89,9 @@ export default function App() {
 
   const doReroll = () => {
     if (!result) return;
-    const r = pickMeal(mealsData.meals, selectedMood, result.meal.id);
+    const r = pickMeal(mealsData.meals, selectedMood, recentIds);
     setResult(r);
+    trackPick(r.meal.id);
     setRerollCount((c) => c + 1);
     setAnimKey((k) => k + 1);
   };

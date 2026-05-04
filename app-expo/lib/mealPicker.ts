@@ -9,7 +9,7 @@ const MAIN_MOODS: MoodId[] = ['healthy_ish', 'fancy', 'honest', 'comfort'];
 export function pickMeal(
   meals: Meal[],
   selection: Selection,
-  avoidId: string | null,
+  recentIds: string[],
 ): PickResult {
   let pool: Meal[];
   if (selection === 'all') {
@@ -20,9 +20,14 @@ export function pickMeal(
     pool = meals.filter((m) => m.moods.some((x) => MAIN_MOODS.includes(x)));
   }
 
-  let candidates = pool;
-  if (avoidId && pool.length > 1) {
-    candidates = pool.filter((m) => m.id !== avoidId);
+  // Avoid every recently-seen meal. If that empties the pool (small filtered
+  // mood + long history), relax to just avoiding the most recent one.
+  const recentSet = new Set(recentIds);
+  let candidates = pool.filter((m) => !recentSet.has(m.id));
+  if (candidates.length === 0) {
+    const last = recentIds[recentIds.length - 1];
+    candidates = last && pool.length > 1 ? pool.filter((m) => m.id !== last) : pool;
+    if (candidates.length === 0) candidates = pool;
   }
 
   const meal = pickRandom(candidates);
