@@ -39,7 +39,6 @@ export default function App() {
     Fraunces_400Italic: Fraunces_400Regular_Italic,
     Fraunces_500Medium,
     InstrumentSerif_400Regular,
-    Twemoji: require('./assets/fonts/Twemoji.ttf'),
   });
 
   const [screen, setScreen] = useState<'home' | 'result'>('home');

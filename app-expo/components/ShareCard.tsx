@@ -2,8 +2,8 @@ import React, { forwardRef } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MoodDecoration } from './MoodDecoration';
+import { EmojiImage } from './EmojiImage';
 import type { MoodTheme } from '../lib/moodSystem';
-import { EMOJI_FONT_FAMILY } from '../lib/emojiFont';
 
 const CARD_WIDTH = 540;
 const CARD_HEIGHT = 960;
@@ -29,7 +29,9 @@ export const ShareCard = forwardRef<View, Props>(
         <MoodDecoration theme={theme} scale={3} />
 
         <View style={styles.content}>
-          <Text style={styles.emoji}>{meal.emoji}</Text>
+          <View style={styles.emojiBox}>
+            <EmojiImage emoji={meal.emoji} size={220} />
+          </View>
           <Text
             style={[
               styles.name,
@@ -82,12 +84,10 @@ const styles = StyleSheet.create({
     paddingBottom: 180,
     zIndex: 2,
   },
-  emoji: {
-    fontSize: 220,
-    lineHeight: 280,
+  emojiBox: {
     marginBottom: 30,
-    textAlign: 'center',
-    fontFamily: EMOJI_FONT_FAMILY,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   name: {
     textAlign: 'center',

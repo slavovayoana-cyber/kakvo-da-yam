@@ -8,7 +8,7 @@ import { MoodDecoration } from '../components/MoodDecoration';
 import { getTheme, MOOD_THEMES, MoodTheme, ALL_THEME } from '../lib/moodSystem';
 import { SUBTITLES } from '../lib/mealPicker';
 import { tapMedium, tapSelection } from '../lib/haptics';
-import { EMOJI_FONT_FAMILY } from '../lib/emojiFont';
+import { EmojiImage } from '../components/EmojiImage';
 import type { MoodId, Selection } from '../lib/types';
 
 type Props = {
@@ -132,7 +132,7 @@ export function HomeScreen({
                       },
                     ]}
                   >
-                    <Text style={styles.chipEmoji}>{m.emoji}</Text>
+                    <EmojiImage emoji={m.emoji} size={18} />
                     <Text
                       style={[
                         styles.chipText,
@@ -165,7 +165,7 @@ export function HomeScreen({
                       },
                     ]}
                   >
-                    <Text style={styles.chipEmoji}>{m.emoji}</Text>
+                    <EmojiImage emoji={m.emoji} size={18} />
                     <Text
                       style={[
                         styles.chipText,
@@ -196,7 +196,7 @@ export function HomeScreen({
                       },
                     ]}
                   >
-                    <Text style={styles.chipEmoji}>{m.emoji}</Text>
+                    <EmojiImage emoji={m.emoji} size={18} />
                     <Text
                       style={[
                         styles.chipText,
@@ -226,7 +226,7 @@ export function HomeScreen({
                       },
                     ]}
                   >
-                    <Text style={styles.chipEmoji}>🎲</Text>
+                    <EmojiImage emoji="🎲" size={18} />
                     <Text
                       style={[
                         styles.chipText,
@@ -341,7 +341,6 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     borderWidth: 1.5,
   },
-  chipEmoji: { fontSize: 15, fontFamily: EMOJI_FONT_FAMILY },
   chipText: {
     fontFamily: 'Geist_500Medium',
     fontSize: 13.5,

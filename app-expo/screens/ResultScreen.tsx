@@ -7,7 +7,7 @@ import { MoodDecoration } from '../components/MoodDecoration';
 import { getTheme } from '../lib/moodSystem';
 import { getRerollMessage } from '../lib/mealPicker';
 import { tapMedium, tapLight } from '../lib/haptics';
-import { EMOJI_FONT_FAMILY } from '../lib/emojiFont';
+import { EmojiImage } from '../components/EmojiImage';
 import type { PickResult } from '../lib/types';
 
 type Props = {
@@ -146,16 +146,16 @@ export function ResultScreen({
           <Text style={[styles.backIcon, { color: theme.ink }]}>←</Text>
         </Pressable>
         <View style={[styles.moodPill, { backgroundColor: theme.color }]}>
-          <Text style={styles.moodPillEmoji}>{theme.emoji}</Text>
+          <EmojiImage emoji={theme.emoji} size={14} />
           <Text style={styles.moodPillText}>{theme.name}</Text>
         </View>
       </View>
 
       {/* Result body */}
       <View style={styles.body}>
-        <Animated.Text style={[styles.emoji, emojiTransform]}>
-          {meal.emoji}
-        </Animated.Text>
+        <Animated.View style={[styles.emojiBox, emojiTransform]}>
+          <EmojiImage emoji={meal.emoji} size={130} />
+        </Animated.View>
         <Animated.Text
           style={[
             styles.name,
@@ -262,7 +262,6 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     flexDirection: 'row', alignItems: 'center', gap: 5,
   },
-  moodPillEmoji: { fontSize: 12, fontFamily: EMOJI_FONT_FAMILY },
   moodPillText: {
     fontFamily: 'Geist_600SemiBold',
     color: '#fff', fontSize: 12, fontWeight: '600',
@@ -273,14 +272,10 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
     paddingHorizontal: 28,
   },
-  emoji: {
-    fontSize: 130,
-    lineHeight: 170,
+  emojiBox: {
     marginBottom: 18,
-    paddingTop: 12,
-    textAlign: 'center',
-    includeFontPadding: false,
-    fontFamily: EMOJI_FONT_FAMILY,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   name: {
     textAlign: 'center',

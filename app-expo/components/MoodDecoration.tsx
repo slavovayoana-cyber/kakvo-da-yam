@@ -1,8 +1,8 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
+import { View, StyleSheet, Animated, Easing } from 'react-native';
 import Svg, { Path, G, Circle, Ellipse } from 'react-native-svg';
 import type { MoodTheme } from '../lib/moodSystem';
-import { EMOJI_FONT_FAMILY } from '../lib/emojiFont';
+import { EmojiImage } from './EmojiImage';
 
 type FloatingDieProps = {
   fontSize: number;
@@ -48,15 +48,15 @@ function FloatingDie({
   });
 
   return (
-    <Animated.Text
+    <Animated.View
       style={[
-        { position: 'absolute', fontSize, opacity, fontFamily: EMOJI_FONT_FAMILY },
+        { position: 'absolute', opacity },
         style,
         { transform: [{ translateY }, { rotate }] },
       ]}
     >
-      🎲
-    </Animated.Text>
+      <EmojiImage emoji="🎲" size={fontSize} />
+    </Animated.View>
   );
 }
 
