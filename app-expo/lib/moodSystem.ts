@@ -93,7 +93,7 @@ export const MOOD_THEMES: Record<MoodId, MoodTheme> = {
     nameFontWeight: '800',
     nameLetterSpacing: -0.04 * 32,
     nameTransform: 'uppercase',
-    decoration: 'underline',
+    decoration: 'none',
     voice: 'без филтър',
   },
   comfort: {
