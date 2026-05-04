@@ -37,7 +37,7 @@ export const ShareCard = forwardRef<View, Props>(
               styles.name,
               {
                 fontSize: nameSize,
-                lineHeight: nameSize * 1.1,
+                lineHeight: nameSize * 1.35,
                 fontFamily: theme.titleFontFamily,
                 fontWeight: theme.nameFontWeight,
                 fontStyle: theme.nameFontStyle ?? 'normal',

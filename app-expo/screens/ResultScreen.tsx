@@ -159,7 +159,11 @@ export function ResultScreen({
         <Animated.Text
           style={[
             styles.name,
-            { fontSize: nameSize, color: theme.ink },
+            {
+              fontSize: nameSize,
+              lineHeight: nameSize * 1.35,
+              color: theme.ink,
+            },
             nameStyle,
             {
               opacity: namePresence,
@@ -280,8 +284,9 @@ const styles = StyleSheet.create({
   name: {
     textAlign: 'center',
     marginBottom: 14,
-    lineHeight: 32 * 1.05,
     maxWidth: 280,
+    paddingTop: 6,
+    paddingBottom: 6,
   },
   reason: {
     fontFamily: 'Geist_400Regular',
