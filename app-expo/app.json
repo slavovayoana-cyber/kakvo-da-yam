@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Какво да ям?",
-    "slug": "kakvodayam",
+    "slug": "kakvo-da-yam-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
