@@ -6,6 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { MoodDecoration } from '../components/MoodDecoration';
 import { getTheme } from '../lib/moodSystem';
 import { getRerollMessage } from '../lib/mealPicker';
+import { tapMedium, tapLight } from '../lib/haptics';
 import type { PickResult } from '../lib/types';
 
 type Props = {
@@ -206,7 +207,7 @@ export function ResultScreen({
 
         <View style={styles.btnRow}>
           <Pressable
-            onPress={onReroll}
+            onPress={() => { tapMedium(); onReroll(); }}
             style={({ pressed }) => [
               styles.secondaryBtn,
               {
@@ -218,7 +219,7 @@ export function ResultScreen({
             <Text style={[styles.secondaryBtnText, { color: theme.ink }]}>↻ Друго</Text>
           </Pressable>
           <Pressable
-            onPress={onShare}
+            onPress={() => { tapLight(); onShare(); }}
             style={({ pressed }) => [
               styles.primaryBtn,
               {

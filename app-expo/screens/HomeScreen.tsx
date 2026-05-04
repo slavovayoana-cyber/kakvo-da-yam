@@ -7,6 +7,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { MoodDecoration } from '../components/MoodDecoration';
 import { getTheme, MOOD_THEMES, MoodTheme, ALL_THEME } from '../lib/moodSystem';
 import { SUBTITLES } from '../lib/mealPicker';
+import { tapMedium, tapSelection } from '../lib/haptics';
 import type { MoodId, Selection } from '../lib/types';
 
 type Props = {
@@ -120,7 +121,7 @@ export function HomeScreen({
                 return (
                   <Pressable
                     key={m.id}
-                    onPress={() => setSelectedMood(active ? null : (m.id as MoodId))}
+                    onPress={() => { tapSelection(); setSelectedMood(active ? null : (m.id as MoodId)); }}
                     style={({ pressed }) => [
                       styles.chip,
                       {
@@ -153,7 +154,7 @@ export function HomeScreen({
                 return (
                   <Pressable
                     key={m.id}
-                    onPress={() => setSelectedMood(active ? null : (m.id as MoodId))}
+                    onPress={() => { tapSelection(); setSelectedMood(active ? null : (m.id as MoodId)); }}
                     style={({ pressed }) => [
                       styles.chip,
                       {
@@ -184,7 +185,7 @@ export function HomeScreen({
                 return (
                   <Pressable
                     key={m.id}
-                    onPress={() => setSelectedMood(active ? null : (m.id as MoodId))}
+                    onPress={() => { tapSelection(); setSelectedMood(active ? null : (m.id as MoodId)); }}
                     style={({ pressed }) => [
                       styles.chip,
                       {
@@ -214,7 +215,7 @@ export function HomeScreen({
                 return (
                   <Pressable
                     key="all"
-                    onPress={() => setSelectedMood(active ? null : 'all')}
+                    onPress={() => { tapSelection(); setSelectedMood(active ? null : 'all'); }}
                     style={({ pressed }) => [
                       styles.chip,
                       {
@@ -244,7 +245,7 @@ export function HomeScreen({
 
           {/* Main button */}
           <Pressable
-            onPress={onPick}
+            onPress={() => { tapMedium(); onPick(); }}
             style={({ pressed }) => [
               styles.mainBtn,
               {
