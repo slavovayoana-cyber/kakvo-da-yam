@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MoodDecoration } from './MoodDecoration';
 import type { MoodTheme } from '../lib/moodSystem';
+import { EMOJI_FONT_FAMILY } from '../lib/emojiFont';
 
 const CARD_WIDTH = 540;
 const CARD_HEIGHT = 960;
@@ -86,6 +87,7 @@ const styles = StyleSheet.create({
     lineHeight: 280,
     marginBottom: 30,
     textAlign: 'center',
+    fontFamily: EMOJI_FONT_FAMILY,
   },
   name: {
     textAlign: 'center',

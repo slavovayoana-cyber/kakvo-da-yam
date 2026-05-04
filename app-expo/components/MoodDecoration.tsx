@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
 import Svg, { Path, G, Circle, Ellipse } from 'react-native-svg';
 import type { MoodTheme } from '../lib/moodSystem';
+import { EMOJI_FONT_FAMILY } from '../lib/emojiFont';
 
 type FloatingDieProps = {
   fontSize: number;
@@ -49,7 +50,7 @@ function FloatingDie({
   return (
     <Animated.Text
       style={[
-        { position: 'absolute', fontSize, opacity },
+        { position: 'absolute', fontSize, opacity, fontFamily: EMOJI_FONT_FAMILY },
         style,
         { transform: [{ translateY }, { rotate }] },
       ]}

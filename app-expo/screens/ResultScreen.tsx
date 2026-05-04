@@ -7,6 +7,7 @@ import { MoodDecoration } from '../components/MoodDecoration';
 import { getTheme } from '../lib/moodSystem';
 import { getRerollMessage } from '../lib/mealPicker';
 import { tapMedium, tapLight } from '../lib/haptics';
+import { EMOJI_FONT_FAMILY } from '../lib/emojiFont';
 import type { PickResult } from '../lib/types';
 
 type Props = {
@@ -261,7 +262,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     flexDirection: 'row', alignItems: 'center', gap: 5,
   },
-  moodPillEmoji: { fontSize: 12 },
+  moodPillEmoji: { fontSize: 12, fontFamily: EMOJI_FONT_FAMILY },
   moodPillText: {
     fontFamily: 'Geist_600SemiBold',
     color: '#fff', fontSize: 12, fontWeight: '600',
@@ -279,6 +280,7 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     textAlign: 'center',
     includeFontPadding: false,
+    fontFamily: EMOJI_FONT_FAMILY,
   },
   name: {
     textAlign: 'center',
