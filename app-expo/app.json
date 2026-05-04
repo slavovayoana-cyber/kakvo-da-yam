@@ -10,7 +10,7 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#FCEBDD"
+      "backgroundColor": "#D5918A"
     },
     "ios": {
       "supportsTablet": true,
@@ -20,7 +20,7 @@
       "package": "com.kakvodayam.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#FCEBDD"
+        "backgroundColor": "#D5918A"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
