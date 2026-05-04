@@ -30,6 +30,12 @@
     },
     "plugins": [
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "0e13e17d-cac9-434b-8a46-9424eeef19be"
+      }
+    },
+    "owner": "slavovayoana"
   }
 }
