@@ -176,10 +176,10 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#FBF7F2' },
+  root: { flex: 1, backgroundColor: '#FCEBDD' },
   loading: {
     flex: 1, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#FBF7F2',
+    backgroundColor: '#FCEBDD',
   },
   loadingText: {
     color: '#a89881',
