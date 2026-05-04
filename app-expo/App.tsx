@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Share, StatusBar, Platform } from 'react-native';
 import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
+import * as NavigationBar from 'expo-navigation-bar';
 import { useFonts } from 'expo-font';
 import {
   Geist_400Regular,
@@ -69,6 +70,12 @@ export default function App() {
       if (subtitleTimer.current) clearInterval(subtitleTimer.current);
     };
   }, [screen]);
+
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    NavigationBar.setBackgroundColorAsync('#00000000').catch(() => {});
+    NavigationBar.setButtonStyleAsync('dark').catch(() => {});
+  }, []);
 
   if (!fontsLoaded) {
     return (
