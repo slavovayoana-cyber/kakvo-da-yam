@@ -29,6 +29,7 @@ import {
   getJournal,
   addJournalEntry,
 } from './lib/journal';
+import { openMealNearby } from './lib/maps';
 import type { MealsData, PickResult, Selection } from './lib/types';
 
 import mealsJson from './data/meals.json';
@@ -146,6 +147,11 @@ export default function App() {
     setScreen('journal');
   };
 
+  const doFindNearby = () => {
+    if (!result) return;
+    openMealNearby(result.meal.name, result.meal.id).catch(() => {});
+  };
+
   const doShare = async () => {
     if (!result) return;
     const theme = getTheme(result.moodId);
@@ -207,6 +213,7 @@ export default function App() {
           onChangeMood={goHome}
           onHome={goHome}
           onCooked={doCooked}
+          onFindNearby={doFindNearby}
           cookedThisSession={cookedThisSession}
         />
       )}

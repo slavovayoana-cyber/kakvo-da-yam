@@ -8,6 +8,7 @@ import { getTheme } from '../lib/moodSystem';
 import { getRerollMessage } from '../lib/mealPicker';
 import { tapMedium, tapLight } from '../lib/haptics';
 import { EmojiImage } from '../components/EmojiImage';
+import { getNearbyType, getNearbyButtonLabel } from '../lib/maps';
 import type { PickResult } from '../lib/types';
 
 type Props = {
@@ -19,12 +20,14 @@ type Props = {
   onChangeMood: () => void;
   onHome: () => void;
   onCooked: () => void;
+  onFindNearby: () => void;
   cookedThisSession: boolean;
 };
 
 export function ResultScreen({
   result, rerollCount, animKey,
-  onReroll, onShare, onChangeMood, onHome, onCooked, cookedThisSession,
+  onReroll, onShare, onChangeMood, onHome, onCooked, onFindNearby,
+  cookedThisSession,
 }: Props) {
   const [displayed, setDisplayed] = useState<PickResult>(result);
   const { meal, reason, moodId } = displayed;
@@ -259,11 +262,31 @@ export function ResultScreen({
           </Text>
         </Pressable>
 
-        <Pressable onPress={onChangeMood} style={styles.changeMoodBtn}>
-          <Text style={[styles.changeMoodText, { color: theme.ink }]}>
-            Промени настроението
-          </Text>
-        </Pressable>
+        <View style={styles.tertiaryRow}>
+          <Pressable onPress={onChangeMood} style={styles.changeMoodBtn} hitSlop={6}>
+            <Text style={[styles.changeMoodText, { color: theme.ink }]}>
+              Промени настроението
+            </Text>
+          </Pressable>
+          {(() => {
+            const nearbyType = getNearbyType(meal.id);
+            if (nearbyType === 'none') return null;
+            return (
+              <>
+                <Text style={[styles.tertiaryDivider, { color: theme.ink }]}>·</Text>
+                <Pressable
+                  onPress={() => { tapLight(); onFindNearby(); }}
+                  style={styles.changeMoodBtn}
+                  hitSlop={6}
+                >
+                  <Text style={[styles.changeMoodText, { color: theme.ink }]}>
+                    {getNearbyButtonLabel(nearbyType)}
+                  </Text>
+                </Pressable>
+              </>
+            );
+          })()}
+        </View>
       </View>
     </View>
   );
@@ -367,7 +390,17 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: -0.01 * 14.5,
   },
-  changeMoodBtn: { alignSelf: 'center', padding: 8 },
+  tertiaryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  tertiaryDivider: {
+    fontSize: 13,
+    opacity: 0.35,
+  },
+  changeMoodBtn: { padding: 8 },
   changeMoodText: {
     fontFamily: 'Geist_400Regular',
     fontSize: 13, opacity: 0.55,

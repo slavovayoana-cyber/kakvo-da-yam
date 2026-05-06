@@ -1,16 +1,18 @@
 import React from 'react';
 import {
-  View, Text, Pressable, StyleSheet, ScrollView, Alert,
+  View, Text, Pressable, StyleSheet, ScrollView, Alert, Share, Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ALL_THEME, getTheme } from '../lib/moodSystem';
 import { tapLight, tapMedium } from '../lib/haptics';
 import { EmojiImage } from '../components/EmojiImage';
+import { PersonalityCard } from '../components/PersonalityCard';
 import {
   type JournalEntry,
   formatRelativeDate,
   removeJournalEntry,
 } from '../lib/journal';
+import { computePersonality } from '../lib/personality';
 
 type Props = {
   entries: JournalEntry[];
@@ -20,6 +22,22 @@ type Props = {
 
 export function JournalScreen({ entries, onBack, onChange }: Props) {
   const theme = ALL_THEME;
+  const personalityResult = computePersonality(entries);
+
+  const sharePersonality = async () => {
+    tapLight();
+    const p = personalityResult.personality;
+    const message = `Кулинарната ми личност: ${p.emoji} ${p.title}\n„${p.tagline}"\n\n— от приложението „Какво да ям?"`;
+    try {
+      await Share.share(
+        Platform.OS === 'ios'
+          ? { message }
+          : { message, title: 'Какво да ям?' },
+      );
+    } catch {
+      // dismissed
+    }
+  };
 
   const handleDelete = (entry: JournalEntry) => {
     Alert.alert(
@@ -78,6 +96,11 @@ export function JournalScreen({ entries, onBack, onChange }: Props) {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
+        <PersonalityCard
+          result={personalityResult}
+          onShare={personalityResult.isReady ? sharePersonality : undefined}
+        />
+
         {/* Stats card */}
         <View style={styles.statsCard}>
           <View style={styles.statBox}>
