@@ -20,9 +20,15 @@ import {
 } from '@expo-google-fonts/instrument-serif';
 import { HomeScreen } from './screens/HomeScreen';
 import { ResultScreen } from './screens/ResultScreen';
+import { JournalScreen } from './screens/JournalScreen';
 import { ShareCard } from './components/ShareCard';
 import { pickMeal, formatShareText } from './lib/mealPicker';
 import { getTheme } from './lib/moodSystem';
+import {
+  type JournalEntry,
+  getJournal,
+  addJournalEntry,
+} from './lib/journal';
 import type { MealsData, PickResult, Selection } from './lib/types';
 
 import mealsJson from './data/meals.json';
@@ -42,14 +48,25 @@ export default function App() {
     InstrumentSerif_400Regular,
   });
 
-  const [screen, setScreen] = useState<'home' | 'result'>('home');
+  const [screen, setScreen] = useState<'home' | 'result' | 'journal'>('home');
   const [selectedMood, setSelectedMood] = useState<Selection>('all');
   const [result, setResult] = useState<PickResult | null>(null);
   const [rerollCount, setRerollCount] = useState(0);
   const [animKey, setAnimKey] = useState(0);
   const [subtitleIdx, setSubtitleIdx] = useState(0);
   const [recentIds, setRecentIds] = useState<string[]>([]);
+  const [journal, setJournal] = useState<JournalEntry[]>([]);
+  const [cookedThisSession, setCookedThisSession] = useState(false);
   const cardRef = useRef<View>(null);
+
+  useEffect(() => {
+    getJournal().then(setJournal).catch(() => setJournal([]));
+  }, []);
+
+  const refreshJournal = async () => {
+    const next = await getJournal();
+    setJournal(next);
+  };
 
   const MAX_RECENT = 10;
   const trackPick = (id: string) => {
@@ -91,6 +108,7 @@ export default function App() {
     trackPick(r.meal.id);
     setRerollCount(0);
     setAnimKey((k) => k + 1);
+    setCookedThisSession(false);
     setScreen('result');
   };
 
@@ -101,10 +119,31 @@ export default function App() {
     trackPick(r.meal.id);
     setRerollCount((c) => c + 1);
     setAnimKey((k) => k + 1);
+    setCookedThisSession(false);
+  };
+
+  const doCooked = async () => {
+    if (!result || cookedThisSession) return;
+    setCookedThisSession(true);
+    try {
+      await addJournalEntry({
+        mealId: result.meal.id,
+        mealName: result.meal.name,
+        mealEmoji: result.meal.emoji,
+        moodId: result.moodId,
+      });
+      await refreshJournal();
+    } catch {
+      setCookedThisSession(false);
+    }
   };
 
   const goHome = () => {
     setScreen('home');
+  };
+
+  const openJournal = () => {
+    setScreen('journal');
   };
 
   const doShare = async () => {
@@ -153,6 +192,8 @@ export default function App() {
           selectedMood={selectedMood}
           setSelectedMood={setSelectedMood}
           onPick={doPick}
+          onOpenJournal={openJournal}
+          journalCount={journal.length}
           subtitleIdx={subtitleIdx}
         />
       )}
@@ -165,6 +206,15 @@ export default function App() {
           onShare={doShare}
           onChangeMood={goHome}
           onHome={goHome}
+          onCooked={doCooked}
+          cookedThisSession={cookedThisSession}
+        />
+      )}
+      {screen === 'journal' && (
+        <JournalScreen
+          entries={journal}
+          onBack={goHome}
+          onChange={refreshJournal}
         />
       )}
 

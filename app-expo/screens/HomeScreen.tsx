@@ -15,11 +15,13 @@ type Props = {
   selectedMood: Selection;
   setSelectedMood: (m: Selection) => void;
   onPick: () => void;
+  onOpenJournal: () => void;
+  journalCount: number;
   subtitleIdx: number;
 };
 
 export function HomeScreen({
-  selectedMood, setSelectedMood, onPick, subtitleIdx,
+  selectedMood, setSelectedMood, onPick, onOpenJournal, journalCount, subtitleIdx,
 }: Props) {
   const theme: MoodTheme = getTheme(selectedMood);
   const useMoodType = !!selectedMood && selectedMood !== 'all';
@@ -81,9 +83,21 @@ export function HomeScreen({
           <Text style={[styles.headerMono, { color: theme.ink, opacity: 0.55 }]}>
             {'какво да ям'}<Text style={{ color: theme.accent }}>?</Text>
           </Text>
-          <Text style={[styles.headerMono, { color: theme.ink, opacity: 0.45 }]}>
-            v1.0
-          </Text>
+          <Pressable
+            onPress={() => { tapSelection(); onOpenJournal(); }}
+            style={({ pressed }) => [
+              styles.journalBtn,
+              {
+                borderColor: theme.colorDeep + '33',
+                opacity: pressed ? 0.7 : 1,
+              },
+            ]}
+            hitSlop={10}
+          >
+            <Text style={[styles.journalBtnText, { color: theme.ink }]}>
+              📔 Дневник{journalCount > 0 ? ` · ${journalCount}` : ''}
+            </Text>
+          </Pressable>
         </View>
 
         {/* Title block */}
@@ -297,6 +311,21 @@ const styles = StyleSheet.create({
     fontSize: 11,
     letterSpacing: 0.18 * 11,
     textTransform: 'uppercase',
+  },
+  journalBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 11,
+    borderRadius: 999,
+    borderWidth: 1.2,
+    backgroundColor: 'rgba(255,255,255,0.45)',
+  },
+  journalBtnText: {
+    fontFamily: 'Geist_500Medium',
+    fontSize: 11.5,
+    fontWeight: '500',
+    letterSpacing: -0.005 * 11.5,
   },
   titleBlock: {
     flex: 1,

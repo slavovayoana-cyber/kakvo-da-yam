@@ -18,11 +18,13 @@ type Props = {
   onShare: () => void;
   onChangeMood: () => void;
   onHome: () => void;
+  onCooked: () => void;
+  cookedThisSession: boolean;
 };
 
 export function ResultScreen({
   result, rerollCount, animKey,
-  onReroll, onShare, onChangeMood, onHome,
+  onReroll, onShare, onChangeMood, onHome, onCooked, cookedThisSession,
 }: Props) {
   const [displayed, setDisplayed] = useState<PickResult>(result);
   const { meal, reason, moodId } = displayed;
@@ -238,6 +240,25 @@ export function ResultScreen({
           </Pressable>
         </View>
 
+        <Pressable
+          onPress={() => { if (!cookedThisSession) { tapLight(); onCooked(); } }}
+          disabled={cookedThisSession}
+          style={({ pressed }) => [
+            styles.cookedBtn,
+            {
+              borderColor: theme.colorDeep + (cookedThisSession ? '55' : '33'),
+              backgroundColor: cookedThisSession
+                ? theme.colorDeep + '15'
+                : 'rgba(255,255,255,0.45)',
+              opacity: pressed && !cookedThisSession ? 0.8 : 1,
+            },
+          ]}
+        >
+          <Text style={[styles.cookedBtnText, { color: theme.ink }]}>
+            {cookedThisSession ? '✓ Записано в дневника' : '👨‍🍳 Готвих го!'}
+          </Text>
+        </Pressable>
+
         <Pressable onPress={onChangeMood} style={styles.changeMoodBtn}>
           <Text style={[styles.changeMoodText, { color: theme.ink }]}>
             Промени настроението
@@ -330,6 +351,21 @@ const styles = StyleSheet.create({
     fontFamily: 'Geist_600SemiBold',
     color: '#fff', fontSize: 16, fontWeight: '600',
     letterSpacing: -0.015 * 16,
+  },
+  cookedBtn: {
+    alignSelf: 'stretch',
+    paddingVertical: 13,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    marginTop: 0,
+    marginBottom: 8,
+  },
+  cookedBtnText: {
+    fontFamily: 'Geist_600SemiBold',
+    fontSize: 14.5,
+    fontWeight: '600',
+    letterSpacing: -0.01 * 14.5,
   },
   changeMoodBtn: { alignSelf: 'center', padding: 8 },
   changeMoodText: {
