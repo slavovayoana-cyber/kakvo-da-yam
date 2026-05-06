@@ -1,12 +1,15 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import {
   View, Text, Pressable, StyleSheet, ScrollView, Alert, Share, Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { captureRef } from 'react-native-view-shot';
+import * as Sharing from 'expo-sharing';
 import { ALL_THEME, getTheme } from '../lib/moodSystem';
 import { tapLight, tapMedium } from '../lib/haptics';
 import { EmojiImage } from '../components/EmojiImage';
 import { PersonalityCard } from '../components/PersonalityCard';
+import { PersonalityShareCard } from '../components/PersonalityShareCard';
 import {
   type JournalEntry,
   formatRelativeDate,
@@ -23,16 +26,40 @@ type Props = {
 export function JournalScreen({ entries, onBack, onChange }: Props) {
   const theme = ALL_THEME;
   const personalityResult = computePersonality(entries);
+  const cardRef = useRef<View>(null);
 
   const sharePersonality = async () => {
     tapLight();
     const p = personalityResult.personality;
-    const message = `Кулинарната ми личност: ${p.emoji} ${p.title}\n„${p.tagline}"\n\n— от приложението „Какво да ям?"`;
+    const fallbackMessage = `Кулинарната ми личност: ${p.emoji} ${p.title}\n„${p.tagline}"\n\n— от приложението „Какво да ям?"`;
+
+    try {
+      if (cardRef.current) {
+        const uri = await captureRef(cardRef, {
+          format: 'png',
+          quality: 1,
+          result: 'tmpfile',
+          width: 1080,
+          height: 1920,
+        });
+        if (await Sharing.isAvailableAsync()) {
+          await Sharing.shareAsync(uri, {
+            mimeType: 'image/png',
+            dialogTitle: 'Кулинарната ми личност',
+            UTI: 'public.png',
+          });
+          return;
+        }
+      }
+    } catch {
+      // capture failed — fall through to text share
+    }
+
     try {
       await Share.share(
         Platform.OS === 'ios'
-          ? { message }
-          : { message, title: 'Какво да ям?' },
+          ? { message: fallbackMessage }
+          : { message: fallbackMessage, title: 'Какво да ям?' },
       );
     } catch {
       // dismissed
@@ -175,6 +202,10 @@ export function JournalScreen({ entries, onBack, onChange }: Props) {
           </View>
         )}
       </ScrollView>
+
+      <View style={styles.offscreen} pointerEvents="none">
+        <PersonalityShareCard ref={cardRef} result={personalityResult} />
+      </View>
     </View>
   );
 }
@@ -309,5 +340,10 @@ const styles = StyleSheet.create({
     opacity: 0.45,
     marginTop: 14,
     fontStyle: 'italic',
+  },
+  offscreen: {
+    position: 'absolute',
+    left: -10000,
+    top: 0,
   },
 });

@@ -2,6 +2,7 @@ import { Linking, Platform } from 'react-native';
 
 export type NearbyType =
   | 'restaurant'
+  | 'fancy_restaurant'
   | 'grocery'
   | 'health_store'
   | 'bar'
@@ -14,6 +15,11 @@ const NEARBY_OVERRIDES: Record<string, NearbyType> = {
   fridge_thing: 'none',
   whatever_at_home: 'none',
   just_a_little_sweet: 'none',
+
+  // Fancy / fine dining
+  expensive_thing: 'fancy_restaurant',
+  unaffordable_restaurant: 'fancy_restaurant',
+  lobster: 'fancy_restaurant',
 
   // Bars / drinks
   just_one_drink: 'bar',
@@ -52,8 +58,9 @@ export function getNearbyType(mealId: string): NearbyType {
 
 export function getNearbyButtonLabel(type: NearbyType): string {
   if (type === 'grocery') return '🛒 Магазин наблизо';
-  if (type === 'health_store') return '🌱 Био магазин наблизо';
+  if (type === 'health_store') return '🌱 Био магазин';
   if (type === 'bar') return '🍸 Бар наблизо';
+  if (type === 'fancy_restaurant') return '💎 Fine dining';
   return '🗺 Къде наблизо';
 }
 
@@ -68,6 +75,7 @@ export async function openMealNearby(
   if (type === 'grocery') queryStr = 'супермаркет';
   else if (type === 'health_store') queryStr = 'био магазин';
   else if (type === 'bar') queryStr = 'бар';
+  else if (type === 'fancy_restaurant') queryStr = 'fine dining ресторант';
   else queryStr = `${mealName} ресторант`;
   const query = encodeURIComponent(queryStr);
 

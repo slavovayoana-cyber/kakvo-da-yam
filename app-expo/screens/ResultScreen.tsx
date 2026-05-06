@@ -243,50 +243,68 @@ export function ResultScreen({
           </Pressable>
         </View>
 
-        <Pressable
-          onPress={() => { if (!cookedThisSession) { tapLight(); onCooked(); } }}
-          disabled={cookedThisSession}
-          style={({ pressed }) => [
-            styles.cookedBtn,
-            {
-              borderColor: theme.colorDeep + (cookedThisSession ? '55' : '33'),
-              backgroundColor: cookedThisSession
-                ? theme.colorDeep + '15'
-                : 'rgba(255,255,255,0.45)',
-              opacity: pressed && !cookedThisSession ? 0.8 : 1,
-            },
-          ]}
-        >
-          <Text style={[styles.cookedBtnText, { color: theme.ink }]}>
-            {cookedThisSession ? '✓ Записано в дневника' : '👨‍🍳 Готвих го!'}
-          </Text>
-        </Pressable>
-
-        <View style={styles.tertiaryRow}>
-          <Pressable onPress={onChangeMood} style={styles.changeMoodBtn} hitSlop={6}>
-            <Text style={[styles.changeMoodText, { color: theme.ink }]}>
-              Промени настроението
-            </Text>
-          </Pressable>
-          {(() => {
-            const nearbyType = getNearbyType(meal.id);
-            if (nearbyType === 'none') return null;
-            return (
-              <>
-                <Text style={[styles.tertiaryDivider, { color: theme.ink }]}>·</Text>
+        {(() => {
+          const nearbyType = getNearbyType(meal.id);
+          const showNearby = nearbyType !== 'none';
+          return (
+            <View style={styles.cookedRow}>
+              <Pressable
+                onPress={() => { if (!cookedThisSession) { tapLight(); onCooked(); } }}
+                disabled={cookedThisSession}
+                style={({ pressed }) => [
+                  styles.cookedBtn,
+                  showNearby ? styles.cookedBtnHalf : styles.cookedBtnFull,
+                  {
+                    borderColor: theme.colorDeep + (cookedThisSession ? '55' : '33'),
+                    backgroundColor: cookedThisSession
+                      ? theme.colorDeep + '15'
+                      : 'rgba(255,255,255,0.45)',
+                    opacity: pressed && !cookedThisSession ? 0.8 : 1,
+                  },
+                ]}
+              >
+                <Text
+                  style={[styles.cookedBtnText, { color: theme.ink }]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.85}
+                >
+                  {cookedThisSession ? '✓ Записано' : '👨‍🍳 Готвих го!'}
+                </Text>
+              </Pressable>
+              {showNearby ? (
                 <Pressable
                   onPress={() => { tapLight(); onFindNearby(); }}
-                  style={styles.changeMoodBtn}
-                  hitSlop={6}
+                  style={({ pressed }) => [
+                    styles.cookedBtn,
+                    styles.cookedBtnHalf,
+                    {
+                      borderColor: theme.colorDeep + '33',
+                      backgroundColor: pressed
+                        ? theme.color + '40'
+                        : 'rgba(255,255,255,0.45)',
+                    },
+                  ]}
                 >
-                  <Text style={[styles.changeMoodText, { color: theme.ink }]}>
+                  <Text
+                    style={[styles.cookedBtnText, { color: theme.ink }]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.85}
+                  >
                     {getNearbyButtonLabel(nearbyType)}
                   </Text>
                 </Pressable>
-              </>
-            );
-          })()}
-        </View>
+              ) : null}
+            </View>
+          );
+        })()}
+
+        <Pressable onPress={onChangeMood} style={styles.changeMoodBtn}>
+          <Text style={[styles.changeMoodText, { color: theme.ink }]}>
+            Промени настроението
+          </Text>
+        </Pressable>
       </View>
     </View>
   );
@@ -375,32 +393,28 @@ const styles = StyleSheet.create({
     color: '#fff', fontSize: 16, fontWeight: '600',
     letterSpacing: -0.015 * 16,
   },
+  cookedRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 8,
+  },
   cookedBtn: {
-    alignSelf: 'stretch',
     paddingVertical: 13,
+    paddingHorizontal: 12,
     borderRadius: 14,
     borderWidth: 1.5,
     alignItems: 'center',
-    marginTop: 0,
-    marginBottom: 8,
+    justifyContent: 'center',
   },
+  cookedBtnFull: { alignSelf: 'stretch', flex: 1 },
+  cookedBtnHalf: { flex: 1 },
   cookedBtnText: {
     fontFamily: 'Geist_600SemiBold',
-    fontSize: 14.5,
+    fontSize: 14,
     fontWeight: '600',
-    letterSpacing: -0.01 * 14.5,
+    letterSpacing: -0.01 * 14,
   },
-  tertiaryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  tertiaryDivider: {
-    fontSize: 13,
-    opacity: 0.35,
-  },
-  changeMoodBtn: { padding: 8 },
+  changeMoodBtn: { alignSelf: 'center', padding: 8 },
   changeMoodText: {
     fontFamily: 'Geist_400Regular',
     fontSize: 13, opacity: 0.55,
