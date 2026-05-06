@@ -16,10 +16,18 @@
     },
     "production": {
       "autoIncrement": true,
-      "channel": "production"
+      "channel": "production",
+      "ios": {
+        "resourceClass": "m-medium"
+      }
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "appleId": "sparkykidsapp@gmail.com",
+        "ascAppId": "6766818647"
+      }
+    }
   }
 }
