@@ -16,12 +16,13 @@ type Props = {
   setSelectedMood: (m: Selection) => void;
   onPick: () => void;
   onOpenJournal: () => void;
+  onOpenCouple: () => void;
   journalCount: number;
   subtitleIdx: number;
 };
 
 export function HomeScreen({
-  selectedMood, setSelectedMood, onPick, onOpenJournal, journalCount, subtitleIdx,
+  selectedMood, setSelectedMood, onPick, onOpenJournal, onOpenCouple, journalCount, subtitleIdx,
 }: Props) {
   const theme: MoodTheme = getTheme(selectedMood);
   const useMoodType = !!selectedMood && selectedMood !== 'all';
@@ -273,6 +274,22 @@ export function HomeScreen({
             <Text style={styles.mainBtnText}>Избери за мен →</Text>
           </Pressable>
 
+          {/* Couples mode button */}
+          <Pressable
+            onPress={() => { tapMedium(); onOpenCouple(); }}
+            style={({ pressed }) => [
+              styles.coupleBtn,
+              {
+                borderColor: theme.colorDeep + '55',
+                opacity: pressed ? 0.85 : 1,
+              },
+            ]}
+          >
+            <Text style={[styles.coupleBtnText, { color: theme.ink }]}>
+              👩‍❤️‍👨 Заедно решаваме
+            </Text>
+          </Pressable>
+
           {/* Tagline */}
           <Text
             style={[
@@ -406,6 +423,23 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     letterSpacing: -0.02 * 18,
+  },
+  coupleBtn: {
+    width: '100%',
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    backgroundColor: 'rgba(255,255,255,0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 10,
+  },
+  coupleBtnText: {
+    fontFamily: 'Geist_600SemiBold',
+    fontSize: 15,
+    fontWeight: '600',
+    letterSpacing: -0.01 * 15,
   },
   tagline: {
     textAlign: 'center',

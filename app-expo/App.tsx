@@ -21,6 +21,9 @@ import {
 import { HomeScreen } from './screens/HomeScreen';
 import { ResultScreen } from './screens/ResultScreen';
 import { JournalScreen } from './screens/JournalScreen';
+import { CoupleLobbyScreen } from './screens/CoupleLobbyScreen';
+import { CoupleSwipeScreen } from './screens/CoupleSwipeScreen';
+import { CoupleMatchScreen } from './screens/CoupleMatchScreen';
 import { ShareCard } from './components/ShareCard';
 import { pickMeal, formatShareText } from './lib/mealPicker';
 import { getTheme } from './lib/moodSystem';
@@ -30,7 +33,11 @@ import {
   addJournalEntry,
 } from './lib/journal';
 import { openMealNearby } from './lib/maps';
-import type { MealsData, PickResult, Selection } from './lib/types';
+import type {
+  CoupleSession,
+  SessionRole,
+} from './lib/couples';
+import type { Meal, MealsData, PickResult, Selection } from './lib/types';
 
 import mealsJson from './data/meals.json';
 
@@ -49,7 +56,9 @@ export default function App() {
     InstrumentSerif_400Regular,
   });
 
-  const [screen, setScreen] = useState<'home' | 'result' | 'journal'>('home');
+  const [screen, setScreen] = useState<
+    'home' | 'result' | 'journal' | 'couple_lobby' | 'couple_swipe' | 'couple_match'
+  >('home');
   const [selectedMood, setSelectedMood] = useState<Selection>('all');
   const [result, setResult] = useState<PickResult | null>(null);
   const [rerollCount, setRerollCount] = useState(0);
@@ -58,7 +67,12 @@ export default function App() {
   const [recentIds, setRecentIds] = useState<string[]>([]);
   const [journal, setJournal] = useState<JournalEntry[]>([]);
   const [cookedThisSession, setCookedThisSession] = useState(false);
+  const [coupleSession, setCoupleSession] = useState<CoupleSession | null>(null);
+  const [coupleRole, setCoupleRole] = useState<SessionRole | null>(null);
+  const [coupleMatchedMeal, setCoupleMatchedMeal] = useState<Meal | null>(null);
   const cardRef = useRef<View>(null);
+
+  const allMealIds = mealsData.meals.map((m) => m.id);
 
   useEffect(() => {
     getJournal().then(setJournal).catch(() => setJournal([]));
@@ -152,6 +166,37 @@ export default function App() {
     openMealNearby(result.meal.name, result.meal.id).catch(() => {});
   };
 
+  const openCoupleLobby = () => {
+    setCoupleMatchedMeal(null);
+    setCoupleSession(null);
+    setCoupleRole(null);
+    setScreen('couple_lobby');
+  };
+
+  const onCoupleStart = (session: CoupleSession, role: SessionRole) => {
+    setCoupleSession(session);
+    setCoupleRole(role);
+    setScreen('couple_swipe');
+  };
+
+  const onCoupleMatch = (meal: Meal) => {
+    setCoupleMatchedMeal(meal);
+    setScreen('couple_match');
+  };
+
+  const exitCouple = () => {
+    setCoupleSession(null);
+    setCoupleRole(null);
+    setCoupleMatchedMeal(null);
+    setScreen('home');
+  };
+
+  const findCoupleNearby = () => {
+    if (coupleMatchedMeal) {
+      openMealNearby(coupleMatchedMeal.name, coupleMatchedMeal.id).catch(() => {});
+    }
+  };
+
   const doShare = async () => {
     if (!result) return;
     const theme = getTheme(result.moodId);
@@ -199,6 +244,7 @@ export default function App() {
           setSelectedMood={setSelectedMood}
           onPick={doPick}
           onOpenJournal={openJournal}
+          onOpenCouple={openCoupleLobby}
           journalCount={journal.length}
           subtitleIdx={subtitleIdx}
         />
@@ -222,6 +268,31 @@ export default function App() {
           entries={journal}
           onBack={goHome}
           onChange={refreshJournal}
+        />
+      )}
+      {screen === 'couple_lobby' && (
+        <CoupleLobbyScreen
+          allMealIds={allMealIds}
+          onBack={goHome}
+          onStart={onCoupleStart}
+        />
+      )}
+      {screen === 'couple_swipe' && coupleSession && coupleRole && (
+        <CoupleSwipeScreen
+          session={coupleSession}
+          role={coupleRole}
+          allMeals={mealsData.meals}
+          onMatch={onCoupleMatch}
+          onExit={exitCouple}
+          onExhaust={exitCouple}
+        />
+      )}
+      {screen === 'couple_match' && coupleMatchedMeal && (
+        <CoupleMatchScreen
+          meal={coupleMatchedMeal}
+          onFindNearby={findCoupleNearby}
+          onCookTogether={exitCouple}
+          onDone={exitCouple}
         />
       )}
 
