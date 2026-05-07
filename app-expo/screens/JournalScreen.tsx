@@ -69,7 +69,7 @@ export function JournalScreen({ entries, onBack, onChange }: Props) {
   const handleDelete = (entry: JournalEntry) => {
     Alert.alert(
       'Изтрий запис',
-      `Сигурна ли си че искаш да премахнеш "${entry.mealName}" от дневника?`,
+      `Наистина ли искаш да премахнеш "${entry.mealName}" от дневника?`,
       [
         { text: 'Отказ', style: 'cancel' },
         {
@@ -149,7 +149,7 @@ export function JournalScreen({ entries, onBack, onChange }: Props) {
           <View style={styles.empty}>
             <Text style={styles.emptyEmoji}>🍽️</Text>
             <Text style={[styles.emptyTitle, { color: theme.ink }]}>
-              Още нищо не си готвила
+              Дневникът ти е празен
             </Text>
             <Text style={[styles.emptyText, { color: theme.ink }]}>
               Когато получиш препоръка и я сготвиш,{'\n'}

@@ -6,6 +6,7 @@ export type NearbyType =
   | 'grocery'
   | 'health_store'
   | 'bar'
+  | 'cinema'
   | 'none';
 
 const NEARBY_OVERRIDES: Record<string, NearbyType> = {
@@ -15,14 +16,23 @@ const NEARBY_OVERRIDES: Record<string, NearbyType> = {
   fridge_thing: 'none',
   whatever_at_home: 'none',
   just_a_little_sweet: 'none',
+  moms_food: 'none',
 
   // Fancy / fine dining
   expensive_thing: 'fancy_restaurant',
   unaffordable_restaurant: 'fancy_restaurant',
   lobster: 'fancy_restaurant',
+  truffle_fries: 'fancy_restaurant',
+  ribeye_steak: 'fancy_restaurant',
+  sommelier_wine: 'fancy_restaurant',
 
   // Bars / drinks
   just_one_drink: 'bar',
+  ouzo: 'bar',
+  rakia: 'bar',
+
+  // Кино
+  cinema_popcorn: 'cinema',
 
   // Био / здравословни магазини
   alkaline_water: 'health_store',
@@ -40,6 +50,7 @@ const NEARBY_OVERRIDES: Record<string, NearbyType> = {
   sourdough: 'health_store',
   cottage_cheese: 'health_store',
   dubai_chocolate: 'health_store',
+  muesli: 'health_store',
 
   // Обикновен супермаркет
   chocolate: 'grocery',
@@ -50,6 +61,8 @@ const NEARBY_OVERRIDES: Record<string, NearbyType> = {
   turshiya: 'grocery',
   eggs: 'grocery',
   cheese_tomato: 'grocery',
+  cornflakes: 'grocery',
+  lokum: 'grocery',
 };
 
 export function getNearbyType(mealId: string): NearbyType {
@@ -61,6 +74,7 @@ export function getNearbyButtonLabel(type: NearbyType): string {
   if (type === 'health_store') return '🌱 Био магазин';
   if (type === 'bar') return '🍸 Бар наблизо';
   if (type === 'fancy_restaurant') return '💎 Fine dining';
+  if (type === 'cinema') return '🎬 Кино наблизо';
   return '🗺 Къде наблизо';
 }
 
@@ -76,6 +90,7 @@ export async function openMealNearby(
   else if (type === 'health_store') queryStr = 'био магазин';
   else if (type === 'bar') queryStr = 'бар';
   else if (type === 'fancy_restaurant') queryStr = 'fine dining ресторант';
+  else if (type === 'cinema') queryStr = 'кино';
   else queryStr = `${mealName} ресторант`;
   const query = encodeURIComponent(queryStr);
 

@@ -32,7 +32,7 @@ export const MOOD_THEMES: Record<MoodId, MoodTheme> = {
     id: 'healthy_ish',
     emoji: '🥗',
     name: 'Healthy-ish',
-    tagline: 'Искам да се чувствам отговорна',
+    tagline: 'Искам да се чувствам отговорно',
     color: '#9CAF88',
     colorDeep: '#6E8463',
     bg: '#EFF1E5',
