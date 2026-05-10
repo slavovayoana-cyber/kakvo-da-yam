@@ -38,6 +38,7 @@ import type {
   CoupleSession,
   SessionRole,
 } from './lib/couples';
+import { COUPLE_EXTRA_MEALS } from './lib/coupleMeals';
 import type { Meal, MealsData, PickResult, Selection } from './lib/types';
 
 import mealsJson from './data/meals.json';
@@ -74,6 +75,8 @@ export default function App() {
   const cardRef = useRef<View>(null);
 
   const allMealIds = mealsData.meals.map((m) => m.id);
+  const couplesPoolMeals = [...mealsData.meals, ...COUPLE_EXTRA_MEALS];
+  const couplesPoolIds = couplesPoolMeals.map((m) => m.id);
 
   useEffect(() => {
     getJournal().then(setJournal).catch(() => setJournal([]));
@@ -274,7 +277,7 @@ export default function App() {
       )}
       {screen === 'couple_lobby' && (
         <CoupleLobbyScreen
-          allMealIds={allMealIds}
+          allMealIds={couplesPoolIds}
           onBack={goHome}
           onStart={onCoupleStart}
         />
@@ -283,7 +286,7 @@ export default function App() {
         <CoupleSwipeScreen
           session={coupleSession}
           role={coupleRole}
-          allMeals={mealsData.meals}
+          allMeals={couplesPoolMeals}
           onMatch={onCoupleMatch}
           onExit={exitCouple}
           onExhaust={exitCouple}

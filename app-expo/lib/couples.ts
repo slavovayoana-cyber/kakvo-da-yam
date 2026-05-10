@@ -24,7 +24,7 @@ export type CoupleSwipe = {
 
 export type SessionRole = 'creator' | 'partner';
 
-const POOL_SIZE = 30;
+const POOL_SIZE = 50;
 
 function generateCode(): string {
   return String(Math.floor(1000 + Math.random() * 9000));
