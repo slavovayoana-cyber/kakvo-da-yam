@@ -12,6 +12,7 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ALL_THEME } from '../lib/moodSystem';
 import { tapLight, tapMedium } from '../lib/haptics';
@@ -35,6 +36,7 @@ type Mode = 'pick' | 'creating' | 'joining';
 
 export function CoupleLobbyScreen({ allMealIds, onBack, onStart }: Props) {
   const theme = ALL_THEME;
+  const insets = useSafeAreaInsets();
   const [mode, setMode] = useState<Mode>('pick');
   const [session, setSession] = useState<CoupleSession | null>(null);
   const [code, setCode] = useState('');
@@ -128,7 +130,7 @@ export function CoupleLobbyScreen({ allMealIds, onBack, onStart }: Props) {
   };
 
   return (
-    <View style={[styles.root, { backgroundColor: theme.bg }]}>
+    <View style={[styles.root, { backgroundColor: theme.bg, paddingBottom: 24 + insets.bottom }]}>
       <LinearGradient
         colors={theme.gradient.colors as readonly [string, string, ...string[]]}
         locations={

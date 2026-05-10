@@ -3,6 +3,7 @@ import {
   View, Text, Pressable, StyleSheet, ScrollView, Animated,
   useWindowDimensions,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MoodDecoration } from '../components/MoodDecoration';
 import { getTheme, MOOD_THEMES, MoodTheme, ALL_THEME } from '../lib/moodSystem';
@@ -47,6 +48,7 @@ export function HomeScreen({
     });
   }, [subtitleIdx, subtitleOpacity]);
   const { height } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
 
   const titleFont = useMoodType ? theme.titleFontFamily : 'Geist_700Bold';
   const titleStyle = useMoodType
@@ -75,7 +77,10 @@ export function HomeScreen({
       <MoodDecoration theme={theme} />
 
       <ScrollView
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={[
+          styles.scroll,
+          { paddingBottom: 24 + insets.bottom },
+        ]}
         bounces={false}
         showsVerticalScrollIndicator={false}
       >

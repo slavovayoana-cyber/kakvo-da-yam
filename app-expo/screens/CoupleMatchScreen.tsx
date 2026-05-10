@@ -7,6 +7,7 @@ import {
   Animated,
   Easing,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ALL_THEME, getTheme } from '../lib/moodSystem';
 import { tapMedium, tapLight } from '../lib/haptics';
@@ -28,6 +29,7 @@ export function CoupleMatchScreen({
   onDone,
 }: Props) {
   const theme = ALL_THEME;
+  const insets = useSafeAreaInsets();
   const moodTheme = getTheme(meal.moods?.[0] ?? 'comfort');
 
   const titleScale = useRef(new Animated.Value(0)).current;
@@ -63,7 +65,7 @@ export function CoupleMatchScreen({
   const showNearby = nearbyType !== 'none';
 
   return (
-    <View style={[styles.root, { backgroundColor: moodTheme.bg }]}>
+    <View style={[styles.root, { backgroundColor: moodTheme.bg, paddingBottom: 30 + insets.bottom }]}>
       <LinearGradient
         colors={
           moodTheme.gradient.colors as readonly [string, string, ...string[]]

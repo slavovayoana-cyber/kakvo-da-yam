@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   View, Text, Pressable, StyleSheet, Animated, Easing,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MoodDecoration } from '../components/MoodDecoration';
 import { getTheme } from '../lib/moodSystem';
@@ -29,6 +30,7 @@ export function ResultScreen({
   onReroll, onShare, onChangeMood, onHome, onCooked, onFindNearby,
   cookedThisSession,
 }: Props) {
+  const insets = useSafeAreaInsets();
   const [displayed, setDisplayed] = useState<PickResult>(result);
   const { meal, reason, moodId } = displayed;
   const theme = getTheme(moodId);
@@ -129,7 +131,7 @@ export function ResultScreen({
   } as any;
 
   return (
-    <View style={[styles.root, { backgroundColor: theme.bg }]}>
+    <View style={[styles.root, { backgroundColor: theme.bg, paddingBottom: 24 + insets.bottom }]}>
       <LinearGradient
         colors={theme.gradient.colors as readonly [string, string, ...string[]]}
         locations={theme.gradient.locations as readonly [number, number, ...number[]] | undefined}

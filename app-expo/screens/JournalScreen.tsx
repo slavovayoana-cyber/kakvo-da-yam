@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import {
   View, Text, Pressable, StyleSheet, ScrollView, Alert, Share, Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
@@ -25,6 +26,7 @@ type Props = {
 
 export function JournalScreen({ entries, onBack, onChange }: Props) {
   const theme = ALL_THEME;
+  const insets = useSafeAreaInsets();
   const personalityResult = computePersonality(entries);
   const cardRef = useRef<View>(null);
 
@@ -120,7 +122,10 @@ export function JournalScreen({ entries, onBack, onChange }: Props) {
       </View>
 
       <ScrollView
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={[
+          styles.scroll,
+          { paddingBottom: 32 + insets.bottom },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         <PersonalityCard

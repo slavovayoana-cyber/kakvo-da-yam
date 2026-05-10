@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Share, StatusBar, Platform } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import * as NavigationBar from 'expo-navigation-bar';
@@ -236,6 +237,7 @@ export default function App() {
   };
 
   return (
+    <SafeAreaProvider>
     <View style={styles.root}>
       <StatusBar barStyle="dark-content" />
       {screen === 'home' && (
@@ -307,6 +309,7 @@ export default function App() {
         </View>
       )}
     </View>
+    </SafeAreaProvider>
   );
 }
 

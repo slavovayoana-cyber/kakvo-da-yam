@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ALL_THEME, getTheme } from '../lib/moodSystem';
 import { tapLight, tapMedium, tapSelection } from '../lib/haptics';
@@ -47,6 +48,7 @@ export function CoupleSwipeScreen({
   onExhaust,
 }: Props) {
   const theme = ALL_THEME;
+  const insets = useSafeAreaInsets();
   const [index, setIndex] = useState(0);
   const [partnerSwipeCount, setPartnerSwipeCount] = useState(0);
   const swipesRef = useRef<CoupleSwipe[]>([]);
@@ -239,7 +241,7 @@ export function CoupleSwipeScreen({
 
   if (!current) {
     return (
-      <View style={[styles.root, { backgroundColor: theme.bg }]}>
+      <View style={[styles.root, { backgroundColor: theme.bg, paddingBottom: 30 + insets.bottom }]}>
         <View style={styles.center}>
           <ActivityIndicator color={theme.colorDeep} />
         </View>
