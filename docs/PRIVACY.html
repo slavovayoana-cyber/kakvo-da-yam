@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Privacy Policy · Какво да ям?</title>
-<meta name="description" content="Какво да ям? — Privacy Policy. The app collects no data, has no backend, no analytics, no ads." />
+<meta name="description" content="Какво да ям? — Privacy Policy. No personal data, no accounts, no ads. Only anonymous data for couples mode, auto-deleted after 60 min." />
 <style>
   :root {
     --bg-top: #FCEBDD;
@@ -49,6 +49,8 @@
   h1 { font-size: 22px; margin-top: 40px; letter-spacing: -0.02em; }
   h2 { font-size: 17px; margin-top: 28px; color: var(--accent); }
   p { margin: 8px 0 14px; }
+  ul { margin: 8px 0 14px; padding-left: 24px; }
+  li { margin: 4px 0; }
   a { color: var(--accent); }
   strong { color: var(--ink); }
   .lang-divider {
@@ -71,38 +73,62 @@
   <header>
     <h1 class="brand">какво да ям<span class="q">?</span></h1>
     <div class="meta">Privacy Policy · Политика за поверителност</div>
-    <div class="meta">Last updated · Последна редакция: 2026-05-04</div>
+    <div class="meta">Last updated · Последна редакция: 2026-05-11</div>
   </header>
 
   <h1>🇧🇬 На български</h1>
 
   <h2>Кратко</h2>
-  <p>Приложението <strong>„Какво да ям?"</strong> не събира, не съхранява и не споделя никакви твои лични данни. Точка.</p>
+  <p>Приложението <strong>„Какво да ям?"</strong> не изисква акаунт, не пита за име, имейл или телефон, и не показва реклами. Не правим аналитика и не следим поведението ти.</p>
+  <p>Едничкото изключение е <strong>режимът „Заедно решаваме"</strong> (couples mode) — за да синхронизираме swipe-ове между двата телефона ни трябва временна анонимна сесия. Подробности по-долу.</p>
 
-  <h2>Какви данни събираме?</h2>
-  <p><strong>Никакви.</strong> Приложението работи изцяло локално на твоето устройство. Няма регистрация, няма акаунт, няма потребителски профил.</p>
+  <h2>Какви данни се пазят локално (само на твоя телефон)?</h2>
+  <ul>
+    <li><strong>Хранителен дневник</strong> — ястията които си отбелязала като „Готвих го!". Никога не напускат твоето устройство.</li>
+    <li><strong>Скорошни предложения</strong> — кратък списък с последно показаните ястия, за да не се повтарят. Локален списък, не се споделя.</li>
+    <li><strong>Анонимен ID на устройство</strong> — случаен низ генериран при първото отваряне (например „dev_x3p9k_q7f"). Този ID се ползва САМО за couples mode (виж по-долу) и не съдържа никаква лична информация.</li>
+  </ul>
+  <p>Изтриваш приложението → всичко това изчезва автоматично.</p>
 
-  <h2>Имаме ли сървър?</h2>
-  <p>Не. Базата с ястия и всички текстове са вградени в приложението при инсталация. Не правим мрежови заявки към наши сървъри.</p>
+  <h2>Couples mode („Заедно решаваме")</h2>
+  <p>За да синхронизираме swipe-овете между двата телефона в couples сесия, приложението ползва <strong>Supabase</strong> (хостван в Германия, ЕС) за временна база. Когато стартираш couples сесия:</p>
+  <ul>
+    <li>Създава се запис със 4-цифрен код, анонимния ID на устройството ти, и списък с ястия за тази сесия.</li>
+    <li>При swipe — записва се ред: анонимен device ID + meal ID + посока (ляво/дясно).</li>
+    <li>Партньорският телефон чете тези редове в реално време за да открие „match".</li>
+    <li><strong>Сесията се изтрива автоматично 60 минути след създаването.</strong></li>
+  </ul>
+  <p>Това което <strong>НЕ</strong> се записва: твоето име, имейл, телефон, локация, IP адрес, история на ползване, нищо лично. Анонимният device ID не може да бъде свързан с теб като физическо лице.</p>
+
+  <h2>Карти („Къде наблизо")</h2>
+  <p>Когато натиснеш бутон като „🗺 Къде наблизо" или „🛒 Магазин наблизо", приложението отваря <strong>Google Maps</strong> (или Safari) с търсене за категорията. Това е стандартна system action — не предаваме никакви данни, освен търсещата фраза (напр. „pizza", „българска кухня").</p>
+  <p>Какво прави Google Maps с тази заявка след това е под <a href="https://policies.google.com/privacy">Google Privacy Policy</a>, не под нашата.</p>
 
   <h2>Какво се случва когато натиснеш „Сподели"?</h2>
-  <p>Извикваме системния share механизъм на Android (или iOS). Той ти предлага твоите инсталирани приложения (WhatsApp, Instagram, Messenger и др.) и ти избираш къде да изпратиш картинката. <strong>Ние не виждаме нито с кого споделяш, нито какво.</strong></p>
+  <p>Приложението генерира картинка (PNG) с резултата и я предава на системния iOS / Android share sheet. Той ти предлага твоите инсталирани приложения (WhatsApp, Instagram, Messenger и др.). <strong>Ние не виждаме нито с кого споделяш, нито какво.</strong></p>
 
   <h2>Какви разрешения изисква приложението?</h2>
-  <p><strong>Storage / достъп до файлове</strong> — временно, само ако споделяш картинка, за да запазим временен файл преди да го предадем на share sheet-а. Файлът се изтрива от системата автоматично.</p>
-  <p><strong>Vibrate / хаптика</strong> — за тактилна обратна връзка при натискане на бутони. Може да се изключи от настройките на телефона.</p>
+  <ul>
+    <li><strong>Мрежа (Network)</strong> — само за couples mode (Supabase) и за отварянето на Google Maps. Извън couples mode приложението работи изцяло офлайн.</li>
+    <li><strong>Storage</strong> — временно, за да запазим картинката която ще споделиш. Изтрива се от системата автоматично.</li>
+    <li><strong>Вибрация (haptics)</strong> — за тактилна обратна връзка. Може да се изключи от настройките.</li>
+  </ul>
 
   <h2>Аналитика, crash reports, реклами?</h2>
-  <p><strong>Никакви.</strong> Приложението не съдържа SDK за аналитика, crash reporting или реклами. Никой трети страна не получава информация за теб през това приложение.</p>
-
-  <h2>Шрифтове и графики?</h2>
-  <p>Twemoji emoji графиките и шрифтовете (Geist, Fraunces, Instrument Serif) са вградени в приложението при инсталация. Не правим заявки към CDN при работа.</p>
+  <p><strong>Никакви.</strong> Приложението не съдържа SDK за аналитика, crash reporting (Firebase, Sentry и т.н.) или реклами. Никой трети страна не получава информация за теб през това приложение.</p>
 
   <h2>Деца</h2>
-  <p>Приложението е подходящо за всички възрасти и не събира никакви данни от никого, включително деца под 13 години.</p>
+  <p>Приложението не е насочено към деца под 13. Не събираме съзнателно никакви данни от деца. Анонимният device ID не може да идентифицира конкретно лице.</p>
+
+  <h2>Твоите права (GDPR)</h2>
+  <ul>
+    <li><strong>Изтриване:</strong> Изтриваш приложението → локалните данни изчезват. Couples сесиите се изтриват автоматично след 60 мин. Ако искаш да изтрием конкретна сесия по-рано — пиши ни на имейла по-долу.</li>
+    <li><strong>Достъп:</strong> Couples данните са анонимни (без име, имейл, телефон) — нямаме механизъм да ти ги предоставим, защото не можем да идентифицираме теб като лице.</li>
+    <li><strong>Преносимост:</strong> Локалните данни от дневника не са в обработка от наша страна (на твоя телефон са). Couples данните са анонимни и ephemeral.</li>
+  </ul>
 
   <h2>Промени в политиката</h2>
-  <p>Ако някога променим какво прави приложението по отношение на данните, ще обновим този документ и ще включим изричен опит в приложението. Засега и в обозримо бъдеще: <strong>никакви данни не напускат твоето устройство.</strong></p>
+  <p>Ако промeним какво прави приложението по отношение на данните, ще обновим този документ и ще добавим notice в приложението преди следващото му ползване.</p>
 
   <h2>Контакт</h2>
   <p>Въпроси? Пиши на <a href="mailto:slavovayoana@gmail.com">slavovayoana@gmail.com</a></p>
@@ -112,32 +138,56 @@
   <h1>🇬🇧 In English</h1>
 
   <h2>Short version</h2>
-  <p>The <strong>"Какво да ям?" (What Should I Eat?)</strong> app does not collect, store, or share any of your personal data. That's it.</p>
+  <p>The <strong>"Какво да ям?" (What Should I Eat?)</strong> app does not require an account, does not ask for name, email or phone, and shows no ads. We do not run analytics or track your behavior.</p>
+  <p>The single exception is <strong>couples mode</strong> ("Заедно решаваме") — to sync swipes between two phones we need a temporary anonymous session. Details below.</p>
 
-  <h2>What data do we collect?</h2>
-  <p><strong>None.</strong> The app runs entirely on your device. No sign-up, no account, no user profile.</p>
+  <h2>What data is kept locally (on your phone only)?</h2>
+  <ul>
+    <li><strong>Cooking journal</strong> — meals you marked as "I cooked it". Never leaves your device.</li>
+    <li><strong>Recent picks</strong> — short list of last-shown meals, to avoid repetition. Local only.</li>
+    <li><strong>Anonymous device ID</strong> — a random string generated on first launch (e.g. "dev_x3p9k_q7f"). Used only for couples mode (see below). Contains no personal information.</li>
+  </ul>
+  <p>Uninstall the app → all of this is gone automatically.</p>
 
-  <h2>Do we have a server?</h2>
-  <p>No. The meal database and all texts are bundled into the app at install time. We make no network requests to our own servers.</p>
+  <h2>Couples mode ("Заедно решаваме")</h2>
+  <p>To sync swipes between two phones in a couples session, the app uses <strong>Supabase</strong> (hosted in Germany, EU) as a temporary backend. When you start a couples session:</p>
+  <ul>
+    <li>A record is created containing a 4-digit code, your anonymous device ID, and the list of meals for this session.</li>
+    <li>On swipe — a row is written containing: anonymous device ID + meal ID + direction (left/right).</li>
+    <li>The partner phone reads these rows in real time to detect a "match".</li>
+    <li><strong>The session is automatically deleted 60 minutes after creation.</strong></li>
+  </ul>
+  <p>What is <strong>NOT</strong> stored: your name, email, phone, location, IP address, usage history, nothing personal. The anonymous device ID cannot be linked to you as a physical person.</p>
+
+  <h2>Maps ("Where nearby")</h2>
+  <p>When you tap a button like "🗺 Where nearby" or "🛒 Store nearby", the app opens <strong>Google Maps</strong> (or Safari) with a category search. This is a standard system action — we pass no data beyond the search phrase (e.g. "pizza", "българска кухня").</p>
+  <p>What Google Maps does with that query is subject to <a href="https://policies.google.com/privacy">Google's Privacy Policy</a>, not ours.</p>
 
   <h2>What happens when you tap "Share"?</h2>
-  <p>We invoke the system share sheet on Android (or iOS). It presents your installed apps (WhatsApp, Instagram, Messenger, etc.) and you choose where to send the image. <strong>We never see with whom you share or what.</strong></p>
+  <p>The app generates a PNG image of the result and passes it to the iOS / Android system share sheet. It then presents your installed apps (WhatsApp, Instagram, Messenger, etc.). <strong>We never see with whom you share or what.</strong></p>
 
   <h2>Permissions</h2>
-  <p><strong>Storage / file access</strong> — transient, only when sharing an image, to write a temporary file before handing it to the system share sheet. The file is cleaned up by the OS automatically.</p>
-  <p><strong>Vibrate / haptics</strong> — for tactile feedback on button presses. Can be disabled in your phone settings.</p>
+  <ul>
+    <li><strong>Network</strong> — only for couples mode (Supabase) and opening Google Maps. Outside couples mode the app works entirely offline.</li>
+    <li><strong>Storage</strong> — transient, only when sharing an image, to write a temporary file. The file is cleaned up automatically.</li>
+    <li><strong>Vibrate / haptics</strong> — for tactile feedback. Can be disabled in phone settings.</li>
+  </ul>
 
   <h2>Analytics, crash reports, ads?</h2>
-  <p><strong>None.</strong> The app contains no analytics, crash reporting, or ad SDKs. No third party receives information about you through this app.</p>
-
-  <h2>Fonts and graphics</h2>
-  <p>Twemoji emoji graphics and the Geist / Fraunces / Instrument Serif fonts are bundled into the app at install time. We make no CDN requests at runtime.</p>
+  <p><strong>None.</strong> The app contains no analytics, crash reporting (Firebase, Sentry, etc.) or ad SDKs. No third party receives information about you through this app.</p>
 
   <h2>Children</h2>
-  <p>The app is suitable for all ages and does not collect any data from anyone, including children under 13.</p>
+  <p>The app is not directed at children under 13. We do not knowingly collect any data from children. The anonymous device ID cannot identify a specific person.</p>
+
+  <h2>Your rights (GDPR)</h2>
+  <ul>
+    <li><strong>Deletion:</strong> Uninstall the app → local data is gone. Couples sessions auto-delete after 60 min. To delete a specific session sooner, email us.</li>
+    <li><strong>Access:</strong> Couples data is anonymous (no name, email, phone) — we have no mechanism to provide it to you, because we cannot identify you as a person.</li>
+    <li><strong>Portability:</strong> Local journal data is not processed on our side (it's on your phone). Couples data is anonymous and ephemeral.</li>
+  </ul>
 
   <h2>Changes to this policy</h2>
-  <p>If we ever change what the app does with respect to data, we will update this document and add an explicit consent prompt in the app. For now and the foreseeable future: <strong>no data leaves your device.</strong></p>
+  <p>If we change what the app does with respect to data, we will update this document and add a notice in the app before next use.</p>
 
   <h2>Contact</h2>
   <p>Questions? Email <a href="mailto:slavovayoana@gmail.com">slavovayoana@gmail.com</a></p>
