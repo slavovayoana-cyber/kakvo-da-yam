@@ -130,7 +130,7 @@ export function CoupleLobbyScreen({ allMealIds, onBack, onStart }: Props) {
   };
 
   return (
-    <View style={[styles.root, { backgroundColor: theme.bg, paddingBottom: 24 + insets.bottom }]}>
+    <View style={[styles.root, { backgroundColor: theme.bg, paddingBottom: Math.max(insets.bottom, 24) }]}>
       <LinearGradient
         colors={theme.gradient.colors as readonly [string, string, ...string[]]}
         locations={

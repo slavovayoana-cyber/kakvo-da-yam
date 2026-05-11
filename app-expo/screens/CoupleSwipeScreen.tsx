@@ -241,7 +241,7 @@ export function CoupleSwipeScreen({
 
   if (!current) {
     return (
-      <View style={[styles.root, { backgroundColor: theme.bg, paddingBottom: 30 + insets.bottom }]}>
+      <View style={[styles.root, { backgroundColor: theme.bg, paddingBottom: Math.max(insets.bottom, 30) }]}>
         <View style={styles.center}>
           <ActivityIndicator color={theme.colorDeep} />
         </View>

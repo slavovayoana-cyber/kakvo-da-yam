@@ -63,6 +63,7 @@ const NEARBY_OVERRIDES: Record<string, NearbyType> = {
   cheese_tomato: 'grocery',
   cornflakes: 'grocery',
   lokum: 'grocery',
+  ice_cream_dinner: 'grocery',
 };
 
 export function getNearbyType(mealId: string): NearbyType {
@@ -71,63 +72,67 @@ export function getNearbyType(mealId: string): NearbyType {
 
 /**
  * Per-meal custom search query for the restaurant tier — used when the
- * meal's name confuses Google Maps (e.g. "Бъфало крилца" matches places
- * literally named "Бъфало"). The query is used verbatim with no extra
- * "ресторант" suffix.
+ * meal's name would confuse Google Maps (e.g. "Бъфало крилца" matching
+ * places literally named "Бъфало"). No "near me" suffix — Maps already
+ * uses the user's location automatically and that phrase has been
+ * causing Google Maps to error out intermittently.
  */
 const SEARCH_OVERRIDES: Record<string, string> = {
-  buffalo_wings: 'wings near me',
-  hawaii_pizza: 'pizza near me',
-  caesar_salad: 'caesar salad near me',
-  poke_bowl: 'poke bowl near me',
-  thai_curry: 'thai food near me',
-  chinese_takeout: 'chinese food near me',
-  ramen: 'ramen near me',
-  dumplings: 'asian food near me',
-  bruschetta: 'italian restaurant near me',
-  pasta: 'italian restaurant near me',
-  spaghetti_bolognese: 'italian restaurant near me',
-  risotto: 'italian restaurant near me',
-  macaron: 'patisserie near me',
-  croissant: 'bakery near me',
-  baklava: 'baklava near me',
-  gyros: 'gyros near me',
-  pleskavica: 'balkan food near me',
-  sushi: 'sushi near me',
+  // English category queries
+  buffalo_wings: 'wings restaurant',
+  hawaii_pizza: 'pizza',
+  caesar_salad: 'caesar salad',
+  poke_bowl: 'poke bowl',
+  thai_curry: 'thai food',
+  chinese_takeout: 'chinese food',
+  ramen: 'ramen',
+  dumplings: 'asian food',
+  bruschetta: 'italian restaurant',
+  pasta: 'italian restaurant',
+  spaghetti_bolognese: 'italian restaurant',
+  risotto: 'italian restaurant',
+  macaron: 'patisserie',
+  croissant: 'bakery',
+  baklava: 'baklava',
+  gyros: 'gyros',
+  pleskavica: 'balkan food',
+  sushi: 'sushi',
   supermarket_sushi: 'супермаркет',
-  tacos: 'mexican food near me',
-  burrito: 'mexican food near me',
-  eggs_benedict: 'brunch near me',
-  brunch: 'brunch near me',
-  boozy_brunch: 'brunch near me',
-  avocado_toast: 'brunch near me',
-  avocado_bagel: 'brunch near me',
-  matcha_latte: 'cafe near me',
-  smoothie: 'smoothie bar near me',
-  green_juice: 'juice bar near me',
-  coffee_mimosa: 'brunch near me',
-  pizza: 'pizza near me',
-  neighborhood_pizza: 'pizza near me',
+  tacos: 'mexican food',
+  burrito: 'mexican food',
+  eggs_benedict: 'brunch',
+  brunch: 'brunch',
+  boozy_brunch: 'brunch',
+  avocado_toast: 'brunch',
+  avocado_bagel: 'brunch',
+  matcha_latte: 'cafe',
+  smoothie: 'smoothie bar',
+  green_juice: 'juice bar',
+  coffee_mimosa: 'brunch',
+  pizza: 'pizza',
+  neighborhood_pizza: 'pizza',
   frozen_pizza: 'супермаркет',
-  burger: 'burger near me',
-  dyuner: 'dyuner near me',
-  banitsa: 'banitsa near me',
-  shopska: 'българска кухня near me',
-  musaka: 'българска кухня near me',
-  shkembe_chorba: 'българска кухня near me',
-  bob_chorba: 'българска кухня near me',
-  chicken_noodle_soup: 'българска кухня near me',
-  stuffed_peppers: 'българска кухня near me',
-  kebapcheta_fries: 'скара near me',
-  kebap_kyufte: 'скара near me',
-  skara: 'скара near me',
-  cheverme: 'скара near me',
-  sach: 'българска кухня near me',
-  gyuvech: 'българска кухня near me',
-  tarator: 'българска кухня near me',
-  popara: 'българска кухня near me',
-  mekici: 'мекичарница near me',
-  french_toast_bg: 'мекичарница near me',
+  burger: 'burger',
+
+  // Bulgarian category queries
+  dyuner: 'дюнер',
+  banitsa: 'баница',
+  shopska: 'българска кухня',
+  musaka: 'българска кухня',
+  shkembe_chorba: 'българска кухня',
+  bob_chorba: 'българска кухня',
+  chicken_noodle_soup: 'българска кухня',
+  stuffed_peppers: 'българска кухня',
+  kebapcheta_fries: 'скара',
+  kebap_kyufte: 'скара',
+  skara: 'скара',
+  cheverme: 'скара',
+  sach: 'българска кухня',
+  gyuvech: 'българска кухня',
+  tarator: 'българска кухня',
+  popara: 'българска кухня',
+  mekici: 'закуски',
+  french_toast_bg: 'закуски',
 };
 
 export function getNearbyButtonLabel(type: NearbyType): string {
@@ -150,24 +155,15 @@ export async function openMealNearby(
   if (type === 'grocery') queryStr = 'супермаркет';
   else if (type === 'health_store') queryStr = 'био магазин';
   else if (type === 'bar') queryStr = 'бар';
-  else if (type === 'fancy_restaurant') queryStr = 'fine dining ресторант';
+  else if (type === 'fancy_restaurant') queryStr = 'fine dining';
   else if (type === 'cinema') queryStr = 'кино';
   else queryStr = SEARCH_OVERRIDES[mealId] ?? `${mealName} ресторант`;
   const query = encodeURIComponent(queryStr);
 
-  if (Platform.OS === 'ios') {
-    const googleAppUrl = `comgooglemaps://?q=${query}`;
-    try {
-      const canOpen = await Linking.canOpenURL(googleAppUrl);
-      if (canOpen) {
-        await Linking.openURL(googleAppUrl);
-        return;
-      }
-    } catch {
-      // fall through to web
-    }
-  }
-
+  // Always use the universal Google Maps URL. On iOS this opens directly
+  // in the Google Maps app via Universal Links when installed; the previous
+  // comgooglemaps:// deep-link path was triggering Maps' generic
+  // "Something went wrong" error on some devices/iOS builds.
   const webUrl = `https://www.google.com/maps/search/?api=1&query=${query}`;
   await Linking.openURL(webUrl);
 }

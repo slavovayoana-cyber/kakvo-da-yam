@@ -120,7 +120,8 @@ export function ResultScreen({
     opacity: emojiPresence,
   };
 
-  const nameSize = meal.name.length > 18 ? 26 : 32;
+  const len = meal.name.length;
+  const nameSize = len > 26 ? 22 : len > 18 ? 26 : 32;
 
   const nameStyle = {
     fontFamily: theme.titleFontFamily,
@@ -131,7 +132,7 @@ export function ResultScreen({
   } as any;
 
   return (
-    <View style={[styles.root, { backgroundColor: theme.bg, paddingBottom: 24 + insets.bottom }]}>
+    <View style={[styles.root, { backgroundColor: theme.bg, paddingBottom: Math.max(insets.bottom, 24) }]}>
       <LinearGradient
         colors={theme.gradient.colors as readonly [string, string, ...string[]]}
         locations={theme.gradient.locations as readonly [number, number, ...number[]] | undefined}
@@ -164,6 +165,9 @@ export function ResultScreen({
           <EmojiImage emoji={meal.emoji} size={130} />
         </Animated.View>
         <Animated.Text
+          numberOfLines={3}
+          adjustsFontSizeToFit
+          minimumFontScale={0.7}
           style={[
             styles.name,
             {
@@ -187,6 +191,7 @@ export function ResultScreen({
           {meal.name}
         </Animated.Text>
         <Animated.Text
+          numberOfLines={5}
           style={[
             styles.reason,
             { color: theme.ink },
@@ -348,16 +353,18 @@ const styles = StyleSheet.create({
   name: {
     textAlign: 'center',
     marginBottom: 14,
-    maxWidth: 280,
     paddingTop: 6,
     paddingBottom: 6,
+    paddingHorizontal: 4,
+    alignSelf: 'stretch',
   },
   reason: {
     fontFamily: 'Geist_400Regular',
     fontSize: 16, lineHeight: 16 * 1.4,
     fontStyle: 'italic',
     textAlign: 'center',
-    maxWidth: 280,
+    paddingHorizontal: 4,
+    alignSelf: 'stretch',
   },
   actions: { paddingHorizontal: 20, zIndex: 3 },
   sassMsg: {

@@ -65,7 +65,7 @@ export function CoupleMatchScreen({
   const showNearby = nearbyType !== 'none';
 
   return (
-    <View style={[styles.root, { backgroundColor: moodTheme.bg, paddingBottom: 30 + insets.bottom }]}>
+    <View style={[styles.root, { backgroundColor: moodTheme.bg, paddingBottom: Math.max(insets.bottom, 30) }]}>
       <LinearGradient
         colors={
           moodTheme.gradient.colors as readonly [string, string, ...string[]]

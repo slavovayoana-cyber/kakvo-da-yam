@@ -79,7 +79,7 @@ export function HomeScreen({
       <ScrollView
         contentContainerStyle={[
           styles.scroll,
-          { paddingBottom: 24 + insets.bottom },
+          { paddingBottom: Math.max(insets.bottom, 24) },
         ]}
         bounces={false}
         showsVerticalScrollIndicator={false}

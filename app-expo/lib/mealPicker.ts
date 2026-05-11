@@ -4,7 +4,54 @@ function pickRandom<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
+function shuffle<T>(arr: T[]): T[] {
+  const out = [...arr];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
 const MAIN_MOODS: MoodId[] = ['healthy_ish', 'fancy', 'honest', 'comfort'];
+
+/**
+ * Per-pool shuffled deck. Each pool key (e.g. "all", "healthy_ish", "default")
+ * keeps a queue of meal ids waiting to be drawn. When the queue empties we
+ * reshuffle the full pool. This guarantees the user cycles through every
+ * meal in a pool before any one repeats.
+ */
+const decks = new Map<string, string[]>();
+
+function poolKey(selection: Selection): string {
+  if (selection === 'all') return 'all';
+  if (selection) return `mood:${selection}`;
+  return 'default';
+}
+
+function drawFromDeck(
+  selection: Selection,
+  pool: Meal[],
+  avoidId?: string | null,
+): Meal {
+  const key = poolKey(selection);
+  let deck = decks.get(key) ?? [];
+  // Drop ids no longer in the pool (e.g. if pool changes between renders)
+  const poolIds = new Set(pool.map((m) => m.id));
+  deck = deck.filter((id) => poolIds.has(id));
+  // Reshuffle if empty
+  if (deck.length === 0) {
+    deck = shuffle(pool.map((m) => m.id));
+    // Avoid drawing the very same id we just showed
+    if (avoidId && deck.length > 1 && deck[0] === avoidId) {
+      [deck[0], deck[1]] = [deck[1], deck[0]];
+    }
+  }
+  // Take from the front
+  const drawnId = deck.shift()!;
+  decks.set(key, deck);
+  return pool.find((m) => m.id === drawnId) ?? pool[0];
+}
 
 export function pickMeal(
   meals: Meal[],
@@ -20,17 +67,8 @@ export function pickMeal(
     pool = meals.filter((m) => m.moods.some((x) => MAIN_MOODS.includes(x)));
   }
 
-  // Avoid every recently-seen meal. If that empties the pool (small filtered
-  // mood + long history), relax to just avoiding the most recent one.
-  const recentSet = new Set(recentIds);
-  let candidates = pool.filter((m) => !recentSet.has(m.id));
-  if (candidates.length === 0) {
-    const last = recentIds[recentIds.length - 1];
-    candidates = last && pool.length > 1 ? pool.filter((m) => m.id !== last) : pool;
-    if (candidates.length === 0) candidates = pool;
-  }
-
-  const meal = pickRandom(candidates);
+  const lastId = recentIds[recentIds.length - 1] ?? null;
+  const meal = drawFromDeck(selection, pool, lastId);
 
   let reasonMood: MoodId;
   if (selection === 'all') {
@@ -63,13 +101,15 @@ export function getRerollMessage(count: number): string | null {
   return REROLL_MESSAGES[Math.min(count, REROLL_MESSAGES.length - 1)];
 }
 
+export const APP_URL = 'https://noomup.com/kakvo-da-yam/';
+
 export function formatShareText(
   meal: Meal,
   reason: string,
   moodEmoji: string,
 ): string {
   const e = moodEmoji || '🍽️';
-  return `${e} Какво да ям? казва:\n\n${meal.emoji} ${meal.name}\n„${reason}"\n\n— приложението "Какво да ям?"\n#каквоиДаЯм`;
+  return `${e} Какво да ям? казва:\n\n${meal.emoji} ${meal.name}\n„${reason}"\n\n— приложението „Какво да ям?"\n📲 ${APP_URL}\n#каквоиДаЯм`;
 }
 
 export const SUBTITLES = [

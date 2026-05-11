@@ -61,6 +61,9 @@ export const ShareCard = forwardRef<View, Props>(
           <Text style={[styles.watermark, { color: theme.ink }]}>
             какво да ям<Text style={{ color: theme.accent }}>?</Text>
           </Text>
+          <Text style={[styles.url, { color: theme.ink }]}>
+            noomup.com/kakvo-da-yam
+          </Text>
         </View>
       </View>
     );
@@ -130,5 +133,13 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     textAlign: 'center',
     opacity: 0.7,
+  },
+  url: {
+    fontFamily: 'Geist_400Regular',
+    fontSize: 14,
+    letterSpacing: 14 * 0.05,
+    textAlign: 'center',
+    opacity: 0.5,
+    marginTop: 6,
   },
 });

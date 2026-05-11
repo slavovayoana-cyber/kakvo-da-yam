@@ -98,6 +98,9 @@ export const PersonalityShareCard = forwardRef<View, Props>(
             какво да ям
             <Text style={{ color: p.accent }}>?</Text>
           </Text>
+          <Text style={[styles.url, { color: p.ink }]}>
+            noomup.com/kakvo-da-yam
+          </Text>
         </View>
       </View>
     );
@@ -225,5 +228,13 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     textAlign: 'center',
     opacity: 0.7,
+  },
+  url: {
+    fontFamily: 'Geist_400Regular',
+    fontSize: 14,
+    letterSpacing: 14 * 0.05,
+    textAlign: 'center',
+    opacity: 0.5,
+    marginTop: 6,
   },
 });

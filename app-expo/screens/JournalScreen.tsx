@@ -33,7 +33,7 @@ export function JournalScreen({ entries, onBack, onChange }: Props) {
   const sharePersonality = async () => {
     tapLight();
     const p = personalityResult.personality;
-    const fallbackMessage = `Кулинарната ми личност: ${p.emoji} ${p.title}\n„${p.tagline}"\n\n— от приложението „Какво да ям?"`;
+    const fallbackMessage = `Кулинарната ми личност: ${p.emoji} ${p.title}\n„${p.tagline}"\n\n— от приложението „Какво да ям?"\n📲 https://noomup.com/kakvo-da-yam/`;
 
     try {
       if (cardRef.current) {
@@ -124,7 +124,7 @@ export function JournalScreen({ entries, onBack, onChange }: Props) {
       <ScrollView
         contentContainerStyle={[
           styles.scroll,
-          { paddingBottom: 32 + insets.bottom },
+          { paddingBottom: Math.max(insets.bottom, 32) },
         ]}
         showsVerticalScrollIndicator={false}
       >
