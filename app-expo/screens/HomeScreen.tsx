@@ -10,20 +10,31 @@ import { getTheme, MOOD_THEMES, MoodTheme, ALL_THEME } from '../lib/moodSystem';
 import { SUBTITLES } from '../lib/mealPicker';
 import { tapMedium, tapSelection } from '../lib/haptics';
 import { EmojiImage } from '../components/EmojiImage';
-import type { MoodId, Selection } from '../lib/types';
+import type { MealTime, MoodId, Selection } from '../lib/types';
+
+const TIME_CHIPS: { id: MealTime; emoji: string; label: string; color: string; colorDeep: string }[] = [
+  { id: 'breakfast',    emoji: '🌅', label: 'Закуска',      color: '#F5B97A', colorDeep: '#d9975a' },
+  { id: 'lunch_dinner', emoji: '🍽',  label: 'Обяд/Вечеря', color: '#7DB87D', colorDeep: '#5a9a5a' },
+  { id: 'snack',        emoji: '🍎', label: 'Снак',         color: '#E8A87C', colorDeep: '#c8885c' },
+  { id: 'drink',        emoji: '☕', label: 'Напитка',      color: '#8AB4D4', colorDeep: '#6090b4' },
+];
 
 type Props = {
   selectedMood: Selection;
   setSelectedMood: (m: Selection) => void;
+  selectedTime: MealTime | null;
+  setSelectedTime: (t: MealTime | null) => void;
   onPick: () => void;
   onOpenJournal: () => void;
+  onOpenSettings: () => void;
   onOpenCouple: () => void;
   journalCount: number;
   subtitleIdx: number;
 };
 
 export function HomeScreen({
-  selectedMood, setSelectedMood, onPick, onOpenJournal, onOpenCouple, journalCount, subtitleIdx,
+  selectedMood, setSelectedMood, selectedTime, setSelectedTime,
+  onPick, onOpenJournal, onOpenSettings, onOpenCouple, journalCount, subtitleIdx,
 }: Props) {
   const theme: MoodTheme = getTheme(selectedMood);
   const useMoodType = !!selectedMood && selectedMood !== 'all';
@@ -89,21 +100,30 @@ export function HomeScreen({
           <Text style={[styles.headerMono, { color: theme.ink, opacity: 0.55 }]}>
             {'какво да ям'}<Text style={{ color: theme.accent }}>?</Text>
           </Text>
-          <Pressable
-            onPress={() => { tapSelection(); onOpenJournal(); }}
-            style={({ pressed }) => [
-              styles.journalBtn,
-              {
-                borderColor: theme.colorDeep + '33',
-                opacity: pressed ? 0.7 : 1,
-              },
-            ]}
-            hitSlop={10}
-          >
-            <Text style={[styles.journalBtnText, { color: theme.ink }]}>
-              📔 Дневник{journalCount > 0 ? ` · ${journalCount}` : ''}
-            </Text>
-          </Pressable>
+          <View style={styles.headerRight}>
+            <Pressable
+              onPress={() => { tapSelection(); onOpenJournal(); }}
+              style={({ pressed }) => [
+                styles.journalBtn,
+                { borderColor: theme.colorDeep + '33', opacity: pressed ? 0.7 : 1 },
+              ]}
+              hitSlop={10}
+            >
+              <Text style={[styles.journalBtnText, { color: theme.ink }]}>
+                📔 Дневник{journalCount > 0 ? ` · ${journalCount}` : ''}
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => { tapSelection(); onOpenSettings(); }}
+              style={({ pressed }) => [
+                styles.settingsBtn,
+                { borderColor: theme.colorDeep + '33', opacity: pressed ? 0.7 : 1 },
+              ]}
+              hitSlop={10}
+            >
+              <Text style={styles.settingsBtnText}>⚙️</Text>
+            </Pressable>
+          </View>
         </View>
 
         {/* Title block */}
@@ -124,8 +144,41 @@ export function HomeScreen({
           </Animated.Text>
         </View>
 
-        {/* Mood chips section */}
+        {/* Chips section */}
         <View style={styles.chipsSection}>
+
+          {/* Time chips */}
+          <Text style={[styles.chipsLabel, { color: theme.ink, opacity: 0.5 }]}>
+            КОГА?
+          </Text>
+          <View style={[styles.chipsRow, styles.timeRow]}>
+            {TIME_CHIPS.map((t) => {
+              const active = selectedTime === t.id;
+              return (
+                <Pressable
+                  key={t.id}
+                  onPress={() => { tapSelection(); setSelectedTime(active ? null : t.id); }}
+                  style={({ pressed }) => [
+                    styles.chip,
+                    {
+                      borderColor: active ? t.colorDeep : 'rgba(0,0,0,0.08)',
+                      backgroundColor: active ? t.color : 'rgba(255,255,255,0.55)',
+                      opacity: pressed ? 0.85 : 1,
+                    },
+                  ]}
+                >
+                  <EmojiImage emoji={t.emoji} size={16} />
+                  <Text style={[styles.chipText, { color: active ? '#fff' : theme.ink, fontWeight: active ? '600' : '500' }]}>
+                    {t.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          <View style={[styles.divider, { backgroundColor: theme.ink + '14' }]} />
+
+          {/* Mood chips */}
           <Text
             style={[
               styles.chipsLabel,
@@ -312,6 +365,7 @@ export function HomeScreen({
                 ? `„${theme.tagline}"`
                 : 'или random измежду всички 4'}
           </Text>
+
         </View>
       </ScrollView>
     </View>
@@ -334,6 +388,11 @@ const styles = StyleSheet.create({
     letterSpacing: 0.18 * 11,
     textTransform: 'uppercase',
   },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   journalBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -348,6 +407,18 @@ const styles = StyleSheet.create({
     fontSize: 11.5,
     fontWeight: '500',
     letterSpacing: -0.005 * 11.5,
+  },
+  settingsBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 999,
+    borderWidth: 1.2,
+    backgroundColor: 'rgba(255,255,255,0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  settingsBtnText: {
+    fontSize: 14,
   },
   titleBlock: {
     flex: 1,
@@ -382,6 +453,15 @@ const styles = StyleSheet.create({
   chipsRow: {
     flexDirection: 'row',
     gap: 8,
+  },
+  timeRow: {
+    flexWrap: 'wrap',
+    marginBottom: 16,
+  },
+  divider: {
+    height: 1,
+    marginBottom: 16,
+    marginHorizontal: 4,
   },
   chip: {
     flexDirection: 'row',

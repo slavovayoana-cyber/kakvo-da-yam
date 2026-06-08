@@ -6,6 +6,8 @@ export type NearbyType =
   | 'grocery'
   | 'health_store'
   | 'bar'
+  | 'cafe'
+  | 'bakery'
   | 'cinema'
   | 'none';
 
@@ -25,11 +27,44 @@ const NEARBY_OVERRIDES: Record<string, NearbyType> = {
   truffle_fries: 'fancy_restaurant',
   ribeye_steak: 'fancy_restaurant',
   sommelier_wine: 'fancy_restaurant',
+  wagyu: 'fancy_restaurant',
+  truffle_pasta: 'fancy_restaurant',
 
-  // Bars / drinks
+  // Bars / cocktails
   just_one_drink: 'bar',
   ouzo: 'bar',
   rakia: 'bar',
+  wine: 'bar',
+  prosecco: 'bar',
+  mojito: 'bar',
+  gin_tonic: 'bar',
+  tequila: 'bar',
+
+  // Пекарна
+  kifla: 'bakery',
+  kozunak: 'bakery',
+  pogacha: 'bakery',
+  zelnik: 'bakery',
+  tikvenik: 'bakery',
+  banitsa_ayran: 'bakery',
+  pain_au_chocolat: 'bakery',
+  muffin: 'bakery',
+
+  // Закуски → кафе
+  granola_yogurt: 'cafe',
+  overnight_oats: 'cafe',
+  omelette: 'cafe',
+  bacon_eggs: 'cafe',
+
+  // Кафенета
+  espresso: 'cafe',
+  cappuccino: 'cafe',
+  frappe: 'cafe',
+  fredo_cappuccino: 'cafe',
+  tea: 'cafe',
+  lemonade: 'cafe',
+  bubble_tea: 'cafe',
+  boza: 'cafe',
 
   // Кино
   cinema_popcorn: 'cinema',
@@ -97,7 +132,7 @@ const SEARCH_OVERRIDES: Record<string, string> = {
   gyros: 'gyros',
   pleskavica: 'balkan food',
   sushi: 'sushi',
-  supermarket_sushi: 'супермаркет',
+  supermarket_sushi: 'supermarket',
   tacos: 'mexican food',
   burrito: 'mexican food',
   eggs_benedict: 'brunch',
@@ -111,34 +146,79 @@ const SEARCH_OVERRIDES: Record<string, string> = {
   coffee_mimosa: 'brunch',
   pizza: 'pizza',
   neighborhood_pizza: 'pizza',
-  frozen_pizza: 'супермаркет',
+  frozen_pizza: 'supermarket',
   burger: 'burger',
 
-  // Bulgarian category queries
-  dyuner: 'дюнер',
-  banitsa: 'баница',
-  shopska: 'българска кухня',
-  musaka: 'българска кухня',
-  shkembe_chorba: 'българска кухня',
-  bob_chorba: 'българска кухня',
-  chicken_noodle_soup: 'българска кухня',
-  stuffed_peppers: 'българска кухня',
-  kebapcheta_fries: 'скара',
-  kebap_kyufte: 'скара',
-  skara: 'скара',
-  cheverme: 'скара',
-  sach: 'българска кухня',
-  gyuvech: 'българска кухня',
-  tarator: 'българска кухня',
-  popara: 'българска кухня',
-  mekici: 'закуски',
-  french_toast_bg: 'закуски',
+  // Search overrides for breakfasts
+  kifla: 'bakery',
+  kozunak: 'bakery',
+  pogacha: 'bakery',
+  zelnik: 'bakery',
+  tikvenik: 'bakery',
+  banitsa_ayran: 'bakery',
+  pain_au_chocolat: 'patisserie',
+  bacon_eggs: 'breakfast restaurant',
+  omelette: 'cafe',
+  granola_yogurt: 'cafe',
+  muffin: 'cafe',
+  overnight_oats: 'cafe',
+
+  // Drinks
+  espresso: 'cafe',
+  cappuccino: 'cafe',
+  frappe: 'cafe',
+  fredo_cappuccino: 'greek cafe',
+  tea: 'tea house',
+  lemonade: 'cafe',
+  bubble_tea: 'bubble tea',
+  boza: 'cafe',
+  wine: 'wine bar',
+  prosecco: 'wine bar',
+  mojito: 'cocktail bar',
+  gin_tonic: 'cocktail bar',
+  tequila: 'bar',
+
+  // New international meals
+  sashimi: 'japanese restaurant',
+  peking_duck: 'chinese restaurant',
+  lahmacun: 'turkish restaurant',
+  bibimbap: 'korean restaurant',
+  bbq_wings: 'bbq restaurant',
+  pumpkin_soup: 'vegetarian restaurant',
+  sweet_sour_chicken: 'chinese restaurant',
+  butter_chicken: 'indian restaurant',
+  fried_zucchini: 'mediterranean restaurant',
+  hummus_veggies: 'vegetarian restaurant',
+  tiramisu: 'italian restaurant',
+  quinoa_salad: 'vegetarian restaurant',
+
+  // Bulgarian category queries (English for international Maps compatibility)
+  dyuner: 'kebab',
+  banitsa: 'bakery',
+  shopska: 'bulgarian food',
+  musaka: 'bulgarian food',
+  shkembe_chorba: 'bulgarian food',
+  bob_chorba: 'bulgarian food',
+  chicken_noodle_soup: 'bulgarian food',
+  stuffed_peppers: 'bulgarian food',
+  kebapcheta_fries: 'grill restaurant',
+  kebap_kyufte: 'grill restaurant',
+  skara: 'grill restaurant',
+  cheverme: 'grill restaurant',
+  sach: 'bulgarian food',
+  gyuvech: 'bulgarian food',
+  tarator: 'bulgarian food',
+  popara: 'bulgarian food',
+  mekici: 'breakfast cafe',
+  french_toast_bg: 'breakfast cafe',
 };
 
 export function getNearbyButtonLabel(type: NearbyType): string {
   if (type === 'grocery') return '🛒 Магазин наблизо';
   if (type === 'health_store') return '🌱 Био магазин';
   if (type === 'bar') return '🍸 Бар наблизо';
+  if (type === 'cafe') return '☕ Кафе наблизо';
+  if (type === 'bakery') return '🥐 Пекарна наблизо';
   if (type === 'fancy_restaurant') return '💎 Fine dining';
   if (type === 'cinema') return '🎬 Кино наблизо';
   return '🗺 Къде наблизо';
@@ -152,11 +232,13 @@ export async function openMealNearby(
   if (type === 'none') return;
 
   let queryStr: string;
-  if (type === 'grocery') queryStr = 'супермаркет';
-  else if (type === 'health_store') queryStr = 'био магазин';
-  else if (type === 'bar') queryStr = 'бар';
+  if (type === 'grocery') queryStr = 'supermarket';
+  else if (type === 'health_store') queryStr = 'organic health store';
+  else if (type === 'bar') queryStr = SEARCH_OVERRIDES[mealId] ?? 'cocktail bar';
+  else if (type === 'cafe') queryStr = SEARCH_OVERRIDES[mealId] ?? 'cafe';
+  else if (type === 'bakery') queryStr = SEARCH_OVERRIDES[mealId] ?? 'bakery';
   else if (type === 'fancy_restaurant') queryStr = 'fine dining';
-  else if (type === 'cinema') queryStr = 'кино';
+  else if (type === 'cinema') queryStr = 'cinema';
   else queryStr = SEARCH_OVERRIDES[mealId] ?? `${mealName} ресторант`;
   const query = encodeURIComponent(queryStr);
 

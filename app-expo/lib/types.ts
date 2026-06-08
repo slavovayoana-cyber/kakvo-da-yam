@@ -7,12 +7,15 @@ export type MoodId =
 
 export type Selection = MoodId | 'all' | null;
 
+export type MealTime = 'breakfast' | 'lunch_dinner' | 'snack' | 'drink';
+
 export type Meal = {
   id: string;
   emoji: string;
   name: string;
   moods: MoodId[];
   reasons: Partial<Record<MoodId, string[]>>;
+  times?: MealTime[];
 };
 
 export type MealsData = {

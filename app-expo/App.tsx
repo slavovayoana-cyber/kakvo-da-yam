@@ -22,6 +22,7 @@ import {
 import { HomeScreen } from './screens/HomeScreen';
 import { ResultScreen } from './screens/ResultScreen';
 import { JournalScreen } from './screens/JournalScreen';
+import { SettingsScreen } from './screens/SettingsScreen';
 import { CoupleLobbyScreen } from './screens/CoupleLobbyScreen';
 import { CoupleSwipeScreen } from './screens/CoupleSwipeScreen';
 import { CoupleMatchScreen } from './screens/CoupleMatchScreen';
@@ -39,7 +40,7 @@ import type {
   SessionRole,
 } from './lib/couples';
 import { COUPLE_EXTRA_MEALS } from './lib/coupleMeals';
-import type { Meal, MealsData, PickResult, Selection } from './lib/types';
+import type { Meal, MealTime, MealsData, PickResult, Selection } from './lib/types';
 
 import mealsJson from './data/meals.json';
 
@@ -59,9 +60,10 @@ export default function App() {
   });
 
   const [screen, setScreen] = useState<
-    'home' | 'result' | 'journal' | 'couple_lobby' | 'couple_swipe' | 'couple_match'
+    'home' | 'result' | 'journal' | 'settings' | 'couple_lobby' | 'couple_swipe' | 'couple_match'
   >('home');
   const [selectedMood, setSelectedMood] = useState<Selection>('all');
+  const [selectedTime, setSelectedTime] = useState<MealTime | null>(null);
   const [result, setResult] = useState<PickResult | null>(null);
   const [rerollCount, setRerollCount] = useState(0);
   const [animKey, setAnimKey] = useState(0);
@@ -122,7 +124,7 @@ export default function App() {
   }
 
   const doPick = () => {
-    const r = pickMeal(mealsData.meals, selectedMood, recentIds);
+    const r = pickMeal(mealsData.meals, selectedMood, recentIds, selectedTime);
     setResult(r);
     trackPick(r.meal.id);
     setRerollCount(0);
@@ -133,7 +135,7 @@ export default function App() {
 
   const doReroll = () => {
     if (!result) return;
-    const r = pickMeal(mealsData.meals, selectedMood, recentIds);
+    const r = pickMeal(mealsData.meals, selectedMood, recentIds, selectedTime);
     setResult(r);
     trackPick(r.meal.id);
     setRerollCount((c) => c + 1);
@@ -161,9 +163,8 @@ export default function App() {
     setScreen('home');
   };
 
-  const openJournal = () => {
-    setScreen('journal');
-  };
+  const openJournal = () => setScreen('journal');
+  const openSettings = () => setScreen('settings');
 
   const doFindNearby = () => {
     if (!result) return;
@@ -247,8 +248,11 @@ export default function App() {
         <HomeScreen
           selectedMood={selectedMood}
           setSelectedMood={setSelectedMood}
+          selectedTime={selectedTime}
+          setSelectedTime={setSelectedTime}
           onPick={doPick}
           onOpenJournal={openJournal}
+          onOpenSettings={openSettings}
           onOpenCouple={openCoupleLobby}
           journalCount={journal.length}
           subtitleIdx={subtitleIdx}
@@ -274,6 +278,9 @@ export default function App() {
           onBack={goHome}
           onChange={refreshJournal}
         />
+      )}
+      {screen === 'settings' && (
+        <SettingsScreen onBack={goHome} />
       )}
       {screen === 'couple_lobby' && (
         <CoupleLobbyScreen

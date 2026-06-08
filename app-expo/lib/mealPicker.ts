@@ -1,4 +1,4 @@
-import type { Meal, MoodId, PickResult, Selection } from './types';
+import type { Meal, MealTime, MoodId, PickResult, Selection } from './types';
 
 function pickRandom<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
@@ -23,18 +23,20 @@ const MAIN_MOODS: MoodId[] = ['healthy_ish', 'fancy', 'honest', 'comfort'];
  */
 const decks = new Map<string, string[]>();
 
-function poolKey(selection: Selection): string {
-  if (selection === 'all') return 'all';
-  if (selection) return `mood:${selection}`;
-  return 'default';
+function poolKey(selection: Selection, time: MealTime | null): string {
+  const timeKey = time ? `:${time}` : '';
+  if (selection === 'all') return `all${timeKey}`;
+  if (selection) return `mood:${selection}${timeKey}`;
+  return `default${timeKey}`;
 }
 
 function drawFromDeck(
   selection: Selection,
+  time: MealTime | null,
   pool: Meal[],
   avoidId?: string | null,
 ): Meal {
-  const key = poolKey(selection);
+  const key = poolKey(selection, time);
   let deck = decks.get(key) ?? [];
   // Drop ids no longer in the pool (e.g. if pool changes between renders)
   const poolIds = new Set(pool.map((m) => m.id));
@@ -57,6 +59,7 @@ export function pickMeal(
   meals: Meal[],
   selection: Selection,
   recentIds: string[],
+  time: MealTime | null = null,
 ): PickResult {
   let pool: Meal[];
   if (selection === 'all') {
@@ -67,8 +70,13 @@ export function pickMeal(
     pool = meals.filter((m) => m.moods.some((x) => MAIN_MOODS.includes(x)));
   }
 
+  if (time) {
+    const timeFiltered = pool.filter((m) => m.times?.includes(time));
+    if (timeFiltered.length > 0) pool = timeFiltered;
+  }
+
   const lastId = recentIds[recentIds.length - 1] ?? null;
-  const meal = drawFromDeck(selection, pool, lastId);
+  const meal = drawFromDeck(selection, time, pool, lastId);
 
   let reasonMood: MoodId;
   if (selection === 'all') {
