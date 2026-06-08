@@ -731,8 +731,7 @@
         ]
       },
       "times": [
-        "lunch_dinner",
-        "snack"
+        "lunch_dinner"
       ]
     },
     {
@@ -770,8 +769,7 @@
         ]
       },
       "times": [
-        "lunch_dinner",
-        "snack"
+        "lunch_dinner"
       ]
     },
     {
@@ -806,8 +804,7 @@
         ]
       },
       "times": [
-        "lunch_dinner",
-        "snack"
+        "lunch_dinner"
       ]
     },
     {
@@ -1038,8 +1035,7 @@
         ]
       },
       "times": [
-        "lunch_dinner",
-        "snack"
+        "lunch_dinner"
       ]
     },
     {
@@ -1168,8 +1164,7 @@
         ]
       },
       "times": [
-        "lunch_dinner",
-        "snack"
+        "lunch_dinner"
       ]
     },
     {
@@ -1372,9 +1367,7 @@
           "лекува всичко, освен социалния ти живот"
         ]
       },
-      "times": [
-        "snack"
-      ]
+      "times": []
     },
     {
       "id": "banana",
@@ -1537,9 +1530,7 @@
           "масло 2.0 — същото, ама духовно"
         ]
       },
-      "times": [
-        "snack"
-      ]
+      "times": []
     },
     {
       "id": "tahan",
@@ -1578,8 +1569,7 @@
         ]
       },
       "times": [
-        "breakfast",
-        "snack"
+        "breakfast"
       ]
     },
     {
@@ -2053,7 +2043,7 @@
     },
     {
       "id": "truffle_pasta",
-      "emoji": "🍄",
+      "emoji": "🍝🍄",
       "name": "Паста с трюфели",
       "moods": [
         "fancy"
@@ -2084,8 +2074,7 @@
         ]
       },
       "times": [
-        "lunch_dinner",
-        "snack"
+        "lunch_dinner"
       ]
     },
     {
@@ -2125,13 +2114,12 @@
         ]
       },
       "times": [
-        "snack",
         "lunch_dinner"
       ]
     },
     {
       "id": "pumpkin_soup",
-      "emoji": "🎃",
+      "emoji": "🎃🍲",
       "name": "Крем супа от тиква",
       "moods": [
         "comfort",
@@ -2151,7 +2139,7 @@
     },
     {
       "id": "sweet_sour_chicken",
-      "emoji": "🍱",
+      "emoji": "🍗🍍",
       "name": "Китайски Sweet & Sour Chicken",
       "moods": [
         "honest"
@@ -2202,13 +2190,12 @@
         ]
       },
       "times": [
-        "snack",
         "lunch_dinner"
       ]
     },
     {
       "id": "hummus_veggies",
-      "emoji": "🫘",
+      "emoji": "🫘🥗",
       "name": "Хумус с печени зеленчуци",
       "moods": [
         "healthy_ish"
@@ -2225,7 +2212,7 @@
     },
     {
       "id": "tiramisu",
-      "emoji": "🍰",
+      "emoji": "☕🍰",
       "name": "Тирамису",
       "moods": [
         "comfort",
@@ -2245,7 +2232,7 @@
     },
     {
       "id": "quinoa_salad",
-      "emoji": "🌱",
+      "emoji": "🥗🌱",
       "name": "Салата с киноа и нар",
       "moods": [
         "healthy_ish"
@@ -2302,7 +2289,7 @@
     },
     {
       "id": "frappe",
-      "emoji": "🧋",
+      "emoji": "☕🧊",
       "name": "Фрапе",
       "moods": [
         "comfort",
@@ -2327,7 +2314,7 @@
     },
     {
       "id": "fredo_cappuccino",
-      "emoji": "🧊",
+      "emoji": "🧊☕",
       "name": "Фредо Капучино",
       "moods": [
         "fancy"
@@ -2344,7 +2331,7 @@
     },
     {
       "id": "lemonade",
-      "emoji": "🍋",
+      "emoji": "🍋🥤",
       "name": "Лимонада",
       "moods": [
         "healthy_ish",
