@@ -11,7 +11,7 @@ import os
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, 'data', 'meals.json')
-OUT = os.path.join(ROOT, 'ios', 'KakvoWidget', 'WidgetMeals.swift')
+OUT = os.path.join(ROOT, 'targets', 'widget', 'WidgetMeals.swift')
 
 # Mood -> (badge label, glow RGB 0..1) — glow derived from app mood colors.
 MOOD_INFO = {

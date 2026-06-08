@@ -18,7 +18,16 @@ const DEFAULT_SETTINGS: NotifSettings = {
   dinner: false,
 };
 
+// On first launch we opt the user into a gentle 2/day cadence (lunch + dinner)
+// if they grant permission — breakfast stays off so it's never spammy.
+const FIRST_RUN_SETTINGS: NotifSettings = {
+  breakfast: false,
+  lunch: true,
+  dinner: true,
+};
+
 const STORAGE_KEY = 'notif_settings_v1';
+const FIRST_RUN_KEY = 'notif_first_run_done_v1';
 
 // MARK: - Messages
 
@@ -137,4 +146,26 @@ export async function scheduleAll(settings: NotifSettings): Promise<void> {
 
 export async function cancelAll(): Promise<void> {
   await Notifications.cancelAllScheduledNotificationsAsync();
+}
+
+/**
+ * Runs once on the very first app launch: prompts for notification permission
+ * and, if granted, opts the user into the default 2/day cadence (lunch +
+ * dinner). Subsequent launches are a no-op so we never re-prompt or override
+ * the user's own choices.
+ */
+export async function runFirstLaunchSetup(): Promise<void> {
+  try {
+    const done = await AsyncStorage.getItem(FIRST_RUN_KEY);
+    if (done) return;
+    await AsyncStorage.setItem(FIRST_RUN_KEY, '1');
+
+    const granted = await requestPermissions();
+    if (granted) {
+      await saveSettings(FIRST_RUN_SETTINGS);
+      await scheduleAll(FIRST_RUN_SETTINGS);
+    }
+  } catch {
+    // ignore — notifications are non-critical
+  }
 }

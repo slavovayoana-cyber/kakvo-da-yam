@@ -35,6 +35,7 @@ import {
   addJournalEntry,
 } from './lib/journal';
 import { openMealNearby } from './lib/maps';
+import { runFirstLaunchSetup } from './lib/notifications';
 import type {
   CoupleSession,
   SessionRole,
@@ -82,6 +83,7 @@ export default function App() {
 
   useEffect(() => {
     getJournal().then(setJournal).catch(() => setJournal([]));
+    runFirstLaunchSetup();
   }, []);
 
   const refreshJournal = async () => {

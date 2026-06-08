@@ -15,6 +15,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.kakvodayam.app",
+      "appleTeamId": "VA5J9VM274",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "LSApplicationQueriesSchemes": ["comgooglemaps"]
@@ -33,7 +34,12 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-font"
+      "expo-font",
+      "@bacons/apple-targets",
+      [
+        "./plugins/withAdiRegistration",
+        { "token": "DDHPXCWBZF7FGAAAAAAAAAAAAA" }
+      ]
     ],
     "extra": {
       "eas": {
