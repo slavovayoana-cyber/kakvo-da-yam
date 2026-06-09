@@ -10,7 +10,7 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#D5918A"
+      "backgroundColor": "#FAF0E8"
     },
     "ios": {
       "supportsTablet": true,
@@ -48,7 +48,7 @@
       [
         "expo-tracking-transparency",
         {
-          "userTrackingPermission": "Използваме това, за да ти показваме по-подходящи реклами и да подобряваме приложението."
+          "userTrackingPermission": "Помага ни да измерваме кои реклами водят до инсталации и да развиваме приложението. Приложението не показва реклами и не продава лични данни."
         }
       ],
       [

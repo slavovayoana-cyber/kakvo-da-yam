@@ -35,8 +35,26 @@ struct ResolvedMeal {
     let badge: String
     let glow: Color
 
-    static func random() -> ResolvedMeal {
-        let meal = Meals.all.randomElement() ?? Meals.all[0]
+    /// Which meal-time categories make sense for a given hour of day, so the
+    /// widget never suggests wine at 8am or breakfast at midnight.
+    private static func timesFor(hour: Int) -> [String] {
+        switch hour {
+        case 5..<11:   return ["breakfast"]                          // сутрин
+        case 11..<15:  return ["lunch_dinner"]                       // обяд
+        case 15..<18:  return ["snack", "dessert"]                   // следобед
+        case 18..<23:  return ["lunch_dinner", "dessert", "drink"]   // вечер
+        default:       return ["snack", "dessert"]                   // нощ
+        }
+    }
+
+    /// Pick a random meal appropriate for the given date's hour.
+    static func random(for date: Date = Date()) -> ResolvedMeal {
+        let hour = Calendar.current.component(.hour, from: date)
+        let allowed = Set(timesFor(hour: hour))
+        let pool = Meals.all.filter { meal in
+            meal.times.contains { allowed.contains($0) }
+        }
+        let meal = (pool.isEmpty ? Meals.all : pool).randomElement() ?? Meals.all[0]
         let mood = meal.moods.randomElement() ?? meal.moods[0]
         let reason = mood.reasons.randomElement() ?? ""
         return ResolvedMeal(
@@ -70,12 +88,12 @@ struct KakvoProvider: TimelineProvider {
         completion(MealEntry(date: Date(), meal: .random()))
     }
     func getTimeline(in context: Context, completion: @escaping (Timeline<MealEntry>) -> Void) {
-        // Refresh every 2 hours with a fresh random meal.
+        // A fresh meal every hour, each appropriate for the hour it shows at.
         var entries: [MealEntry] = []
         let now = Date()
-        for offset in 0..<6 {
-            let date = Calendar.current.date(byAdding: .hour, value: offset * 2, to: now) ?? now
-            entries.append(MealEntry(date: date, meal: .random()))
+        for offset in 0..<12 {
+            let date = Calendar.current.date(byAdding: .hour, value: offset, to: now) ?? now
+            entries.append(MealEntry(date: date, meal: .random(for: date)))
         }
         completion(Timeline(entries: entries, policy: .atEnd))
     }
@@ -108,18 +126,25 @@ private struct BrandLabel: View {
     }
 }
 
-private struct GlowBackground: View {
+/// The full-bleed widget background (gradient + mood glow). Lives in
+/// `.containerBackground` so it fills the entire widget with no white border.
+private struct WidgetCanvas: View {
     let meal: ResolvedMeal
-    let center: UnitPoint
-    let radius: CGFloat
+    var isLarge: Bool = false
     @Environment(\.colorScheme) var cs
     var body: some View {
         ZStack {
             if cs == .dark { DT.darkBg } else { DT.lightGrad }
             RadialGradient(
-                colors: [meal.glow.opacity(cs == .dark ? 0.52 : 0.20), .clear],
-                center: center, startRadius: 0, endRadius: radius
+                colors: [meal.glow.opacity(cs == .dark ? 0.52 : 0.22), .clear],
+                center: .topLeading, startRadius: 0, endRadius: isLarge ? 300 : 230
             )
+            if isLarge {
+                RadialGradient(
+                    colors: [Color(red: 0.3, green: 0.2, blue: 0.85).opacity(cs == .dark ? 0.28 : 0.10), .clear],
+                    center: .bottomTrailing, startRadius: 0, endRadius: 200
+                )
+            }
         }
     }
 }
@@ -143,23 +168,24 @@ struct SmallView: View {
     let meal: ResolvedMeal
     @Environment(\.colorScheme) var cs
     var body: some View {
-        ZStack {
-            GlowBackground(meal: meal, center: .topLeading, radius: 180)
-            VStack(alignment: .leading, spacing: 0) {
-                BrandLabel()
-                Spacer()
-                Text(meal.emoji)
-                    .font(.system(size: 52))
-                    .frame(maxWidth: .infinity)
-                Spacer()
-                Text(meal.name)
-                    .font(.system(size: 13, weight: .heavy))
-                    .foregroundColor(DT.ink(cs))
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.78)
-            }
-            .padding(15)
+        VStack(alignment: .leading, spacing: 0) {
+            BrandLabel()
+            Spacer(minLength: 6)
+            Text(meal.emoji)
+                .font(.system(size: 40))
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
+                .frame(maxWidth: .infinity)
+            Spacer(minLength: 6)
+            Text(meal.name)
+                .font(.system(size: 12.5, weight: .heavy))
+                .foregroundColor(DT.ink(cs))
+                .lineLimit(2)
+                .minimumScaleFactor(0.7)
+                .fixedSize(horizontal: false, vertical: true)
         }
+        .padding(14)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 }
 
@@ -169,41 +195,44 @@ struct MediumView: View {
     let meal: ResolvedMeal
     @Environment(\.colorScheme) var cs
     var body: some View {
-        ZStack {
-            GlowBackground(meal: meal, center: .topLeading, radius: 220)
-            VStack(alignment: .leading, spacing: 0) {
-                BrandLabel()
-                HStack(spacing: 14) {
-                    Text(meal.emoji)
-                        .font(.system(size: 56))
-                    VStack(alignment: .leading, spacing: 5) {
-                        Text(meal.name)
-                            .font(.system(size: 15, weight: .heavy))
-                            .foregroundColor(DT.ink(cs))
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.72)
-                        Text(quoted(meal.reason))
-                            .font(.system(size: 11.5))
-                            .foregroundColor(DT.ink(cs).opacity(0.55))
-                            .italic()
-                            .lineLimit(2)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+        VStack(alignment: .leading, spacing: 0) {
+            BrandLabel()
+            HStack(spacing: 12) {
+                Text(meal.emoji)
+                    .font(.system(size: 38))
+                    .lineLimit(1)
+                    .frame(width: 50, alignment: .leading)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(meal.name)
+                        .font(.system(size: 15, weight: .heavy))
+                        .foregroundColor(DT.ink(cs))
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.8)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(quoted(meal.reason))
+                        .font(.system(size: 11))
+                        .foregroundColor(DT.ink(cs).opacity(0.55))
+                        .italic()
+                        .lineLimit(3)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-                .frame(maxHeight: .infinity)
-                HStack {
-                    Text("Натисни за да отвориш")
-                        .font(.system(size: 9, weight: .semibold))
-                        .tracking(0.8)
-                        .textCase(.uppercase)
-                        .foregroundColor(DT.ink(cs).opacity(0.2))
-                    Spacer()
-                    MoodBadge(text: meal.badge)
-                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .layoutPriority(1)
             }
-            .padding(16)
+            .frame(maxHeight: .infinity)
+            HStack {
+                Text("Натисни за да отвориш")
+                    .font(.system(size: 9, weight: .semibold))
+                    .tracking(0.8)
+                    .textCase(.uppercase)
+                    .foregroundColor(DT.ink(cs).opacity(0.2))
+                    .lineLimit(1)
+                Spacer()
+                MoodBadge(text: meal.badge)
+            }
         }
+        .padding(16)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 }
 
@@ -214,57 +243,53 @@ struct LargeView: View {
     @Environment(\.colorScheme) var cs
     private let moods = ["🥗 Healthy", "💅 Fancy", "😂 Honest", "🧸 Comfort", "🇧🇬 BG"]
     var body: some View {
-        ZStack {
-            GlowBackground(meal: meal, center: .topLeading, radius: 280)
-            RadialGradient(
-                colors: [Color(red: 0.3, green: 0.2, blue: 0.85).opacity(cs == .dark ? 0.28 : 0.10), .clear],
-                center: .bottomTrailing, startRadius: 0, endRadius: 200
-            )
-            VStack(alignment: .leading, spacing: 0) {
-                BrandLabel()
-                HStack(spacing: 5) {
-                    ForEach(moods, id: \.self) { m in
-                        let active = meal.badge == m
-                        Text(m)
-                            .font(.system(size: 10, weight: .semibold))
-                            .foregroundColor(active ? DT.accent : DT.ink(cs).opacity(0.38))
-                            .padding(.horizontal, 9).padding(.vertical, 3)
-                            .background(active ? DT.accent.opacity(0.15) : DT.ink(cs).opacity(0.06))
-                            .clipShape(Capsule())
-                            .overlay(Capsule().stroke(active ? DT.accent.opacity(0.35) : Color.clear, lineWidth: 1))
-                    }
+        VStack(alignment: .leading, spacing: 0) {
+            BrandLabel()
+            HStack(spacing: 4) {
+                ForEach(moods, id: \.self) { m in
+                    let active = meal.badge == m
+                    Text(m)
+                        .font(.system(size: 9.5, weight: .semibold))
+                        .lineLimit(1)
+                        .fixedSize()
+                        .foregroundColor(active ? DT.accent : DT.ink(cs).opacity(0.38))
+                        .padding(.horizontal, 7).padding(.vertical, 3)
+                        .background(active ? DT.accent.opacity(0.15) : DT.ink(cs).opacity(0.06))
+                        .clipShape(Capsule())
+                        .overlay(Capsule().stroke(active ? DT.accent.opacity(0.35) : Color.clear, lineWidth: 1))
                 }
-                .padding(.top, 10)
-                Spacer()
-                Text(meal.emoji)
-                    .font(.system(size: 76))
-                    .frame(maxWidth: .infinity)
-                Spacer()
-                Text(meal.name)
-                    .font(.system(size: 22, weight: .black))
-                    .foregroundColor(DT.ink(cs))
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.68)
-                Text(quoted(meal.reason))
-                    .font(.system(size: 13))
-                    .foregroundColor(DT.ink(cs).opacity(0.5))
-                    .italic()
-                    .multilineTextAlignment(.center)
-                    .lineLimit(2)
-                    .frame(maxWidth: .infinity)
-                    .padding(.top, 6)
-                    .padding(.bottom, 14)
-                Text("Избери за мен \u{2192}")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(cs == .dark ? .white : DT.accent)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 13)
-                    .background(DT.ink(cs).opacity(0.07))
-                    .clipShape(RoundedRectangle(cornerRadius: 14))
             }
-            .padding(18)
+            .padding(.top, 10)
+            Spacer()
+            Text(meal.emoji)
+                .font(.system(size: 76))
+                .frame(maxWidth: .infinity)
+            Spacer()
+            Text(meal.name)
+                .font(.system(size: 22, weight: .black))
+                .foregroundColor(DT.ink(cs))
+                .frame(maxWidth: .infinity, alignment: .center)
+                .lineLimit(1)
+                .minimumScaleFactor(0.68)
+            Text(quoted(meal.reason))
+                .font(.system(size: 13))
+                .foregroundColor(DT.ink(cs).opacity(0.5))
+                .italic()
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .frame(maxWidth: .infinity)
+                .padding(.top, 6)
+                .padding(.bottom, 14)
+            Text("Избери за мен \u{2192}")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundColor(cs == .dark ? .white : DT.accent)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 13)
+                .background(DT.ink(cs).opacity(0.07))
+                .clipShape(RoundedRectangle(cornerRadius: 14))
         }
+        .padding(18)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 }
 
@@ -312,7 +337,17 @@ struct KakvoWidgetEntryView: View {
             default:            MediumView(meal: entry.meal)
             }
         }
-        .containerBackground(for: .widget) { Color.clear }
+        .containerBackground(for: .widget) {
+            #if os(iOS)
+            if family == .accessoryRectangular {
+                Color.clear
+            } else {
+                WidgetCanvas(meal: entry.meal, isLarge: family == .systemLarge)
+            }
+            #else
+            WidgetCanvas(meal: entry.meal, isLarge: family == .systemLarge)
+            #endif
+        }
     }
 }
 

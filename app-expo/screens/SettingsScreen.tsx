@@ -145,11 +145,18 @@ export function SettingsScreen({ onBack }: Props) {
               WIDGET НА НАЧАЛНИЯ ЕКРАН
             </Text>
             <View style={styles.widgetCard}>
-              {/* Mini widget preview */}
+              {/* Mini widget preview — light theme to match Settings */}
               <View style={styles.widgetPreview}>
+                <LinearGradient
+                  colors={['#FDF6EE', '#F5DFC9', '#EDC4AA']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={StyleSheet.absoluteFill}
+                />
+                <View style={styles.widgetGlow} />
                 <Text style={styles.widgetPreviewBrand}>КАКВО ДА ЯМ?</Text>
-                <Text style={styles.widgetPreviewEmoji}>🍛</Text>
-                <Text style={styles.widgetPreviewName}>Butter Chicken</Text>
+                <Text style={styles.widgetPreviewEmoji}>🍕</Text>
+                <Text style={styles.widgetPreviewName}>Пица</Text>
               </View>
 
               <Text style={styles.widgetIntro}>
@@ -283,21 +290,30 @@ const styles = StyleSheet.create({
     width: 130,
     height: 130,
     borderRadius: 20,
-    backgroundColor: '#1a1a20',
     padding: 14,
     marginBottom: 16,
     justifyContent: 'space-between',
     overflow: 'hidden',
-    shadowColor: '#C8645A',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
+    shadowColor: '#b8753a',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.22,
+    shadowRadius: 12,
+  },
+  widgetGlow: {
+    position: 'absolute',
+    width: 130,
+    height: 130,
+    borderRadius: 65,
+    top: -45,
+    left: -35,
+    backgroundColor: '#F0B860',
+    opacity: 0.4,
   },
   widgetPreviewBrand: {
     fontFamily: 'Geist_700Bold',
     fontSize: 7.5,
     letterSpacing: 1.2,
-    color: 'rgba(255,255,255,0.38)',
+    color: 'rgba(80,45,30,0.45)',
   },
   widgetPreviewEmoji: {
     fontSize: 40,
@@ -306,7 +322,7 @@ const styles = StyleSheet.create({
   widgetPreviewName: {
     fontFamily: 'Geist_700Bold',
     fontSize: 12,
-    color: '#fff',
+    color: '#3d2318',
   },
   widgetIntro: {
     fontFamily: 'Geist_400Regular',

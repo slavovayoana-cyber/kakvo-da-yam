@@ -16,6 +16,7 @@ const TIME_CHIPS: { id: MealTime; emoji: string; label: string; color: string; c
   { id: 'breakfast',    emoji: '🌅', label: 'Закуска',      color: '#F5B97A', colorDeep: '#d9975a' },
   { id: 'lunch_dinner', emoji: '🍽',  label: 'Обяд/Вечеря', color: '#7DB87D', colorDeep: '#5a9a5a' },
   { id: 'snack',        emoji: '🍎', label: 'Снак',         color: '#E8A87C', colorDeep: '#c8885c' },
+  { id: 'dessert',      emoji: '🍰', label: 'Десерт',       color: '#D9A0C0', colorDeep: '#b87a9e' },
   { id: 'drink',        emoji: '☕', label: 'Напитка',      color: '#8AB4D4', colorDeep: '#6090b4' },
 ];
 
@@ -127,7 +128,7 @@ export function HomeScreen({
         </View>
 
         {/* Title block */}
-        <View style={[styles.titleBlock, { minHeight: height * 0.42 }]}>
+        <View style={styles.titleBlock}>
           <Text
             style={[
               styles.title,
@@ -151,7 +152,12 @@ export function HomeScreen({
           <Text style={[styles.chipsLabel, { color: theme.ink, opacity: 0.5 }]}>
             КОГА?
           </Text>
-          <View style={[styles.chipsRow, styles.timeRow]}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.timeScroll}
+            contentContainerStyle={styles.timeScrollContent}
+          >
             {TIME_CHIPS.map((t) => {
               const active = selectedTime === t.id;
               return (
@@ -174,7 +180,7 @@ export function HomeScreen({
                 </Pressable>
               );
             })}
-          </View>
+          </ScrollView>
 
           <View style={[styles.divider, { backgroundColor: theme.ink + '14' }]} />
 
@@ -374,7 +380,7 @@ export function HomeScreen({
 
 const styles = StyleSheet.create({
   root: { flex: 1, position: 'relative', overflow: 'hidden' },
-  scroll: { flexGrow: 1, paddingTop: 56, paddingBottom: 24 },
+  scroll: { flexGrow: 1, paddingTop: 44, paddingBottom: 20 },
   header: {
     paddingHorizontal: 24,
     paddingTop: 10,
@@ -422,15 +428,16 @@ const styles = StyleSheet.create({
   },
   titleBlock: {
     flex: 1,
+    minHeight: 150,
     paddingHorizontal: 28,
     justifyContent: 'center',
   },
   title: {
-    fontSize: 56,
-    lineHeight: 76,
-    marginBottom: -4,
-    paddingTop: 8,
-    paddingBottom: 8,
+    fontSize: 50,
+    lineHeight: 62,
+    marginBottom: -2,
+    paddingTop: 6,
+    paddingBottom: 6,
   },
   subtitle: {
     fontFamily: 'Geist_400Regular',
@@ -454,9 +461,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
   },
-  timeRow: {
-    flexWrap: 'wrap',
+  timeScroll: {
+    marginHorizontal: -20,
     marginBottom: 16,
+  },
+  timeScrollContent: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 20,
   },
   divider: {
     height: 1,

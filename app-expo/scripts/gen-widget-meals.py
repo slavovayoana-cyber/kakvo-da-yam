@@ -46,6 +46,7 @@ def main():
         'struct WidgetMeal {',
         '    let emoji: String',
         '    let name: String',
+        '    let times: [String]',
         '    let moods: [WidgetMoodOption]',
         '}',
         '',
@@ -64,7 +65,8 @@ def main():
         if not mood_opts:
             continue
         count += 1
-        lines.append(f'        WidgetMeal(emoji: "{esc(m["emoji"])}", name: "{esc(m["name"])}", moods: [')
+        times = ', '.join(f'"{t}"' for t in m.get('times', []))
+        lines.append(f'        WidgetMeal(emoji: "{esc(m["emoji"])}", name: "{esc(m["name"])}", times: [{times}], moods: [')
         for mid, rs in mood_opts:
             badge, (r, g, b) = MOOD_INFO[mid]
             items = ', '.join(f'"{esc(x)}"' for x in rs)

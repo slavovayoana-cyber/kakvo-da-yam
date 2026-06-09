@@ -1,4 +1,5 @@
 import PostHog from 'posthog-react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppEventsLogger, Settings } from 'react-native-fbsdk-next';
 import {
   getTrackingPermissionsAsync,
@@ -12,14 +13,20 @@ import { Platform } from 'react-native';
 export const POSTHOG_API_KEY = 'phc_AdiRajjJRDeTz9Ehdm8oQNfAobZGh6JLAxpRRaqAnsLN';
 export const POSTHOG_HOST = 'https://eu.i.posthog.com'; // EU cloud
 
+// Show the iOS App Tracking Transparency prompt only after the user has opened
+// the app a few times and seen its value — this lifts opt-in rates a lot.
+const LAUNCH_COUNT_KEY = 'app_launch_count_v1';
+const ATT_DONE_KEY = 'att_prompt_done_v1';
+const ATT_AFTER_LAUNCHES = 3;
+
 let posthog: PostHog | null = null;
 
 // ── Init ─────────────────────────────────────────────────────────────────
 
 /**
- * Initialise analytics once at app start. Sets up PostHog and, after the iOS
- * App Tracking Transparency prompt, enables Meta (Facebook) ad attribution so
- * install campaigns can measure conversions.
+ * Initialise analytics once at app start. PostHog starts immediately; Meta is
+ * initialised with whatever tracking permission already exists. The iOS ATT
+ * prompt itself is deferred to the Nth launch (see maybeRequestTracking).
  */
 export async function initAnalytics(): Promise<void> {
   // PostHog — product analytics (installs, screens, events, funnels).
@@ -27,7 +34,6 @@ export async function initAnalytics(): Promise<void> {
     if (!POSTHOG_API_KEY.startsWith('REPLACE_')) {
       posthog = new PostHog(POSTHOG_API_KEY, {
         host: POSTHOG_HOST,
-        // Autocapture lifecycle + app open/close out of the box.
         captureAppLifecycleEvents: true,
       });
     }
@@ -35,21 +41,44 @@ export async function initAnalytics(): Promise<void> {
     // analytics must never crash the app
   }
 
-  // Meta SDK — ask for tracking permission (iOS ATT), then enable ad events.
+  // Meta SDK — init with current permission (no prompt yet on iOS).
   try {
     if (Platform.OS === 'ios') {
       const current = await getTrackingPermissionsAsync();
-      let granted = current.granted;
-      if (current.status === 'undetermined') {
-        const res = await requestTrackingPermissionsAsync();
-        granted = res.granted;
-      }
-      // Only collect advertiser ID / auto-log if the user allowed tracking.
-      Settings.setAdvertiserTrackingEnabled(granted);
-      Settings.setAdvertiserIDCollectionEnabled(granted);
+      Settings.setAdvertiserTrackingEnabled(current.granted);
+      Settings.setAdvertiserIDCollectionEnabled(current.granted);
     }
     Settings.initializeSDK();
     AppEventsLogger.logEvent('app_launch');
+  } catch {
+    // ignore
+  }
+
+  // Count this launch and, once the threshold is reached, show the ATT prompt.
+  maybeRequestTracking();
+}
+
+/**
+ * Increments the launch counter and, on the 3rd+ launch, shows the iOS ATT
+ * prompt once. On Android this is a no-op (no ATT; Meta uses GAID directly).
+ */
+async function maybeRequestTracking(): Promise<void> {
+  if (Platform.OS !== 'ios') return;
+  try {
+    if (await AsyncStorage.getItem(ATT_DONE_KEY)) return;
+
+    const raw = await AsyncStorage.getItem(LAUNCH_COUNT_KEY);
+    const count = (raw ? parseInt(raw, 10) : 0) + 1;
+    await AsyncStorage.setItem(LAUNCH_COUNT_KEY, String(count));
+    if (count < ATT_AFTER_LAUNCHES) return;
+
+    const current = await getTrackingPermissionsAsync();
+    if (current.status !== 'undetermined') return;
+
+    await AsyncStorage.setItem(ATT_DONE_KEY, '1');
+    const res = await requestTrackingPermissionsAsync();
+    Settings.setAdvertiserTrackingEnabled(res.granted);
+    Settings.setAdvertiserIDCollectionEnabled(res.granted);
   } catch {
     // ignore
   }

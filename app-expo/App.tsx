@@ -4,6 +4,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import * as NavigationBar from 'expo-navigation-bar';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useFonts } from 'expo-font';
 import {
   Geist_400Regular,
@@ -122,7 +123,13 @@ export default function App() {
   if (!fontsLoaded) {
     return (
       <View style={styles.loading}>
-        <Text style={styles.loadingText}>Зареждане…</Text>
+        <LinearGradient
+          colors={['#FAF0E8', '#F5DED2', '#EEC9B8']}
+          style={StyleSheet.absoluteFill}
+        />
+        <Text style={styles.loadingTitle}>
+          Какво{'\n'}да ям<Text style={{ color: '#C8645A' }}>?</Text>
+        </Text>
       </View>
     );
   }
@@ -338,13 +345,15 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#FCEBDD' },
   loading: {
     flex: 1, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#FCEBDD',
+    backgroundColor: '#FAF0E8',
   },
-  loadingText: {
-    color: '#a89881',
-    fontSize: 12,
-    letterSpacing: 1.8,
-    textTransform: 'uppercase',
+  loadingTitle: {
+    fontSize: 50,
+    lineHeight: 60,
+    fontWeight: '800',
+    color: '#3d2318',
+    textAlign: 'center',
+    letterSpacing: -1.5,
   },
   offscreen: {
     position: 'absolute',

@@ -7,7 +7,7 @@ export type MoodId =
 
 export type Selection = MoodId | 'all' | null;
 
-export type MealTime = 'breakfast' | 'lunch_dinner' | 'snack' | 'drink';
+export type MealTime = 'breakfast' | 'lunch_dinner' | 'snack' | 'dessert' | 'drink';
 
 export type Meal = {
   id: string;

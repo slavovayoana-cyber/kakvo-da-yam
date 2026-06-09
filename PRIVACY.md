@@ -17,7 +17,7 @@
 Не събираме име, имейл, телефон или акаунт. Събираме **анонимни данни за използване** чрез следните инструменти:
 
 - **PostHog (аналитика)** — анонимни събития (кое ястие е избрано, кое настроение, кой екран е отворен), приблизителна информация за устройството (модел, операционна система, език) и анонимен идентификатор на устройството. Това ни помага да подобряваме приложението. Данните се съхраняват на сървъри в ЕС.
-- **Meta SDK (реклами)** — ако дадеш съгласие за проследяване (на iOS чрез системната питалка „App Tracking Transparency"), споделяме с Meta събитие за инсталация и рекламен идентификатор (IDFA/GAID), за да измерваме ефективността на рекламните си кампании във Facebook и Instagram. Ако откажеш — не споделяме рекламен идентификатор.
+- **Meta SDK (измерване на реклами)** — ако дадеш съгласие за проследяване (на iOS чрез системната питалка „App Tracking Transparency"), споделяме с Meta събитие за инсталация и рекламен идентификатор (IDFA/GAID), за да измерваме кои наши реклами във Facebook и Instagram водят до инсталации. Ако откажеш — не споделяме рекламен идентификатор. **Самото приложение не показва реклами вътре.**
 
 #### Имаме ли сървър?
 Базата с ястия и всички текстове са вградени в приложението. Аналитичните събития се изпращат към PostHog (ЕС) и Meta. При режим „Заедно решаваме" използваме Supabase за синхронизация в реално време между двете устройства (анонимен идентификатор на сесия, без лични данни).
@@ -58,7 +58,7 @@ The **"Какво да ям?" (What Should I Eat?)** app requires no sign-up and
 We do not collect your name, email, phone, or account. We collect **anonymous usage data** through:
 
 - **PostHog (analytics)** — anonymous events (which meal was picked, which mood, which screen was opened), approximate device info (model, OS, language), and an anonymous device identifier. This helps us improve the app. Data is stored on EU servers.
-- **Meta SDK (advertising)** — if you consent to tracking (on iOS via the system "App Tracking Transparency" prompt), we share an install event and an advertising identifier (IDFA/GAID) with Meta to measure the effectiveness of our Facebook and Instagram ad campaigns. If you decline, no advertising identifier is shared.
+- **Meta SDK (ad measurement)** — if you consent to tracking (on iOS via the system "App Tracking Transparency" prompt), we share an install event and an advertising identifier (IDFA/GAID) with Meta to measure which of our Facebook and Instagram ads lead to installs. If you decline, no advertising identifier is shared. **The app itself shows no ads inside.**
 
 #### Do we have a server?
 The meal database and all texts are bundled into the app. Analytics events are sent to PostHog (EU) and Meta. In "Decide Together" mode we use Supabase for real-time sync between the two devices (anonymous session identifier, no personal data).
