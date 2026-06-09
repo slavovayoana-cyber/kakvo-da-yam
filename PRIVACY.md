@@ -1,7 +1,7 @@
 # Privacy Policy · Политика за поверителност
 
 **App:** Какво да ям? *(com.kakvodayam.app)*
-**Last updated · Последна редакция:** 2026-05-04
+**Last updated · Последна редакция:** 2026-06-09
 
 ---
 
@@ -9,37 +9,40 @@
 
 ### Кратко
 
-Приложението **„Какво да ям?"** не събира, не съхранява и не споделя никакви твои лични данни. Точка.
+Приложението **„Какво да ям?"** не изисква регистрация и не събира име, имейл или контакти. Използваме анонимна аналитика (PostHog) и рекламни инструменти на Meta, за да разбираме как се ползва приложението и да измерваме ефективността на рекламите си. Не продаваме лични данни.
 
 ### Подробно
 
 #### Какви данни събираме?
-**Никакви.** Приложението работи изцяло локално на твоето устройство. Няма регистрация, няма акаунт, няма потребителски профил.
+Не събираме име, имейл, телефон или акаунт. Събираме **анонимни данни за използване** чрез следните инструменти:
+
+- **PostHog (аналитика)** — анонимни събития (кое ястие е избрано, кое настроение, кой екран е отворен), приблизителна информация за устройството (модел, операционна система, език) и анонимен идентификатор на устройството. Това ни помага да подобряваме приложението. Данните се съхраняват на сървъри в ЕС.
+- **Meta SDK (реклами)** — ако дадеш съгласие за проследяване (на iOS чрез системната питалка „App Tracking Transparency"), споделяме с Meta събитие за инсталация и рекламен идентификатор (IDFA/GAID), за да измерваме ефективността на рекламните си кампании във Facebook и Instagram. Ако откажеш — не споделяме рекламен идентификатор.
 
 #### Имаме ли сървър?
-Не. Базата с ястия и всички текстове са вградени в приложението при инсталация. Не правим мрежови заявки към наши сървъри.
+Базата с ястия и всички текстове са вградени в приложението. Аналитичните събития се изпращат към PostHog (ЕС) и Meta. При режим „Заедно решаваме" използваме Supabase за синхронизация в реално време между двете устройства (анонимен идентификатор на сесия, без лични данни).
 
 #### Какво се случва когато натиснеш „Сподели"?
-Извикваме системния share механизъм на Android (или iOS). Той ти предлага твоите инсталирани приложения (WhatsApp, Instagram, Messenger и др.) и ти избираш къде да изпратиш картинката. **Ние не виждаме нито с кого споделяш, нито какво.**
+Извикваме системния share механизъм. Той ти предлага инсталираните приложения и ти избираш къде да изпратиш картинката. **Ние не виждаме нито с кого споделяш, нито какво.**
+
+#### Контрол върху проследяването
+- **iOS:** При първо стартиране ще те питаме за разрешение за проследяване. Можеш да откажеш и пак да ползваш приложението. Може да промениш избора по всяко време от Настройки → Поверителност → Проследяване.
+- Можеш да поискаш изтриване на свързаните с теб анонимни данни на имейла по-долу.
 
 #### Какви разрешения изисква приложението?
-- **Storage / достъп до файлове** *(временно, само ако споделяш картинка)* — за да запазим временен файл с генерираната снимка преди да я предадем на share sheet-а. Файлът се изтрива от системата автоматично.
-- **Vibrate / хаптика** — за тактилна обратна връзка при натискане на бутони. Може да се изключи от настройките на телефона.
-
-#### Аналитика, crash reports, реклами?
-**Никакви.** Приложението не съдържа SDK за аналитика, crash reporting или реклами. Никой трети страна не получава информация за теб през това приложение.
-
-#### Шрифтове и графики?
-Twemoji emoji графиките и шрифтовете (Geist, Fraunces, Instrument Serif) са вградени в приложението при инсталация. Не правим заявки към CDN при работа.
+- **Известия** *(по избор)* — за напомняния кога да ядеш. Питаме при първо стартиране; можеш да откажеш или изключиш по всяко време.
+- **Проследяване** *(по избор, iOS)* — за измерване на рекламите. Можеш да откажеш.
+- **Storage / достъп до файлове** *(временно)* — за запазване на временен файл при споделяне на картинка.
+- **Vibrate / хаптика** — за тактилна обратна връзка.
 
 #### Деца
-Приложението е подходящо за всички възрасти и не събира никакви данни от никого, включително деца под 13 години.
+Приложението не е насочено към деца под 13 години и не събира съзнателно данни от тях.
 
 #### Промени в политиката
-Ако някога променим какво прави приложението по отношение на данните, ще обновим този документ и ще включим изричен опит в приложението. Засега и в обозримо бъдеще: **никакви данни не напускат твоето устройство.**
+Ако променим какво прави приложението по отношение на данните, ще обновим този документ.
 
 #### Контакт
-Въпроси? Пиши на [slavovayoana@gmail.com](mailto:slavovayoana@gmail.com)
+Въпроси или искане за изтриване на данни? Пиши на [slavovayoana@gmail.com](mailto:slavovayoana@gmail.com)
 
 ---
 
@@ -47,34 +50,37 @@ Twemoji emoji графиките и шрифтовете (Geist, Fraunces, Instr
 
 ### Short version
 
-The **"Какво да ям?" (What Should I Eat?)** app does not collect, store, or share any of your personal data. That's it.
+The **"Какво да ям?" (What Should I Eat?)** app requires no sign-up and does not collect your name, email, or contacts. We use anonymous analytics (PostHog) and Meta advertising tools to understand how the app is used and to measure our ad performance. We do not sell personal data.
 
 ### Details
 
 #### What data do we collect?
-**None.** The app runs entirely on your device. No sign-up, no account, no user profile.
+We do not collect your name, email, phone, or account. We collect **anonymous usage data** through:
+
+- **PostHog (analytics)** — anonymous events (which meal was picked, which mood, which screen was opened), approximate device info (model, OS, language), and an anonymous device identifier. This helps us improve the app. Data is stored on EU servers.
+- **Meta SDK (advertising)** — if you consent to tracking (on iOS via the system "App Tracking Transparency" prompt), we share an install event and an advertising identifier (IDFA/GAID) with Meta to measure the effectiveness of our Facebook and Instagram ad campaigns. If you decline, no advertising identifier is shared.
 
 #### Do we have a server?
-No. The meal database and all texts are bundled into the app at install time. We make no network requests to our own servers.
+The meal database and all texts are bundled into the app. Analytics events are sent to PostHog (EU) and Meta. In "Decide Together" mode we use Supabase for real-time sync between the two devices (anonymous session identifier, no personal data).
 
 #### What happens when you tap "Share"?
-We invoke the system share sheet on Android (or iOS). It presents your installed apps (WhatsApp, Instagram, Messenger, etc.) and you choose where to send the image. **We never see with whom you share or what.**
+We invoke the system share sheet. It presents your installed apps and you choose where to send the image. **We never see with whom you share or what.**
+
+#### Control over tracking
+- **iOS:** On first launch we ask for tracking permission. You can decline and still use the app. You can change this anytime in Settings → Privacy → Tracking.
+- You can request deletion of your associated anonymous data at the email below.
 
 #### What permissions does the app request?
-- **Storage / file access** *(transient, only when sharing an image)* — to write a temporary file with the generated image before handing it to the system share sheet. The file is cleaned up by the OS automatically.
-- **Vibrate / haptics** — for tactile feedback on button presses. Can be disabled in your phone settings.
-
-#### Analytics, crash reports, ads?
-**None.** The app contains no analytics, crash reporting, or ad SDKs. No third party receives information about you through this app.
-
-#### Fonts and graphics?
-Twemoji emoji graphics and the Geist / Fraunces / Instrument Serif fonts are bundled into the app at install time. We make no CDN requests at runtime.
+- **Notifications** *(optional)* — meal reminders. Asked on first launch; you can decline or disable anytime.
+- **Tracking** *(optional, iOS)* — for ad measurement. You can decline.
+- **Storage / file access** *(transient)* — to write a temporary file when sharing an image.
+- **Vibrate / haptics** — for tactile feedback.
 
 #### Children
-The app is suitable for all ages and does not collect any data from anyone, including children under 13.
+The app is not directed at children under 13 and does not knowingly collect data from them.
 
 #### Changes to this policy
-If we ever change what the app does with respect to data, we will update this document and add an explicit consent prompt in the app. For now and the foreseeable future: **no data leaves your device.**
+If we change what the app does with respect to data, we will update this document.
 
 #### Contact
-Questions? Email [slavovayoana@gmail.com](mailto:slavovayoana@gmail.com)
+Questions or data deletion requests? Email [slavovayoana@gmail.com](mailto:slavovayoana@gmail.com)

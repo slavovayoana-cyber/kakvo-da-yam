@@ -36,6 +36,7 @@ import {
 } from './lib/journal';
 import { openMealNearby } from './lib/maps';
 import { runFirstLaunchSetup } from './lib/notifications';
+import { initAnalytics, Analytics } from './lib/analytics';
 import type {
   CoupleSession,
   SessionRole,
@@ -84,6 +85,7 @@ export default function App() {
   useEffect(() => {
     getJournal().then(setJournal).catch(() => setJournal([]));
     runFirstLaunchSetup();
+    initAnalytics();
   }, []);
 
   const refreshJournal = async () => {
@@ -133,6 +135,7 @@ export default function App() {
     setAnimKey((k) => k + 1);
     setCookedThisSession(false);
     setScreen('result');
+    Analytics.mealPicked(r.meal.id, r.moodId, selectedTime);
   };
 
   const doReroll = () => {
@@ -143,11 +146,13 @@ export default function App() {
     setRerollCount((c) => c + 1);
     setAnimKey((k) => k + 1);
     setCookedThisSession(false);
+    Analytics.rerolled(rerollCount + 1);
   };
 
   const doCooked = async () => {
     if (!result || cookedThisSession) return;
     setCookedThisSession(true);
+    Analytics.cooked(result.meal.id);
     try {
       await addJournalEntry({
         mealId: result.meal.id,
@@ -170,6 +175,7 @@ export default function App() {
 
   const doFindNearby = () => {
     if (!result) return;
+    Analytics.nearbyOpened(result.meal.id);
     openMealNearby(result.meal.name, result.meal.id).catch(() => {});
   };
 
@@ -184,11 +190,13 @@ export default function App() {
     setCoupleSession(session);
     setCoupleRole(role);
     setScreen('couple_swipe');
+    Analytics.coupleStarted();
   };
 
   const onCoupleMatch = (meal: Meal) => {
     setCoupleMatchedMeal(meal);
     setScreen('couple_match');
+    Analytics.coupleMatched(meal.id);
   };
 
   const exitCouple = () => {
@@ -206,6 +214,7 @@ export default function App() {
 
   const doShare = async () => {
     if (!result) return;
+    Analytics.shared(result.meal.id);
     const theme = getTheme(result.moodId);
     const text = formatShareText(result.meal, result.reason, theme.emoji);
 

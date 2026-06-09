@@ -73,14 +73,13 @@
   <header>
     <h1 class="brand">какво да ям<span class="q">?</span></h1>
     <div class="meta">Privacy Policy · Политика за поверителност</div>
-    <div class="meta">Last updated · Последна редакция: 2026-05-11</div>
+    <div class="meta">Last updated · Последна редакция: 2026-06-09</div>
   </header>
 
   <h1>🇧🇬 На български</h1>
 
   <h2>Кратко</h2>
-  <p>Приложението <strong>„Какво да ям?"</strong> не изисква акаунт, не пита за име, имейл или телефон, и не показва реклами. Не правим аналитика и не следим поведението ти.</p>
-  <p>Едничкото изключение е <strong>режимът „Заедно решаваме"</strong> (couples mode) — за да синхронизираме swipe-ове между двата телефона ни трябва временна анонимна сесия. Подробности по-долу.</p>
+  <p>Приложението <strong>„Какво да ям?"</strong> не изисква акаунт и не пита за име, имейл или телефон. Използваме <strong>анонимна аналитика</strong> (PostHog, ЕС) и <strong>рекламни инструменти на Meta</strong>, за да разбираме как се ползва приложението и да измерваме ефективността на рекламите си. Не продаваме лични данни.</p>
 
   <h2>Какви данни се пазят локално (само на твоя телефон)?</h2>
   <ul>
@@ -109,13 +108,20 @@
 
   <h2>Какви разрешения изисква приложението?</h2>
   <ul>
-    <li><strong>Мрежа (Network)</strong> — само за couples mode (Supabase) и за отварянето на Google Maps. Извън couples mode приложението работи изцяло офлайн.</li>
+    <li><strong>Мрежа (Network)</strong> — за анонимна аналитика (PostHog), рекламно измерване (Meta), режим „Заедно решаваме" (Supabase) и отварянето на Google Maps.</li>
+    <li><strong>Известия</strong> <em>(по избор)</em> — за напомняния кога да ядеш. Питаме при първо стартиране; можеш да откажеш или изключиш по всяко време.</li>
+    <li><strong>Проследяване (App Tracking Transparency, iOS)</strong> <em>(по избор)</em> — за рекламно измерване чрез Meta. Можеш да откажеш.</li>
     <li><strong>Storage</strong> — временно, за да запазим картинката която ще споделиш. Изтрива се от системата автоматично.</li>
     <li><strong>Вибрация (haptics)</strong> — за тактилна обратна връзка. Може да се изключи от настройките.</li>
   </ul>
 
-  <h2>Аналитика, crash reports, реклами?</h2>
-  <p><strong>Никакви.</strong> Приложението не съдържа SDK за аналитика, crash reporting (Firebase, Sentry и т.н.) или реклами. Никой трети страна не получава информация за теб през това приложение.</p>
+  <h2>Аналитика и реклами</h2>
+  <p>Използваме два инструмента на трети страни:</p>
+  <ul>
+    <li><strong>PostHog (аналитика, ЕС сървъри)</strong> — анонимни събития за използване (кое ястие е избрано, кое настроение, кой екран е отворен), приблизителна информация за устройството (модел, ОС, език) и анонимен идентификатор. Помага ни да подобряваме приложението.</li>
+    <li><strong>Meta SDK (реклами)</strong> — ако дадеш съгласие за проследяване (на iOS чрез системната питалка „App Tracking Transparency"), споделяме с Meta събитие за инсталация и рекламен идентификатор (IDFA/GAID), за да измерваме ефективността на рекламите си във Facebook и Instagram. Ако откажеш — не споделяме рекламен идентификатор и пак можеш да ползваш приложението напълно.</li>
+  </ul>
+  <p>Не събираме име, имейл, телефон или контакти. Не продаваме лични данни.</p>
 
   <h2>Деца</h2>
   <p>Приложението не е насочено към деца под 13. Не събираме съзнателно никакви данни от деца. Анонимният device ID не може да идентифицира конкретно лице.</p>
@@ -138,8 +144,7 @@
   <h1>🇬🇧 In English</h1>
 
   <h2>Short version</h2>
-  <p>The <strong>"Какво да ям?" (What Should I Eat?)</strong> app does not require an account, does not ask for name, email or phone, and shows no ads. We do not run analytics or track your behavior.</p>
-  <p>The single exception is <strong>couples mode</strong> ("Заедно решаваме") — to sync swipes between two phones we need a temporary anonymous session. Details below.</p>
+  <p>The <strong>"Какво да ям?" (What Should I Eat?)</strong> app does not require an account and does not ask for name, email or phone. We use <strong>anonymous analytics</strong> (PostHog, EU) and <strong>Meta advertising tools</strong> to understand how the app is used and measure our ad performance. We do not sell personal data.</p>
 
   <h2>What data is kept locally (on your phone only)?</h2>
   <ul>
@@ -168,13 +173,20 @@
 
   <h2>Permissions</h2>
   <ul>
-    <li><strong>Network</strong> — only for couples mode (Supabase) and opening Google Maps. Outside couples mode the app works entirely offline.</li>
+    <li><strong>Network</strong> — for anonymous analytics (PostHog), ad measurement (Meta), couples mode (Supabase) and opening Google Maps.</li>
+    <li><strong>Notifications</strong> <em>(optional)</em> — meal reminders. Asked on first launch; you can decline or disable anytime.</li>
+    <li><strong>Tracking (App Tracking Transparency, iOS)</strong> <em>(optional)</em> — for ad measurement via Meta. You can decline.</li>
     <li><strong>Storage</strong> — transient, only when sharing an image, to write a temporary file. The file is cleaned up automatically.</li>
     <li><strong>Vibrate / haptics</strong> — for tactile feedback. Can be disabled in phone settings.</li>
   </ul>
 
-  <h2>Analytics, crash reports, ads?</h2>
-  <p><strong>None.</strong> The app contains no analytics, crash reporting (Firebase, Sentry, etc.) or ad SDKs. No third party receives information about you through this app.</p>
+  <h2>Analytics and ads</h2>
+  <p>We use two third-party tools:</p>
+  <ul>
+    <li><strong>PostHog (analytics, EU servers)</strong> — anonymous usage events (which meal was picked, which mood, which screen was opened), approximate device info (model, OS, language) and an anonymous identifier. Helps us improve the app.</li>
+    <li><strong>Meta SDK (advertising)</strong> — if you consent to tracking (on iOS via the system "App Tracking Transparency" prompt), we share an install event and an advertising identifier (IDFA/GAID) with Meta to measure the effectiveness of our Facebook and Instagram ads. If you decline, no advertising identifier is shared and you can still use the app fully.</li>
+  </ul>
+  <p>We do not collect name, email, phone, or contacts. We do not sell personal data.</p>
 
   <h2>Children</h2>
   <p>The app is not directed at children under 13. We do not knowingly collect any data from children. The anonymous device ID cannot identify a specific person.</p>

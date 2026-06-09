@@ -2,7 +2,7 @@
   "expo": {
     "name": "Какво да ям?",
     "slug": "kakvo-da-yam-app",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -18,7 +18,9 @@
       "appleTeamId": "VA5J9VM274",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "LSApplicationQueriesSchemes": ["comgooglemaps"]
+        "LSApplicationQueriesSchemes": [
+          "comgooglemaps"
+        ]
       }
     },
     "android": {
@@ -38,7 +40,28 @@
       "@bacons/apple-targets",
       [
         "./plugins/withAdiRegistration",
-        { "token": "DDHPXCWBZF7FGAAAAAAAAAAAAA" }
+        {
+          "token": "DDHPXCWBZF7FGAAAAAAAAAAAAA"
+        }
+      ],
+      "expo-localization",
+      [
+        "expo-tracking-transparency",
+        {
+          "userTrackingPermission": "Използваме това, за да ти показваме по-подходящи реклами и да подобряваме приложението."
+        }
+      ],
+      [
+        "react-native-fbsdk-next",
+        {
+          "appID": "891285720681590",
+          "clientToken": "9b99b60d1b65d0a853d2292f2afc1e15",
+          "displayName": "Какво да ям?",
+          "scheme": "fb891285720681590",
+          "advertiserIDCollectionEnabled": true,
+          "autoLogAppEventsEnabled": true,
+          "isAutoInitEnabled": true
+        }
       ]
     ],
     "extra": {

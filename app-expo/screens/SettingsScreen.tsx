@@ -135,8 +135,45 @@ export function SettingsScreen({ onBack }: Props) {
         ))}
 
         <Text style={styles.footnote}>
-          Нотификациите се изпращат локално — без сървъри, без проследяване.
+          Нотификациите се изпращат локално на твоето устройство.
         </Text>
+
+        {/* Widget section — iOS only */}
+        {Platform.OS === 'ios' && (
+          <>
+            <Text style={[styles.sectionLabel, { marginTop: 30 }]}>
+              WIDGET НА НАЧАЛНИЯ ЕКРАН
+            </Text>
+            <View style={styles.widgetCard}>
+              {/* Mini widget preview */}
+              <View style={styles.widgetPreview}>
+                <Text style={styles.widgetPreviewBrand}>КАКВО ДА ЯМ?</Text>
+                <Text style={styles.widgetPreviewEmoji}>🍛</Text>
+                <Text style={styles.widgetPreviewName}>Butter Chicken</Text>
+              </View>
+
+              <Text style={styles.widgetIntro}>
+                Добави widget за случайно ястие направо на началния екран.
+              </Text>
+
+              {[
+                'Задръж пръст на празно място на началния екран',
+                'Натисни ＋ в горния ъгъл',
+                'Потърси „Какво да ям?"',
+                'Избери размер и добави',
+              ].map((step, i) => (
+                <View key={i} style={styles.widgetStep}>
+                  <View style={styles.widgetStepNum}>
+                    <Text style={styles.widgetStepNumText}>{i + 1}</Text>
+                  </View>
+                  <Text style={styles.widgetStepText}>{step}</Text>
+                </View>
+              ))}
+            </View>
+          </>
+        )}
+
+        <View style={{ height: 12 }} />
       </ScrollView>
     </View>
   );
@@ -233,5 +270,76 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 8,
     lineHeight: 17,
+  },
+  widgetCard: {
+    backgroundColor: 'rgba(255,255,255,0.7)',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(80,50,40,0.08)',
+    padding: 16,
+  },
+  widgetPreview: {
+    alignSelf: 'center',
+    width: 130,
+    height: 130,
+    borderRadius: 20,
+    backgroundColor: '#1a1a20',
+    padding: 14,
+    marginBottom: 16,
+    justifyContent: 'space-between',
+    overflow: 'hidden',
+    shadowColor: '#C8645A',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+  },
+  widgetPreviewBrand: {
+    fontFamily: 'Geist_700Bold',
+    fontSize: 7.5,
+    letterSpacing: 1.2,
+    color: 'rgba(255,255,255,0.38)',
+  },
+  widgetPreviewEmoji: {
+    fontSize: 40,
+    textAlign: 'center',
+  },
+  widgetPreviewName: {
+    fontFamily: 'Geist_700Bold',
+    fontSize: 12,
+    color: '#fff',
+  },
+  widgetIntro: {
+    fontFamily: 'Geist_400Regular',
+    fontSize: 13.5,
+    color: '#4a2e26',
+    lineHeight: 19,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  widgetStep: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 10,
+  },
+  widgetStepNum: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#C8645A',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  widgetStepNumText: {
+    fontFamily: 'Geist_700Bold',
+    fontSize: 11,
+    color: '#fff',
+  },
+  widgetStepText: {
+    flex: 1,
+    fontFamily: 'Geist_400Regular',
+    fontSize: 13,
+    color: '#4a2e26',
+    lineHeight: 18,
   },
 });
