@@ -199,9 +199,10 @@ struct MediumView: View {
             BrandLabel()
             HStack(spacing: 12) {
                 Text(meal.emoji)
-                    .font(.system(size: 38))
+                    .font(.system(size: 46))
                     .lineLimit(1)
-                    .frame(width: 50, alignment: .leading)
+                    .minimumScaleFactor(0.4)
+                    .frame(width: 58, alignment: .leading)
                 VStack(alignment: .leading, spacing: 4) {
                     Text(meal.name)
                         .font(.system(size: 15, weight: .heavy))

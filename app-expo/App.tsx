@@ -35,7 +35,7 @@ import {
   getJournal,
   addJournalEntry,
 } from './lib/journal';
-import { openMealNearby } from './lib/maps';
+import { openMealNearby, openMealRecipe } from './lib/maps';
 import { runFirstLaunchSetup } from './lib/notifications';
 import { initAnalytics, Analytics } from './lib/analytics';
 import type {
@@ -85,8 +85,13 @@ export default function App() {
 
   useEffect(() => {
     getJournal().then(setJournal).catch(() => setJournal([]));
-    runFirstLaunchSetup();
-    initAnalytics();
+    // Run the two permission prompts sequentially: iOS silently drops the ATT
+    // prompt if it is requested while the notifications system alert is on
+    // screen, so wait for notifications to finish before initialising analytics.
+    (async () => {
+      await runFirstLaunchSetup();
+      await initAnalytics();
+    })();
   }, []);
 
   const refreshJournal = async () => {
@@ -184,6 +189,11 @@ export default function App() {
     if (!result) return;
     Analytics.nearbyOpened(result.meal.id);
     openMealNearby(result.meal.name, result.meal.id).catch(() => {});
+  };
+
+  const doRecipe = () => {
+    if (!result) return;
+    openMealRecipe(result.meal.name).catch(() => {});
   };
 
   const openCoupleLobby = () => {
@@ -287,6 +297,7 @@ export default function App() {
           onHome={goHome}
           onCooked={doCooked}
           onFindNearby={doFindNearby}
+          onRecipe={doRecipe}
           cookedThisSession={cookedThisSession}
         />
       )}

@@ -1,4 +1,18 @@
 import { Linking, Platform } from 'react-native';
+import { getLocales } from 'expo-localization';
+
+/**
+ * True when the device region is Bulgaria. Used to decide the language of the
+ * fallback Maps query: Bulgarian dish names only return good results inside
+ * Bulgaria, so abroad we fall back to a universal English search instead.
+ */
+function isInBulgaria(): boolean {
+  try {
+    return getLocales().some((l) => l.regionCode === 'BG');
+  } catch {
+    return false;
+  }
+}
 
 export type NearbyType =
   | 'restaurant'
@@ -12,13 +26,14 @@ export type NearbyType =
   | 'none';
 
 const NEARBY_OVERRIDES: Record<string, NearbyType> = {
-  // Meta / abstract — hide button entirely
-  nothing: 'none',
-  everything: 'none',
-  fridge_thing: 'none',
-  whatever_at_home: 'none',
-  just_a_little_sweet: 'none',
-  moms_food: 'none',
+  // Abstract / undecided — send them to a store so there's always a nearby
+  // option (every meal keeps a top button row; no result shows only two buttons)
+  nothing: 'grocery',
+  everything: 'grocery',
+  fridge_thing: 'grocery',
+  whatever_at_home: 'grocery',
+  just_a_little_sweet: 'grocery',
+  moms_food: 'grocery',
 
   // Fancy / fine dining
   expensive_thing: 'fancy_restaurant',
@@ -211,7 +226,60 @@ const SEARCH_OVERRIDES: Record<string, string> = {
   popara: 'bulgarian food',
   mekici: 'breakfast cafe',
   french_toast_bg: 'breakfast cafe',
+
+  // Meals with a clear international equivalent — so they stay specific abroad
+  salmon: 'seafood restaurant',
+  shrimp_pan: 'seafood restaurant',
+  chicken_curry: 'indian restaurant',
+  lamb_leg: 'grill restaurant',
+  tzatziki: 'greek restaurant',
+  menemen: 'turkish restaurant',
+  waffle: 'waffle',
+  banana_cake: 'bakery',
+  tsatsa: 'seafood restaurant',
+  tulumbas: 'dessert',
+  creme_caramel: 'dessert',
+  gevrek: 'bakery',
+  oatmeal: 'breakfast cafe',
+  palachinki: 'creperie',
+  gas_station_hot_dog: 'hot dog',
+  soup: 'soup',
+  salad: 'salad',
+  roasted_veg: 'vegetarian restaurant',
+  sandwich: 'sandwich',
+  warm_sandwich: 'sandwich',
+  lutenitsa_sandwich: 'sandwich',
+  chushki_byurek: 'balkan food',
 };
+
+// Meal types you can actually cook / make at home — these get a "Как се прави"
+// recipe button (cocktails included, per request). Buy-only items are excluded.
+const RECIPE_TYPES: NearbyType[] = ['restaurant', 'fancy_restaurant', 'bakery', 'bar'];
+const NO_RECIPE = new Set<string>([
+  // Buy-only / no real recipe
+  'supermarket_sushi', 'frozen_pizza', 'gas_station_hot_dog', 'hotel_buffet',
+  // Joke / abstract "meals" — there's nothing to cook
+  'healthy_ish', 'fancy', 'honest', 'comfort', 'bulgarian',
+  'expensive_thing', 'unaffordable_restaurant', 'something_light',
+  // Drinks you buy, not make (cocktails like mojito/gin-tonic keep a recipe)
+  'wine', 'rakia', 'prosecco', 'ouzo', 'just_one_drink', 'sommelier_wine', 'rakia_salad',
+]);
+
+export function hasRecipe(mealId: string): boolean {
+  if (NO_RECIPE.has(mealId)) return false;
+  return RECIPE_TYPES.includes(getNearbyType(mealId));
+}
+
+/** Cocktails / bar drinks show "Приготвих го" instead of "Готвих го". */
+export function isBarDrink(mealId: string): boolean {
+  return getNearbyType(mealId) === 'bar';
+}
+
+/** Opens a YouTube search for the dish's recipe, in Bulgarian. */
+export async function openMealRecipe(mealName: string): Promise<void> {
+  const query = encodeURIComponent(`рецепта ${mealName}`);
+  await Linking.openURL(`https://www.youtube.com/results?search_query=${query}`);
+}
 
 export function getNearbyButtonLabel(type: NearbyType): string {
   if (type === 'grocery') return '🛒 Магазин наблизо';
@@ -239,7 +307,10 @@ export async function openMealNearby(
   else if (type === 'bakery') queryStr = SEARCH_OVERRIDES[mealId] ?? 'bakery';
   else if (type === 'fancy_restaurant') queryStr = 'fine dining';
   else if (type === 'cinema') queryStr = 'cinema';
-  else queryStr = SEARCH_OVERRIDES[mealId] ?? `${mealName} ресторант`;
+  else if (SEARCH_OVERRIDES[mealId]) queryStr = SEARCH_OVERRIDES[mealId];
+  // No English override for this meal. Inside Bulgaria search by the dish name;
+  // abroad that returns nothing useful, so fall back to a generic restaurant.
+  else queryStr = isInBulgaria() ? `${mealName} ресторант` : 'restaurant';
   const query = encodeURIComponent(queryStr);
 
   // Always use the universal Google Maps URL. On iOS this opens directly

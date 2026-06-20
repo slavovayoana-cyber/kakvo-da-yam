@@ -5,7 +5,7 @@ import {
   getTrackingPermissionsAsync,
   requestTrackingPermissionsAsync,
 } from 'expo-tracking-transparency';
-import { Platform } from 'react-native';
+import { AppState, Platform } from 'react-native';
 
 // ── Config ───────────────────────────────────────────────────────────────
 // PostHog project API key — find it in PostHog → Project Settings → API Keys.
@@ -13,11 +13,10 @@ import { Platform } from 'react-native';
 export const POSTHOG_API_KEY = 'phc_AdiRajjJRDeTz9Ehdm8oQNfAobZGh6JLAxpRRaqAnsLN';
 export const POSTHOG_HOST = 'https://eu.i.posthog.com'; // EU cloud
 
-// Show the iOS App Tracking Transparency prompt only after the user has opened
-// the app a few times and seen its value — this lifts opt-in rates a lot.
-const LAUNCH_COUNT_KEY = 'app_launch_count_v1';
+// Show the iOS App Tracking Transparency prompt on first launch. It must appear
+// before any tracking data is collected, and App Review (which only opens the
+// app once or twice on a fresh install) has to be able to see it.
 const ATT_DONE_KEY = 'att_prompt_done_v1';
-const ATT_AFTER_LAUNCHES = 3;
 
 let posthog: PostHog | null = null;
 
@@ -58,25 +57,44 @@ export async function initAnalytics(): Promise<void> {
   maybeRequestTracking();
 }
 
+/** Resolves once the app is in the foreground (`active`) — iOS silently drops
+ * the ATT prompt if it is requested while the app is not active. */
+function whenActive(): Promise<void> {
+  return new Promise((resolve) => {
+    if (AppState.currentState === 'active') return resolve();
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        sub.remove();
+        resolve();
+      }
+    });
+  });
+}
+
 /**
- * Increments the launch counter and, on the 3rd+ launch, shows the iOS ATT
- * prompt once. On Android this is a no-op (no ATT; Meta uses GAID directly).
+ * Shows the iOS ATT prompt once, on the first launch, after the app is active.
+ * On Android this is a no-op (no ATT; Meta uses GAID directly).
  */
 async function maybeRequestTracking(): Promise<void> {
   if (Platform.OS !== 'ios') return;
   try {
     if (await AsyncStorage.getItem(ATT_DONE_KEY)) return;
 
-    const raw = await AsyncStorage.getItem(LAUNCH_COUNT_KEY);
-    const count = (raw ? parseInt(raw, 10) : 0) + 1;
-    await AsyncStorage.setItem(LAUNCH_COUNT_KEY, String(count));
-    if (count < ATT_AFTER_LAUNCHES) return;
-
     const current = await getTrackingPermissionsAsync();
     if (current.status !== 'undetermined') return;
 
-    await AsyncStorage.setItem(ATT_DONE_KEY, '1');
+    // Wait until the app is foregrounded, then give the UI a beat to settle so
+    // iOS reliably presents the system prompt.
+    await whenActive();
+    await new Promise((r) => setTimeout(r, 600));
+
     const res = await requestTrackingPermissionsAsync();
+    // Only mark as done if the user actually answered. If iOS dropped the prompt
+    // (e.g. another system alert was up), status stays "undetermined" — leave the
+    // flag unset so we retry on the next launch instead of never asking again.
+    if (res.status !== 'undetermined') {
+      await AsyncStorage.setItem(ATT_DONE_KEY, '1');
+    }
     Settings.setAdvertiserTrackingEnabled(res.granted);
     Settings.setAdvertiserIDCollectionEnabled(res.granted);
   } catch {

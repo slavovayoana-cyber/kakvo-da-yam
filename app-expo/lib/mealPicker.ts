@@ -34,7 +34,7 @@ function drawFromDeck(
   selection: Selection,
   time: MealTime | null,
   pool: Meal[],
-  avoidId?: string | null,
+  avoidIds: string[] = [],
 ): Meal {
   const key = poolKey(selection, time);
   let deck = decks.get(key) ?? [];
@@ -44,9 +44,13 @@ function drawFromDeck(
   // Reshuffle if empty
   if (deck.length === 0) {
     deck = shuffle(pool.map((m) => m.id));
-    // Avoid drawing the very same id we just showed
-    if (avoidId && deck.length > 1 && deck[0] === avoidId) {
-      [deck[0], deck[1]] = [deck[1], deck[0]];
+    // Keep recently-shown meals from reappearing right after a reshuffle:
+    // rotate the deck so the front card isn't one of the last few we showed.
+    const avoid = new Set(avoidIds);
+    let guard = 0;
+    while (deck.length > 1 && avoid.has(deck[0]) && guard < deck.length) {
+      deck.push(deck.shift()!);
+      guard++;
     }
   }
   // Take from the front
@@ -75,8 +79,11 @@ export function pickMeal(
     if (timeFiltered.length > 0) pool = timeFiltered;
   }
 
-  const lastId = recentIds[recentIds.length - 1] ?? null;
-  const meal = drawFromDeck(selection, time, pool, lastId);
+  // Avoid the last few shown meals reappearing right after a reshuffle. Cap at
+  // pool size - 1 so a small pool can still always draw something.
+  const avoidCount = Math.min(5, Math.max(0, pool.length - 1));
+  const avoidIds = recentIds.slice(-avoidCount);
+  const meal = drawFromDeck(selection, time, pool, avoidIds);
 
   let reasonMood: MoodId;
   if (selection === 'all') {

@@ -7,9 +7,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { MoodDecoration } from '../components/MoodDecoration';
 import { getTheme } from '../lib/moodSystem';
 import { getRerollMessage } from '../lib/mealPicker';
-import { tapMedium, tapLight } from '../lib/haptics';
+import { tapLight } from '../lib/haptics';
 import { EmojiImage } from '../components/EmojiImage';
-import { getNearbyType, getNearbyButtonLabel } from '../lib/maps';
+import { RerollDice } from '../components/RerollDice';
+import { getNearbyType, getNearbyButtonLabel, hasRecipe, isBarDrink } from '../lib/maps';
 import type { PickResult } from '../lib/types';
 
 type Props = {
@@ -22,12 +23,13 @@ type Props = {
   onHome: () => void;
   onCooked: () => void;
   onFindNearby: () => void;
+  onRecipe: () => void;
   cookedThisSession: boolean;
 };
 
 export function ResultScreen({
   result, rerollCount, animKey,
-  onReroll, onShare, onChangeMood, onHome, onCooked, onFindNearby,
+  onReroll, onShare, onChangeMood, onHome, onCooked, onFindNearby, onRecipe,
   cookedThisSession,
 }: Props) {
   const insets = useSafeAreaInsets();
@@ -211,6 +213,11 @@ export function ResultScreen({
         </Animated.Text>
       </View>
 
+      {/* Dice sits in its own fixed slot so it never shifts with meal length */}
+      <View style={styles.diceSlot}>
+        <RerollDice onRoll={onReroll} accent={theme.colorDeep} ink={theme.ink} />
+      </View>
+
       {/* Action stack */}
       <View style={styles.actions}>
         {rerollMsg && (
@@ -222,90 +229,84 @@ export function ResultScreen({
           </Text>
         )}
 
-        <View style={styles.btnRow}>
-          <Pressable
-            onPress={() => { tapMedium(); onReroll(); }}
-            style={({ pressed }) => [
-              styles.secondaryBtn,
-              {
-                borderColor: theme.colorDeep + '33',
-                opacity: pressed ? 0.85 : 1,
-              },
-            ]}
-          >
-            <Text style={[styles.secondaryBtnText, { color: theme.ink }]}>↻ Друго</Text>
-          </Pressable>
-          <Pressable
-            onPress={() => { tapLight(); onShare(); }}
-            style={({ pressed }) => [
-              styles.primaryBtn,
-              {
-                backgroundColor: theme.accent,
-                shadowColor: theme.accent,
-                opacity: pressed ? 0.92 : 1,
-              },
-            ]}
-          >
-            <Text style={styles.primaryBtnText}>↗ Сподели</Text>
-          </Pressable>
-        </View>
-
         {(() => {
           const nearbyType = getNearbyType(meal.id);
           const showNearby = nearbyType !== 'none';
+          const showRecipe = hasRecipe(meal.id);
+          const topCount = (showRecipe ? 1 : 0) + (showNearby ? 1 : 0);
+          if (topCount === 0) return null;
+          const colStyle = topCount === 1 ? styles.topColSingle : styles.topCol;
           return (
-            <View style={styles.cookedRow}>
-              <Pressable
-                onPress={() => { if (!cookedThisSession) { tapLight(); onCooked(); } }}
-                disabled={cookedThisSession}
-                style={({ pressed }) => [
-                  styles.cookedBtn,
-                  showNearby ? styles.cookedBtnHalf : styles.cookedBtnFull,
-                  {
-                    borderColor: theme.colorDeep + (cookedThisSession ? '55' : '33'),
-                    backgroundColor: cookedThisSession
-                      ? theme.colorDeep + '15'
-                      : 'rgba(255,255,255,0.45)',
-                    opacity: pressed && !cookedThisSession ? 0.8 : 1,
-                  },
-                ]}
-              >
-                <Text
-                  style={[styles.cookedBtnText, { color: theme.ink }]}
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
-                  minimumFontScale={0.85}
-                >
-                  {cookedThisSession ? '✓ Записано' : '👨‍🍳 Готвих го!'}
-                </Text>
-              </Pressable>
-              {showNearby ? (
-                <Pressable
-                  onPress={() => { tapLight(); onFindNearby(); }}
-                  style={({ pressed }) => [
-                    styles.cookedBtn,
-                    styles.cookedBtnHalf,
-                    {
-                      borderColor: theme.colorDeep + '33',
-                      backgroundColor: pressed
-                        ? theme.color + '40'
-                        : 'rgba(255,255,255,0.45)',
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[styles.cookedBtnText, { color: theme.ink }]}
-                    numberOfLines={1}
-                    adjustsFontSizeToFit
-                    minimumFontScale={0.85}
+            <View style={[styles.cookedRow, topCount === 1 && styles.cookedRowCenter]}>
+              {showRecipe ? (
+                <View style={colStyle}>
+                  <Pressable
+                    onPress={() => { tapLight(); onRecipe(); }}
+                    style={({ pressed }) => [
+                      styles.cookedBtn, styles.cookedBtnStretch,
+                      { borderColor: theme.colorDeep + '33',
+                        backgroundColor: pressed ? theme.color + '40' : 'rgba(255,255,255,0.45)' },
+                    ]}
                   >
-                    {getNearbyButtonLabel(nearbyType)}
-                  </Text>
-                </Pressable>
+                    <Text style={[styles.cookedBtnText, { color: theme.ink }]} numberOfLines={1}>
+                      🎬 Как се прави
+                    </Text>
+                  </Pressable>
+                </View>
+              ) : null}
+              {showNearby ? (
+                <View style={colStyle}>
+                  <Pressable
+                    onPress={() => { tapLight(); onFindNearby(); }}
+                    style={({ pressed }) => [
+                      styles.cookedBtn, styles.cookedBtnStretch,
+                      { borderColor: theme.colorDeep + '33',
+                        backgroundColor: pressed ? theme.color + '40' : 'rgba(255,255,255,0.45)' },
+                    ]}
+                  >
+                    <Text style={[styles.cookedBtnText, { color: theme.ink }]} numberOfLines={1}>
+                      {getNearbyButtonLabel(nearbyType)}
+                    </Text>
+                  </Pressable>
+                </View>
               ) : null}
             </View>
           );
         })()}
+
+        <View style={styles.cookedRow}>
+          <View style={styles.topCol}>
+            <Pressable
+              onPress={() => { if (!cookedThisSession) { tapLight(); onCooked(); } }}
+              disabled={cookedThisSession}
+              style={({ pressed }) => [
+                styles.cookedBtn, styles.cookedBtnStretch,
+                {
+                  borderColor: theme.colorDeep + (cookedThisSession ? '55' : '33'),
+                  backgroundColor: cookedThisSession ? theme.colorDeep + '15' : 'rgba(255,255,255,0.45)',
+                  opacity: pressed && !cookedThisSession ? 0.8 : 1,
+                },
+              ]}
+            >
+              <Text style={[styles.cookedBtnText, { color: theme.ink }]} numberOfLines={1}>
+                {cookedThisSession ? '✓ Записано' : (isBarDrink(meal.id) ? '🍹 Приготвих го' : '👨‍🍳 Готвих го!')}
+              </Text>
+            </Pressable>
+          </View>
+          <View style={styles.topCol}>
+            <Pressable
+              onPress={() => { tapLight(); onShare(); }}
+              style={({ pressed }) => [
+                styles.cookedBtn, styles.cookedBtnStretch,
+                { backgroundColor: theme.accent, borderColor: theme.accent, opacity: pressed ? 0.92 : 1 },
+              ]}
+            >
+              <Text style={[styles.cookedBtnText, { color: '#fff' }]} numberOfLines={1}>
+                ↗ Сподели
+              </Text>
+            </Pressable>
+          </View>
+        </View>
 
         <Pressable onPress={onChangeMood} style={styles.changeMoodBtn}>
           <Text style={[styles.changeMoodText, { color: theme.ink }]}>
@@ -366,6 +367,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
     alignSelf: 'stretch',
   },
+  diceSlot: { height: 150, alignItems: 'center', justifyContent: 'center', zIndex: 3 },
   actions: { paddingHorizontal: 20, zIndex: 3 },
   sassMsg: {
     textAlign: 'center', marginBottom: 12,
@@ -404,7 +406,7 @@ const styles = StyleSheet.create({
   },
   cookedRow: {
     flexDirection: 'row',
-    gap: 10,
+    justifyContent: 'space-between',
     marginBottom: 8,
   },
   cookedBtn: {
@@ -416,7 +418,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   cookedBtnFull: { alignSelf: 'stretch', flex: 1 },
-  cookedBtnHalf: { flex: 1 },
+  cookedBtnHalf: { flexGrow: 1, flexShrink: 1, flexBasis: 0, minWidth: 0 },
+  cookedBtnSingle: { flexGrow: 0, flexShrink: 0, minWidth: '62%', paddingHorizontal: 24 },
+  cookedRowCenter: { justifyContent: 'center' },
+  topCol: { width: '48.5%' },
+  topColSingle: { width: '62%' },
+  cookedBtnStretch: { alignSelf: 'stretch', width: '100%' },
   cookedBtnText: {
     fontFamily: 'Geist_600SemiBold',
     fontSize: 14,
