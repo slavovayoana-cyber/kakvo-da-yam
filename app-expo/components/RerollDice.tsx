@@ -1,9 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, View, Text, Image, StyleSheet, Animated, Easing, AppState } from 'react-native';
 import Svg, { Ellipse, Defs, Filter, FeGaussianBlur } from 'react-native-svg';
+import { EmojiImage } from './EmojiImage';
 import { tapMedium } from '../lib/haptics';
 
 const DICE_IMG = require('../assets/dice.png');
+const PLATE_IMG = require('../assets/dice-plate.png');
 
 const ROLL_FOODS = ['🍝', '🍕', '🍔', '🍣', '🥗', '🌮', '🍜', '🥞', '🌯', '🍲', '🥙', '🍛'];
 
@@ -150,11 +152,11 @@ export function RerollDice({ onRoll, accent, ink }: Props) {
         <View style={styles.faceCenter}>
           {face === null ? (
             <>
-              <Text style={styles.plate}>🍽️</Text>
+              <Image source={PLATE_IMG} style={styles.plateImg} />
               <Text style={[styles.q, { color: accent }]}>?</Text>
             </>
           ) : (
-            <Text style={styles.food}>{face}</Text>
+            <EmojiImage emoji={face} size={38} />
           )}
         </View>
       </Animated.View>
@@ -187,6 +189,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   plate: { fontSize: 38 },
+  plateImg: { width: 44, height: 44 },
   q: {
     position: 'absolute', fontSize: 17, fontWeight: '900',
     transform: [{ translateY: 1 }],
