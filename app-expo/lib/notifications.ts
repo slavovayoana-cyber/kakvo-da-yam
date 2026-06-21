@@ -132,11 +132,26 @@ Notifications.setNotificationHandler({
   }),
 });
 
+// Android 8+ requires every notification to belong to a channel, otherwise
+// scheduled reminders silently never appear. Created once before scheduling.
+const ANDROID_CHANNEL_ID = 'meal-reminders';
+
+async function ensureAndroidChannel(): Promise<void> {
+  if (Platform.OS !== 'android') return;
+  await Notifications.setNotificationChannelAsync(ANDROID_CHANNEL_ID, {
+    name: 'Напомняния за хранене',
+    importance: Notifications.AndroidImportance.DEFAULT,
+    sound: undefined,
+  });
+}
+
 export async function scheduleAll(settings: NotifSettings): Promise<void> {
   await Notifications.cancelAllScheduledNotificationsAsync();
 
   const granted = await requestPermissions();
   if (!granted) return;
+
+  await ensureAndroidChannel();
 
   const slots: NotifSlot[] = ['breakfast', 'lunch', 'dinner'];
 
@@ -160,6 +175,7 @@ export async function scheduleAll(settings: NotifSettings): Promise<void> {
           weekday,
           hour,
           minute,
+          channelId: ANDROID_CHANNEL_ID,
         },
       });
     }
