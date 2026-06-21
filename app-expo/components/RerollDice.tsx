@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, View, Text, Image, StyleSheet, Animated, Easing, AppState } from 'react-native';
 import Svg, { Ellipse, Defs, Filter, FeGaussianBlur } from 'react-native-svg';
-import { EmojiImage } from './EmojiImage';
 import { tapMedium } from '../lib/haptics';
 
 const DICE_IMG = require('../assets/dice.png');
@@ -156,7 +155,10 @@ export function RerollDice({ onRoll, accent, ink }: Props) {
               <Text style={[styles.q, { color: accent }]}>?</Text>
             </>
           ) : (
-            <EmojiImage emoji={face} size={38} />
+            // Plain text emoji while tumbling — far lighter than re-rendering an
+            // SVG every frame, so the spin stays smooth (the brief food flash
+            // doesn't need pixel-perfect consistency).
+            <Text style={styles.food}>{face}</Text>
           )}
         </View>
       </Animated.View>
