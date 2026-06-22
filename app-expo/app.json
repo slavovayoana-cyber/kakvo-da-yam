@@ -62,6 +62,31 @@
           "autoLogAppEventsEnabled": true,
           "isAutoInitEnabled": true
         }
+      ],
+      [
+        "react-native-android-widget",
+        {
+          "widgets": [
+            {
+              "name": "Kakvo",
+              "label": "Какво да ям?",
+              "description": "Избира ястие за теб когато не можеш да решиш",
+              "minWidth": "250dp",
+              "minHeight": "110dp",
+              "resizeMode": "horizontal|vertical",
+              "updatePeriodMillis": 1800000
+            },
+            {
+              "name": "KakvoSmall",
+              "label": "Какво да ям? (малък)",
+              "description": "Малък квадратен уиджет — ястие за теб",
+              "minWidth": "110dp",
+              "minHeight": "110dp",
+              "resizeMode": "none",
+              "updatePeriodMillis": 1800000
+            }
+          ]
+        }
       ]
     ],
     "extra": {
