@@ -75,7 +75,7 @@ export default function App() {
   const [recentIds, setRecentIds] = useState<string[]>([]);
   const [journal, setJournal] = useState<JournalEntry[]>([]);
   const [cookedThisSession, setCookedThisSession] = useState(false);
-  const [summerMode, setSummerMode] = useState(false);
+  const summerModeRef = useRef(false);
   const [coupleSession, setCoupleSession] = useState<CoupleSession | null>(null);
   const [coupleRole, setCoupleRole] = useState<SessionRole | null>(null);
   const [coupleMatchedMeal, setCoupleMatchedMeal] = useState<Meal | null>(null);
@@ -142,7 +142,7 @@ export default function App() {
   }
 
   const doPick = () => {
-    setSummerMode(false);
+    summerModeRef.current = false;
     const r = pickMeal(mealsData.meals, selectedMood, recentIds, selectedTime);
     setResult(r);
     trackPick(r.meal.id);
@@ -163,7 +163,7 @@ export default function App() {
   const pickSummer = () => {
     const r = drawSummer();
     if (!r) return;
-    setSummerMode(true);
+    summerModeRef.current = true;
     setResult(r);
     trackPick(r.meal.id);
     setRerollCount(0);
@@ -175,7 +175,7 @@ export default function App() {
 
   const doReroll = () => {
     if (!result) return;
-    const r = summerMode
+    const r = summerModeRef.current
       ? drawSummer(result.meal.id)
       : pickMeal(mealsData.meals, selectedMood, recentIds, selectedTime);
     if (!r) return;
