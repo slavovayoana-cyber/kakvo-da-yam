@@ -28,7 +28,7 @@ import { CoupleLobbyScreen } from './screens/CoupleLobbyScreen';
 import { CoupleSwipeScreen } from './screens/CoupleSwipeScreen';
 import { CoupleMatchScreen } from './screens/CoupleMatchScreen';
 import { ShareCard } from './components/ShareCard';
-import { pickMeal, formatShareText } from './lib/mealPicker';
+import { pickMeal, pickMealById, formatShareText } from './lib/mealPicker';
 import { getTheme } from './lib/moodSystem';
 import {
   type JournalEntry,
@@ -141,6 +141,18 @@ export default function App() {
 
   const doPick = () => {
     const r = pickMeal(mealsData.meals, selectedMood, recentIds, selectedTime);
+    setResult(r);
+    trackPick(r.meal.id);
+    setRerollCount(0);
+    setAnimKey((k) => k + 1);
+    setCookedThisSession(false);
+    setScreen('result');
+    Analytics.mealPicked(r.meal.id, r.moodId, selectedTime);
+  };
+
+  const pickSummerMeal = (mealId: string) => {
+    const r = pickMealById(mealsData.meals, mealId);
+    if (!r) return;
     setResult(r);
     trackPick(r.meal.id);
     setRerollCount(0);
@@ -279,6 +291,7 @@ export default function App() {
           selectedTime={selectedTime}
           setSelectedTime={setSelectedTime}
           onPick={doPick}
+          onPickMeal={pickSummerMeal}
           onOpenJournal={openJournal}
           onOpenSettings={openSettings}
           onOpenCouple={openCoupleLobby}

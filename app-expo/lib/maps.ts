@@ -114,6 +114,14 @@ const NEARBY_OVERRIDES: Record<string, NearbyType> = {
   cornflakes: 'grocery',
   lokum: 'grocery',
   ice_cream_dinner: 'grocery',
+
+  // Summer picks
+  watermelon: 'grocery',
+  watermelon_cheese: 'grocery',
+  grilled_corn: 'grocery',
+  tomatoes_oil: 'grocery',
+  melba: 'cafe',
+  aperol_spritz: 'bar',
 };
 
 export function getNearbyType(mealId: string): NearbyType {
@@ -183,6 +191,8 @@ const SEARCH_OVERRIDES: Record<string, string> = {
   cappuccino: 'cafe',
   frappe: 'cafe',
   fredo_cappuccino: 'greek cafe',
+  melba: 'gelato',
+  aperol_spritz: 'cocktail bar',
   tea: 'tea house',
   lemonade: 'cafe',
   bubble_tea: 'bubble tea',

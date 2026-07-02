@@ -102,6 +102,17 @@ export function pickMeal(
   return { meal, reason, moodId: reasonMood };
 }
 
+/** Build a result for one specific meal (used by the seasonal home section). */
+export function pickMealById(meals: Meal[], id: string): PickResult | null {
+  const meal = meals.find((m) => m.id === id);
+  if (!meal) return null;
+  const usable = meal.moods.filter((mid) => meal.reasons[mid]?.length);
+  const reasonMood = pickRandom(usable.length ? usable : meal.moods);
+  const reasons = meal.reasons[reasonMood] ?? [];
+  const reason = reasons.length ? pickRandom(reasons) : '';
+  return { meal, reason, moodId: reasonMood };
+}
+
 export const REROLL_MESSAGES: (string | null)[] = [
   null,
   'Сериозно? Добре, още един опит...',
