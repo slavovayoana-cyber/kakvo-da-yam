@@ -10,14 +10,8 @@ import { getTheme, MOOD_THEMES, MoodTheme, ALL_THEME } from '../lib/moodSystem';
 import { SUBTITLES } from '../lib/mealPicker';
 import { tapMedium, tapSelection } from '../lib/haptics';
 import { EmojiImage } from '../components/EmojiImage';
-import { SUMMER_MEAL_IDS, isSummerNow } from '../lib/seasonal';
-import mealsJson from '../data/meals.json';
+import { isSummerNow } from '../lib/seasonal';
 import type { MealTime, MoodId, Selection } from '../lib/types';
-
-type SummerMeal = { id: string; emoji: string; name: string };
-const SUMMER_MEALS: SummerMeal[] = SUMMER_MEAL_IDS
-  .map((id) => (mealsJson as { meals: SummerMeal[] }).meals.find((m) => m.id === id))
-  .filter((m): m is SummerMeal => !!m);
 
 const TIME_CHIPS: { id: MealTime; emoji: string; label: string; color: string; colorDeep: string }[] = [
   { id: 'breakfast',    emoji: '🌅', label: 'Закуска',      color: '#F5B97A', colorDeep: '#d9975a' },
@@ -33,7 +27,7 @@ type Props = {
   selectedTime: MealTime | null;
   setSelectedTime: (t: MealTime | null) => void;
   onPick: () => void;
-  onPickMeal: (mealId: string) => void;
+  onPickSummer: () => void;
   onOpenJournal: () => void;
   onOpenSettings: () => void;
   onOpenCouple: () => void;
@@ -43,7 +37,7 @@ type Props = {
 
 export function HomeScreen({
   selectedMood, setSelectedMood, selectedTime, setSelectedTime,
-  onPick, onPickMeal, onOpenJournal, onOpenSettings, onOpenCouple, journalCount, subtitleIdx,
+  onPick, onPickSummer, onOpenJournal, onOpenSettings, onOpenCouple, journalCount, subtitleIdx,
 }: Props) {
   const theme: MoodTheme = getTheme(selectedMood);
   const useMoodType = !!selectedMood && selectedMood !== 'all';
@@ -153,36 +147,6 @@ export function HomeScreen({
           </Animated.Text>
         </View>
 
-        {/* Seasonal: summer suggestions (auto-shows in summer) */}
-        {isSummerNow() && SUMMER_MEALS.length > 0 && (
-          <View style={styles.summerSection}>
-            <Text style={[styles.chipsLabel, { color: theme.ink, opacity: 0.5 }]}>
-              🌞 ЛЕТНИ ПРЕДЛОЖЕНИЯ
-            </Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.summerScrollContent}
-            >
-              {SUMMER_MEALS.map((m) => (
-                <Pressable
-                  key={m.id}
-                  onPress={() => { tapSelection(); onPickMeal(m.id); }}
-                  style={({ pressed }) => [
-                    styles.summerCard,
-                    { borderColor: theme.colorDeep + '22', opacity: pressed ? 0.82 : 1 },
-                  ]}
-                >
-                  <EmojiImage emoji={m.emoji} size={30} />
-                  <Text style={[styles.summerCardText, { color: theme.ink }]} numberOfLines={2}>
-                    {m.name}
-                  </Text>
-                </Pressable>
-              ))}
-            </ScrollView>
-          </View>
-        )}
-
         {/* Chips section */}
         <View style={styles.chipsSection}>
 
@@ -196,6 +160,21 @@ export function HomeScreen({
             style={styles.timeScroll}
             contentContainerStyle={styles.timeScrollContent}
           >
+            {isSummerNow() && (
+              <Pressable
+                key="summer"
+                onPress={() => { tapSelection(); onPickSummer(); }}
+                style={({ pressed }) => [
+                  styles.chip,
+                  { borderColor: '#e0912f', backgroundColor: '#F7C873', opacity: pressed ? 0.85 : 1 },
+                ]}
+              >
+                <EmojiImage emoji="🌞" size={16} />
+                <Text style={[styles.chipText, { color: '#6b3d0a', fontWeight: '700' }]}>
+                  Летни предложения
+                </Text>
+              </Pressable>
+            )}
             {TIME_CHIPS.map((t) => {
               const active = selectedTime === t.id;
               return (

@@ -29,6 +29,7 @@ import { CoupleSwipeScreen } from './screens/CoupleSwipeScreen';
 import { CoupleMatchScreen } from './screens/CoupleMatchScreen';
 import { ShareCard } from './components/ShareCard';
 import { pickMeal, pickMealById, formatShareText } from './lib/mealPicker';
+import { SUMMER_MEAL_IDS } from './lib/seasonal';
 import { getTheme } from './lib/moodSystem';
 import {
   type JournalEntry,
@@ -74,6 +75,7 @@ export default function App() {
   const [recentIds, setRecentIds] = useState<string[]>([]);
   const [journal, setJournal] = useState<JournalEntry[]>([]);
   const [cookedThisSession, setCookedThisSession] = useState(false);
+  const [summerMode, setSummerMode] = useState(false);
   const [coupleSession, setCoupleSession] = useState<CoupleSession | null>(null);
   const [coupleRole, setCoupleRole] = useState<SessionRole | null>(null);
   const [coupleMatchedMeal, setCoupleMatchedMeal] = useState<Meal | null>(null);
@@ -140,6 +142,7 @@ export default function App() {
   }
 
   const doPick = () => {
+    setSummerMode(false);
     const r = pickMeal(mealsData.meals, selectedMood, recentIds, selectedTime);
     setResult(r);
     trackPick(r.meal.id);
@@ -150,9 +153,17 @@ export default function App() {
     Analytics.mealPicked(r.meal.id, r.moodId, selectedTime);
   };
 
-  const pickSummerMeal = (mealId: string) => {
-    const r = pickMealById(mealsData.meals, mealId);
+  // Random meal from the summer pool, avoiding an immediate repeat.
+  const drawSummer = (avoidId?: string): PickResult | null => {
+    const pool = SUMMER_MEAL_IDS.filter((id) => id !== avoidId);
+    const id = pool[Math.floor(Math.random() * pool.length)] ?? SUMMER_MEAL_IDS[0];
+    return pickMealById(mealsData.meals, id);
+  };
+
+  const pickSummer = () => {
+    const r = drawSummer();
     if (!r) return;
+    setSummerMode(true);
     setResult(r);
     trackPick(r.meal.id);
     setRerollCount(0);
@@ -164,7 +175,10 @@ export default function App() {
 
   const doReroll = () => {
     if (!result) return;
-    const r = pickMeal(mealsData.meals, selectedMood, recentIds, selectedTime);
+    const r = summerMode
+      ? drawSummer(result.meal.id)
+      : pickMeal(mealsData.meals, selectedMood, recentIds, selectedTime);
+    if (!r) return;
     setResult(r);
     trackPick(r.meal.id);
     setRerollCount((c) => c + 1);
@@ -291,7 +305,7 @@ export default function App() {
           selectedTime={selectedTime}
           setSelectedTime={setSelectedTime}
           onPick={doPick}
-          onPickMeal={pickSummerMeal}
+          onPickSummer={pickSummer}
           onOpenJournal={openJournal}
           onOpenSettings={openSettings}
           onOpenCouple={openCoupleLobby}
