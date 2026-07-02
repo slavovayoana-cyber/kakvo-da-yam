@@ -1,0 +1,48 @@
+name: OTA ъпдейт (EAS Update)
+
+# Пуска се ръчно от GitHub: раздел "Actions" → "OTA ъпдейт (EAS Update)"
+# → бутон "Run workflow". Промените стигат до телефоните без ъпдейт от магазина.
+#
+# Изисква таен ключ EXPO_TOKEN в: Settings → Secrets and variables → Actions.
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Канал (production = всички; preview = само за тест)"
+        required: true
+        default: "production"
+        type: choice
+        options:
+          - production
+          - preview
+      message:
+        description: "Съобщение за ъпдейта (какво променяш)"
+        required: true
+        default: "Обновяване на съдържанието"
+
+jobs:
+  publish:
+    name: Публикуване на OTA
+    runs-on: ubuntu-latest
+    steps:
+      - name: Изтегляне на кода
+        uses: actions/checkout@v4
+
+      - name: Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Инсталиране на EAS CLI
+        run: npm install -g eas-cli
+
+      - name: Инсталиране на зависимости
+        working-directory: app-expo
+        run: npm ci
+
+      - name: Публикуване на ъпдейта
+        working-directory: app-expo
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: eas update --branch "${{ inputs.branch }}" --message "${{ inputs.message }}" --non-interactive
