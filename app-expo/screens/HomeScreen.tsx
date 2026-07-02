@@ -166,11 +166,11 @@ export function HomeScreen({
                 onPress={() => { tapSelection(); onPickSummer(); }}
                 style={({ pressed }) => [
                   styles.chip,
-                  { borderColor: '#e0912f', backgroundColor: '#F7C873', opacity: pressed ? 0.85 : 1 },
+                  { borderColor: 'rgba(0,0,0,0.08)', backgroundColor: 'rgba(255,255,255,0.55)', opacity: pressed ? 0.85 : 1 },
                 ]}
               >
                 <EmojiImage emoji="🌞" size={16} />
-                <Text style={[styles.chipText, { color: '#6b3d0a', fontWeight: '700' }]}>
+                <Text style={[styles.chipText, { color: theme.ink, fontWeight: '500' }]}>
                   Летни предложения
                 </Text>
               </Pressable>

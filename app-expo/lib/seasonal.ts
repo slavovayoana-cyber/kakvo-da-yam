@@ -17,11 +17,19 @@ export const SUMMER_MEAL_IDS: string[] = [
   'gyros',
   'ice_cream_dinner',
   'melba',
+  'ice_cream_cone',
   'lemonade',
   'smoothie',
+  'fresh_juice',
   'fredo_cappuccino',
+  'frappe',
   'mojito',
   'aperol_spritz',
+  'calamari',
+  'grilled_fish',
+  'greek_salad',
+  'peaches',
+  'gazpacho',
 ];
 
 /** True during the summer months (Jun–Sep) — the section auto-shows/hides. */

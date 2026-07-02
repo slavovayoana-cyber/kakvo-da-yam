@@ -122,6 +122,9 @@ const NEARBY_OVERRIDES: Record<string, NearbyType> = {
   tomatoes_oil: 'grocery',
   melba: 'cafe',
   aperol_spritz: 'bar',
+  peaches: 'grocery',
+  fresh_juice: 'cafe',
+  ice_cream_cone: 'cafe',
 };
 
 export function getNearbyType(mealId: string): NearbyType {
@@ -193,6 +196,12 @@ const SEARCH_OVERRIDES: Record<string, string> = {
   fredo_cappuccino: 'greek cafe',
   melba: 'gelato',
   aperol_spritz: 'cocktail bar',
+  ice_cream_cone: 'gelato',
+  fresh_juice: 'juice bar',
+  calamari: 'seafood restaurant',
+  grilled_fish: 'seafood restaurant',
+  greek_salad: 'greek restaurant',
+  gazpacho: 'spanish restaurant',
   tea: 'tea house',
   lemonade: 'cafe',
   bubble_tea: 'bubble tea',
