@@ -21,7 +21,7 @@ OUT = os.path.join(ROOT, 'lib', 'twemojiData.ts')
 CDN = 'https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/{}.svg'
 
 # Emoji used in the UI chrome that don't come from meals.json.
-EXTRA_EMOJI = ['🥗', '💅', '😂', '🧸', '🇧🇬', '🎲', '🌅', '🍽', '🍎', '🍰', '☕', '🌞']
+EXTRA_EMOJI = ['🥗', '💅', '😂', '🧸', '🇧🇬', '🎲', '🌅', '🍽', '🍎', '🍰', '☕', '🌊']
 
 
 def tokenize(s):
