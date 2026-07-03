@@ -1,4 +1,4 @@
-// Curated seasonal picks shown in the "🌞 Летни предложения" home section.
+// Curated seasonal picks shown in the "🌊 Летни предложения" home section.
 // Light, cold or refreshing meals — easy to edit and ship over-the-air.
 export const SUMMER_MEAL_IDS: string[] = [
   'watermelon',

@@ -169,7 +169,7 @@ export function HomeScreen({
                   { borderColor: 'rgba(0,0,0,0.08)', backgroundColor: 'rgba(255,255,255,0.55)', opacity: pressed ? 0.85 : 1 },
                 ]}
               >
-                <EmojiImage emoji="🌞" size={16} />
+                <EmojiImage emoji="🌊" size={16} />
                 <Text style={[styles.chipText, { color: theme.ink, fontWeight: '500' }]}>
                   Летни предложения
                 </Text>
