@@ -30,6 +30,13 @@ export const SUMMER_MEAL_IDS: string[] = [
   'greek_salad',
   'peaches',
   'gazpacho',
+  'melon_prosciutto',
+  'kyopoolu',
+  'caprese',
+  'fruit_salad',
+  'ceviche',
+  'smoothie_bowl',
+  'sangria',
 ];
 
 /** True during the summer months (Jun–Sep) — the section auto-shows/hides. */
