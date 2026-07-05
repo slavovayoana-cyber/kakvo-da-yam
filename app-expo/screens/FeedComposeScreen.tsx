@@ -127,6 +127,7 @@ export function FeedComposeScreen({ onBack, onPosted }: Props) {
     if (!dishName.trim()) { Alert.alert('Ястие', 'Напиши какво яде.'); return; }
     if (dishRating < 1) { Alert.alert('Оценка', 'Дай оценка на ястието (звезди).'); return; }
     if (kind === 'venue' && !placeName.trim()) { Alert.alert('Заведение', 'Напиши името на заведението.'); return; }
+    if (kind === 'venue' && !placeCity.trim()) { Alert.alert('Град', 'Напиши в кой град е заведението.'); return; }
 
     setSaving(true);
     try {
@@ -211,7 +212,7 @@ export function FeedComposeScreen({ onBack, onPosted }: Props) {
           {kind === 'venue' ? (
             <>
               <View style={styles.group}>
-                <Text style={styles.lbl}>Заведение</Text>
+                <Text style={styles.lbl}>Заведение и град</Text>
                 <TextInput value={placeName} onChangeText={onPlaceNameChange} placeholder="Име на заведението" placeholderTextColor={C.inkSoft} style={styles.input} />
                 {placeSug.length > 0 ? (
                   <View style={styles.sugBox}>
@@ -222,7 +223,7 @@ export function FeedComposeScreen({ onBack, onPosted }: Props) {
                     ))}
                   </View>
                 ) : null}
-                <TextInput value={placeCity} onChangeText={setPlaceCity} placeholder="Град (по избор)" placeholderTextColor={C.inkSoft} style={[styles.input, { marginTop: 8 }]} />
+                <TextInput value={placeCity} onChangeText={setPlaceCity} placeholder="Град (напр. София)" placeholderTextColor={C.inkSoft} style={[styles.input, { marginTop: 8 }]} />
               </View>
               <View style={styles.group}>
                 <Text style={styles.lbl}>Оценка на заведението (по избор)</Text>
