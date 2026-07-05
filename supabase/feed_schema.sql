@@ -61,7 +61,7 @@ create table if not exists public.feed_likes (
 
 -- поддържа like_count автоматично
 create or replace function public.feed_bump_like_count() returns trigger
-language plpgsql as $$
+language plpgsql security definer set search_path = public as $$
 begin
   if (tg_op = 'INSERT') then
     update public.feed_posts set like_count = like_count + 1 where id = new.post_id;
@@ -132,6 +132,15 @@ create policy feed_likes_read      on public.feed_likes    for select using (tru
 create policy feed_likes_insert    on public.feed_likes    for insert with check (true);
 create policy feed_likes_delete    on public.feed_likes    for delete using (true);
 create policy feed_reports_insert  on public.feed_reports  for insert with check (true);
+
+-- ---------- ПРАВА (GRANT) ЗА anon РОЛЯТА ----------
+-- RLS контролира кои РЕДОВЕ, но PostgREST първо иска table-level GRANT за anon.
+-- Без това всяка заявка връща 42501 „permission denied".
+grant select, insert, update on public.feed_profiles     to anon, authenticated;
+grant select, insert         on public.feed_posts        to anon, authenticated;
+grant select, insert, delete on public.feed_likes        to anon, authenticated;
+grant insert                 on public.feed_reports      to anon, authenticated;
+grant select                 on public.feed_place_stats  to anon, authenticated;
 
 -- ---------- ХРАНИЛИЩЕ ЗА СНИМКИ ----------
 insert into storage.buckets (id, name, public)
