@@ -113,6 +113,7 @@ export function FeedScreen({ onBack, onCompose, reloadKey = 0 }: Props) {
   const [showAdmin, setShowAdmin] = useState(false);
   const [adminPosts, setAdminPosts] = useState<FeedPost[]>([]);
   const [adminLoading, setAdminLoading] = useState(false);
+  const [adminTab, setAdminTab] = useState<'review' | 'all'>('review');
   const [pinModal, setPinModal] = useState(false);
   const [pinInput, setPinInput] = useState('');
   const tapRef = useRef(0);
@@ -156,20 +157,31 @@ export function FeedScreen({ onBack, onCompose, reloadKey = 0 }: Props) {
     finally { setAdminLoading(false); }
   };
 
-  const doAdminAct = async (p: FeedPost, action: 'approve' | 'hide' | 'delete') => {
-    const run = async () => {
+  const doAdminAct = async (p: FeedPost, action: 'approve' | 'hide' | 'delete' | 'ban') => {
+    const run = async (removeAuthor = false) => {
       try {
         await adminAct(p.id, action);
-        setAdminPosts((prev) => prev.filter((x) => x.id !== p.id));
+        setAdminPosts((prev) => prev.filter((x) => removeAuthor ? x.author_device_id !== p.author_device_id : x.id !== p.id));
       } catch { Alert.alert('Опа', 'Действието не успя.'); }
     };
     if (action === 'delete') {
       Alert.alert('Изтриване', `Да изтрия „${p.dish_name}" завинаги?`, [
         { text: 'Отказ', style: 'cancel' },
-        { text: 'Изтрий', style: 'destructive', onPress: run },
+        { text: 'Изтрий', style: 'destructive', onPress: () => run() },
+      ]);
+    } else if (action === 'ban') {
+      Alert.alert('Блокиране на автора',
+        `${p.author_nickname ?? 'Този потребител'} няма да може да публикува повече и всичките му постове ще се скрият. Сигурна ли си?`, [
+        { text: 'Отказ', style: 'cancel' },
+        { text: 'Блокирай', style: 'destructive', onPress: () => run(true) },
       ]);
     } else run();
   };
+
+  const adminVisible = adminTab === 'review'
+    ? adminPosts.filter((p) => p.mod_status === 'pending' || p.mod_status === 'rejected' || p.status === 'hidden')
+    : adminPosts;
+  const reviewCount = adminPosts.filter((p) => p.mod_status === 'pending' || p.mod_status === 'rejected' || p.status === 'hidden').length;
 
   // Взима една снимка с възможност за изрязване (crop работи само при 1 наведнъж).
   const pickCropped = async (): Promise<string | null> => {
@@ -511,46 +523,83 @@ export function FeedScreen({ onBack, onCompose, reloadKey = 0 }: Props) {
         <View style={[styles.root, { paddingTop: insets.top }]}>
           <View style={styles.appbar}>
             <Pressable onPress={() => setShowAdmin(false)} hitSlop={10} style={styles.iconbtn}><Text style={styles.iconTxt}>←</Text></Pressable>
-            <Text style={styles.title}>🛡 За преглед</Text>
+            <Text style={styles.title}>🛡 Модерация</Text>
             <Pressable onPress={openAdmin} hitSlop={10} style={styles.iconbtn}><Text style={styles.iconTxt}>⟳</Text></Pressable>
           </View>
+
+          {/* Табове */}
+          <View style={styles.admTabs}>
+            <Pressable onPress={() => setAdminTab('review')} style={[styles.admTab, adminTab === 'review' && styles.admTabOn]}>
+              <Text style={[styles.admTabTxt, adminTab === 'review' && styles.admTabTxtOn]}>⚠️ За преглед{reviewCount ? ` (${reviewCount})` : ''}</Text>
+            </Pressable>
+            <Pressable onPress={() => setAdminTab('all')} style={[styles.admTab, adminTab === 'all' && styles.admTabOn]}>
+              <Text style={[styles.admTabTxt, adminTab === 'all' && styles.admTabTxtOn]}>📋 Всички ({adminPosts.length})</Text>
+            </Pressable>
+          </View>
+
           {adminLoading ? (
             <View style={styles.center}><ActivityIndicator color={C.accent} /></View>
-          ) : adminPosts.length === 0 ? (
+          ) : adminVisible.length === 0 ? (
             <View style={styles.center}>
-              <Text style={styles.emptyEmoji}>✅</Text>
-              <Text style={styles.emptyTitle}>Нищо за преглед</Text>
-              <Text style={styles.emptySub}>Всичко е чисто в момента.</Text>
+              <Text style={styles.emptyEmoji}>{adminTab === 'review' ? '✅' : '🍽️'}</Text>
+              <Text style={styles.emptyTitle}>{adminTab === 'review' ? 'Нищо за преглед' : 'Няма постове'}</Text>
+              <Text style={styles.emptySub}>{adminTab === 'review' ? 'Всичко е чисто в момента.' : ''}</Text>
             </View>
           ) : (
-            <ScrollView contentContainerStyle={{ padding: 14, paddingBottom: 40, gap: 12 }}>
-              {adminPosts.map((p) => {
-                const flagged = p.mod_status === 'rejected' || p.mod_status === 'pending' || p.status === 'hidden';
-                const statusTxt = p.status === 'hidden' ? '🚩 скрита/докладвана'
-                  : p.mod_status === 'rejected' ? '🚫 спряна от AI'
-                  : p.mod_status === 'pending' ? '⏳ чака проверка'
-                  : '✅ публична';
+            <ScrollView contentContainerStyle={{ padding: 14, paddingBottom: insets.bottom + 40, gap: 14 }}>
+              {adminVisible.map((p) => {
+                const photos = (p.photo_urls?.length ? p.photo_urls : (p.photo_url ? [p.photo_url] : []));
+                const isVenue = p.kind === 'venue';
+                const status = p.status === 'hidden'
+                  ? { txt: '🚩 Скрита / докладвана', bg: '#B22222' }
+                  : p.mod_status === 'rejected' ? { txt: '🚫 Спряна от AI', bg: '#B22222' }
+                  : p.mod_status === 'pending' ? { txt: '⏳ Чака преглед', bg: '#9A7B4F' }
+                  : { txt: '✅ Публична', bg: C.green };
+                const notPublic = p.mod_status !== 'approved' || p.status !== 'active';
                 return (
                 <View key={p.id} style={styles.admCard}>
-                  <View style={styles.admTop}>
-                    <View style={styles.admThumb}>
-                      <FoodImage uri={p.photo_urls?.[0] ?? p.photo_url} emoji={foodEmoji(p)} size="small" />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.admName} numberOfLines={1}>{p.dish_name}</Text>
-                      <Text style={[styles.admMeta, flagged && { color: C.accentDeep, fontWeight: '700' }]}>
-                        {statusTxt}{p.place_name ? ` · ${p.place_name}` : ''}
-                      </Text>
-                      {p.comment ? <Text style={styles.admMeta} numberOfLines={3}>„{p.comment}"</Text> : null}
-                    </View>
+                  {/* статус лента */}
+                  <View style={[styles.admStatus, { backgroundColor: status.bg }]}>
+                    <Text style={styles.admStatusTxt}>{status.txt}</Text>
+                    <Text style={styles.admStatusTxt}>{isVenue ? '🍴 Заведение' : '🍲 Вкъщи'}</Text>
                   </View>
+
+                  {/* снимки */}
+                  {photos.length ? (
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+                      {photos.map((u, i) => (
+                        <Image key={i} source={{ uri: u }} style={styles.admPhoto} resizeMode="cover" />
+                      ))}
+                    </ScrollView>
+                  ) : (
+                    <View style={styles.admNoPhoto}><Text style={{ fontSize: 40 }}>{foodEmoji(p)}</Text></View>
+                  )}
+
+                  {/* текст */}
+                  <Text style={styles.admName}>{p.dish_name}</Text>
+                  <Text style={styles.admAuthor}>от {p.author_nickname ?? 'Анонимен'}</Text>
+                  {isVenue && p.place_name ? (
+                    <Text style={styles.admMeta}>📍 {p.place_name}{p.place_city ? ` · ${p.place_city}` : ''}</Text>
+                  ) : null}
+                  <Text style={styles.admMeta}>
+                    🍴 Ястие: {'★'.repeat(p.dish_rating)}{isVenue && p.place_rating ? `   🏠 Място: ${'★'.repeat(p.place_rating)}` : ''}
+                  </Text>
+                  {p.comment ? <Text style={styles.admComment}>„{p.comment}"</Text> : null}
+                  {!isVenue && p.ingredients ? <Text style={styles.admMeta} numberOfLines={4}>🧂 {p.ingredients}</Text> : null}
+                  {!isVenue && p.steps ? <Text style={styles.admMeta} numberOfLines={6}>📋 {p.steps}</Text> : null}
+
+                  {/* действия */}
                   <View style={styles.admBtnRow}>
-                    {p.mod_status !== 'approved' || p.status !== 'active' ? (
+                    {notPublic ? (
                       <Pressable onPress={() => doAdminAct(p, 'approve')} style={[styles.admBtn, styles.admApprove]}><Text style={styles.admBtnTxt}>✓ Одобри</Text></Pressable>
-                    ) : null}
-                    <Pressable onPress={() => doAdminAct(p, 'hide')} style={[styles.admBtn, styles.admHide]}><Text style={styles.admBtnTxt}>Скрий</Text></Pressable>
+                    ) : (
+                      <Pressable onPress={() => doAdminAct(p, 'hide')} style={[styles.admBtn, styles.admHide]}><Text style={styles.admBtnTxt}>🙈 Скрий</Text></Pressable>
+                    )}
                     <Pressable onPress={() => doAdminAct(p, 'delete')} style={[styles.admBtn, styles.admDelete]}><Text style={styles.admBtnTxt}>🗑 Изтрий</Text></Pressable>
                   </View>
+                  <Pressable onPress={() => doAdminAct(p, 'ban')} style={[styles.admBtn, styles.admBan, { marginTop: 8 }]}>
+                    <Text style={styles.admBtnTxt}>🚫 Блокирай автора (спри да публикува)</Text>
+                  </Pressable>
                 </View>
                 );
               })}
@@ -813,16 +862,26 @@ const styles = StyleSheet.create({
   modBadge: { position: 'absolute', left: 10, bottom: 10, backgroundColor: 'rgba(0,0,0,0.62)', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
   modBadgeBad: { backgroundColor: 'rgba(178,34,34,0.85)' },
   modBadgeTxt: { color: '#fff', fontSize: 11, fontWeight: '700' },
-  admCard: { backgroundColor: C.card, borderRadius: 14, borderWidth: 1, borderColor: C.line, padding: 10, gap: 10 },
-  admTop: { flexDirection: 'row', gap: 10, alignItems: 'center' },
-  admThumb: { width: 56, height: 56, borderRadius: 10, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-  admName: { fontSize: 15, fontWeight: '700', color: C.ink },
-  admMeta: { fontSize: 12, color: C.inkSoft, marginTop: 2 },
-  admBtnRow: { flexDirection: 'row', gap: 8 },
-  admBtn: { flex: 1, borderRadius: 10, paddingVertical: 10, alignItems: 'center' },
+  admTabs: { flexDirection: 'row', gap: 8, paddingHorizontal: 14, paddingBottom: 10 },
+  admTab: { flex: 1, borderRadius: 999, paddingVertical: 9, alignItems: 'center', backgroundColor: C.card, borderWidth: 1, borderColor: C.line },
+  admTabOn: { backgroundColor: C.accent, borderColor: C.accent },
+  admTabTxt: { fontSize: 13, fontWeight: '700', color: C.inkSoft },
+  admTabTxtOn: { color: '#fff' },
+  admCard: { backgroundColor: C.card, borderRadius: 16, borderWidth: 1, borderColor: C.line, padding: 12, gap: 8 },
+  admStatus: { flexDirection: 'row', justifyContent: 'space-between', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
+  admStatusTxt: { color: '#fff', fontSize: 12, fontWeight: '700' },
+  admPhoto: { width: 150, height: 112, borderRadius: 10, backgroundColor: C.bg },
+  admNoPhoto: { height: 90, borderRadius: 10, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' },
+  admName: { fontSize: 17, fontWeight: '800', color: C.ink, marginTop: 2 },
+  admAuthor: { fontSize: 13, color: C.inkSoft, fontWeight: '600' },
+  admMeta: { fontSize: 13, color: C.inkSoft },
+  admComment: { fontSize: 14, color: C.ink, fontStyle: 'italic', lineHeight: 20 },
+  admBtnRow: { flexDirection: 'row', gap: 8, marginTop: 4 },
+  admBtn: { flex: 1, borderRadius: 10, paddingVertical: 11, alignItems: 'center' },
   admApprove: { backgroundColor: C.green },
   admHide: { backgroundColor: '#9A7B4F' },
   admDelete: { backgroundColor: '#B22222' },
+  admBan: { flex: 0, backgroundColor: '#5A2D2D' },
   admBtnTxt: { color: '#fff', fontSize: 13, fontWeight: '700' },
   cardBody: { padding: 13 },
   cardTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
