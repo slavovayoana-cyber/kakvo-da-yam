@@ -373,3 +373,36 @@ export async function blockAuthor(authorDeviceId: string): Promise<void> {
     await AsyncStorage.setItem(BLOCKED_KEY, JSON.stringify(ids));
   }
 }
+
+// ---------- Скрит преглед (само за собственика) ----------
+// Тайни кодове (същите и в supabase/feed_admin.sql). PIN отключва екрана
+// локално; ADMIN_SECRET оторизира действията в базата.
+const ADMIN_SECRET = 'kdy_admin_9c1f7b3e';
+export const ADMIN_PIN = '204060';
+const ADMIN_UNLOCK_KEY = 'kakvodayam:admin_unlocked:v1';
+
+export async function isAdminUnlocked(): Promise<boolean> {
+  try { return (await AsyncStorage.getItem(ADMIN_UNLOCK_KEY)) === '1'; } catch { return false; }
+}
+
+export async function unlockAdmin(pin: string): Promise<boolean> {
+  if (pin.trim() !== ADMIN_PIN) return false;
+  await AsyncStorage.setItem(ADMIN_UNLOCK_KEY, '1');
+  return true;
+}
+
+export async function lockAdmin(): Promise<void> {
+  await AsyncStorage.removeItem(ADMIN_UNLOCK_KEY);
+}
+
+/** Постове за преглед: чакащи AI, спрени, или скрити от доклади. */
+export async function adminListPosts(): Promise<FeedPost[]> {
+  const { data, error } = await supabase.rpc('feed_admin_list', { p_secret: ADMIN_SECRET });
+  if (error) throw error;
+  return (data ?? []) as FeedPost[];
+}
+
+export async function adminAct(postId: string, action: 'approve' | 'hide'): Promise<void> {
+  const { error } = await supabase.rpc('feed_admin_act', { p_id: postId, p_action: action, p_secret: ADMIN_SECRET });
+  if (error) throw error;
+}

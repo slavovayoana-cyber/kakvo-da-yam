@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator,
   Alert, Image, RefreshControl, Modal, Dimensions, TextInput,
@@ -9,6 +9,7 @@ import * as ImagePicker from 'expo-image-picker';
 import {
   listVenuePosts, listHomePosts, toggleLike, reportPost, hidePostLocally,
   getSavedIds, toggleSave, adoptCuratedPosts, updatePostPhotos, blockAuthor,
+  isAdminUnlocked, unlockAdmin, adminListPosts, adminAct,
 } from '../lib/feed';
 import { addJournalEntry } from '../lib/journal';
 import type { FeedPost, PostKind, VenueFilters, HomeFilters, FeedSort, Difficulty } from '../lib/feedTypes';
@@ -107,10 +108,52 @@ export function FeedScreen({ onBack, onCompose, reloadKey = 0 }: Props) {
   const [savedOnly, setSavedOnly] = useState(false);
   const [detailPost, setDetailPost] = useState<FeedPost | null>(null);
 
+  // Скрит преглед (само за собственика)
+  const [adminOn, setAdminOn] = useState(false);
+  const [showAdmin, setShowAdmin] = useState(false);
+  const [adminPosts, setAdminPosts] = useState<FeedPost[]>([]);
+  const [adminLoading, setAdminLoading] = useState(false);
+  const [pinModal, setPinModal] = useState(false);
+  const [pinInput, setPinInput] = useState('');
+  const tapRef = useRef(0);
+  const tapTimer = useRef<any>(null);
+
   const activeCount = kind === 'venue' ? countVenue(venueFilters) : countHome(homeFilters);
 
   useEffect(() => { getSavedIds().then((ids) => setSavedSet(new Set(ids))).catch(() => {}); }, [reloadKey]);
   useEffect(() => { adoptCuratedPosts(); }, []);
+  useEffect(() => { isAdminUnlocked().then(setAdminOn).catch(() => {}); }, []);
+
+  const onTitleTap = () => {
+    tapRef.current += 1;
+    if (tapTimer.current) clearTimeout(tapTimer.current);
+    tapTimer.current = setTimeout(() => { tapRef.current = 0; }, 1500);
+    if (tapRef.current >= 7) {
+      tapRef.current = 0;
+      if (adminOn) openAdmin(); else { setPinInput(''); setPinModal(true); }
+    }
+  };
+
+  const submitPin = async () => {
+    const ok = await unlockAdmin(pinInput).catch(() => false);
+    if (ok) { setPinModal(false); setAdminOn(true); openAdmin(); }
+    else Alert.alert('Грешен код', 'Опитай пак.');
+  };
+
+  const openAdmin = async () => {
+    setShowAdmin(true);
+    setAdminLoading(true);
+    try { setAdminPosts(await adminListPosts()); }
+    catch { Alert.alert('Опа', 'Неуспешно зареждане.'); }
+    finally { setAdminLoading(false); }
+  };
+
+  const doAdminAct = async (p: FeedPost, action: 'approve' | 'hide') => {
+    try {
+      await adminAct(p.id, action);
+      setAdminPosts((prev) => prev.filter((x) => x.id !== p.id));
+    } catch { Alert.alert('Опа', 'Действието не успя.'); }
+  };
 
   // Взима една снимка с възможност за изрязване (crop работи само при 1 наведнъж).
   const pickCropped = async (): Promise<string | null> => {
@@ -228,8 +271,15 @@ export function FeedScreen({ onBack, onCompose, reloadKey = 0 }: Props) {
         <Pressable onPress={onBack} hitSlop={10} style={styles.iconbtn}>
           <Text style={styles.iconTxt}>←</Text>
         </Pressable>
-        <Text style={styles.title}>Какво <Text style={{ color: C.accent }}>APP</Text>на?</Text>
+        <Pressable onPress={onTitleTap}>
+          <Text style={styles.title}>Какво <Text style={{ color: C.accent }}>APP</Text>на?</Text>
+        </Pressable>
         <View style={styles.viewtoggle}>
+          {adminOn ? (
+            <Pressable onPress={openAdmin} hitSlop={8} style={styles.vbtn}>
+              <Text style={styles.vtxt}>🛡</Text>
+            </Pressable>
+          ) : null}
           <Pressable onPress={() => setView('cards')} style={[styles.vbtn, view === 'cards' && styles.vbtnOn]}>
             <Text style={[styles.vtxt, view === 'cards' && styles.vtxtOn]}>▦</Text>
           </Pressable>
@@ -415,6 +465,66 @@ export function FeedScreen({ onBack, onCompose, reloadKey = 0 }: Props) {
           )}
         </View>
        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* PIN за скрит преглед */}
+      <Modal visible={pinModal} transparent animationType="fade" onRequestClose={() => setPinModal(false)}>
+        <Pressable style={styles.backdrop} onPress={() => setPinModal(false)} />
+        <View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
+          <View style={styles.sheetHead}>
+            <Text style={styles.sheetTitle}>Код за преглед</Text>
+            <Pressable onPress={() => setPinModal(false)} hitSlop={10}><Text style={styles.sheetX}>✕</Text></Pressable>
+          </View>
+          <TextInput
+            value={pinInput} onChangeText={setPinInput}
+            placeholder="Въведи PIN" placeholderTextColor={C.inkSoft}
+            keyboardType="number-pad" secureTextEntry autoFocus
+            style={styles.cityInput}
+          />
+          <Pressable onPress={submitPin} style={[styles.applyBtn, { marginTop: 4 }]}>
+            <Text style={styles.applyTxt}>Отключи</Text>
+          </Pressable>
+        </View>
+      </Modal>
+
+      {/* Скрит преглед (само за собственика) */}
+      <Modal visible={showAdmin} animationType="slide" onRequestClose={() => setShowAdmin(false)}>
+        <View style={[styles.root, { paddingTop: insets.top }]}>
+          <View style={styles.appbar}>
+            <Pressable onPress={() => setShowAdmin(false)} hitSlop={10} style={styles.iconbtn}><Text style={styles.iconTxt}>←</Text></Pressable>
+            <Text style={styles.title}>🛡 За преглед</Text>
+            <Pressable onPress={openAdmin} hitSlop={10} style={styles.iconbtn}><Text style={styles.iconTxt}>⟳</Text></Pressable>
+          </View>
+          {adminLoading ? (
+            <View style={styles.center}><ActivityIndicator color={C.accent} /></View>
+          ) : adminPosts.length === 0 ? (
+            <View style={styles.center}>
+              <Text style={styles.emptyEmoji}>✅</Text>
+              <Text style={styles.emptyTitle}>Нищо за преглед</Text>
+              <Text style={styles.emptySub}>Всичко е чисто в момента.</Text>
+            </View>
+          ) : (
+            <ScrollView contentContainerStyle={{ padding: 14, paddingBottom: 40, gap: 12 }}>
+              {adminPosts.map((p) => (
+                <View key={p.id} style={styles.admCard}>
+                  <FoodImage uri={p.photo_urls?.[0] ?? p.photo_url} emoji={foodEmoji(p)} size="small" />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.admName} numberOfLines={1}>{p.dish_name}</Text>
+                    <Text style={styles.admMeta}>
+                      {p.mod_status === 'rejected' ? '🚫 спряна от AI' : p.mod_status === 'pending' ? '⏳ чака проверка' : '🚩 докладвана'}
+                      {p.place_name ? ` · ${p.place_name}` : ''}
+                    </Text>
+                    {p.comment ? <Text style={styles.admMeta} numberOfLines={2}>{p.comment}</Text> : null}
+                  </View>
+                  <View style={{ gap: 6 }}>
+                    <Pressable onPress={() => doAdminAct(p, 'approve')} style={[styles.admBtn, styles.admApprove]}><Text style={styles.admBtnTxt}>Одобри</Text></Pressable>
+                    <Pressable onPress={() => doAdminAct(p, 'hide')} style={[styles.admBtn, styles.admHide]}><Text style={styles.admBtnTxt}>Скрий</Text></Pressable>
+                  </View>
+                </View>
+              ))}
+            </ScrollView>
+          )}
+        </View>
       </Modal>
 
       {/* Detail */}
@@ -671,6 +781,13 @@ const styles = StyleSheet.create({
   modBadge: { position: 'absolute', left: 10, bottom: 10, backgroundColor: 'rgba(0,0,0,0.62)', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
   modBadgeBad: { backgroundColor: 'rgba(178,34,34,0.85)' },
   modBadgeTxt: { color: '#fff', fontSize: 11, fontWeight: '700' },
+  admCard: { flexDirection: 'row', gap: 10, alignItems: 'center', backgroundColor: C.card, borderRadius: 14, borderWidth: 1, borderColor: C.line, padding: 10 },
+  admName: { fontSize: 15, fontWeight: '700', color: C.ink },
+  admMeta: { fontSize: 12, color: C.inkSoft, marginTop: 2 },
+  admBtn: { borderRadius: 10, paddingHorizontal: 12, paddingVertical: 7, alignItems: 'center' },
+  admApprove: { backgroundColor: C.green },
+  admHide: { backgroundColor: '#B22222' },
+  admBtnTxt: { color: '#fff', fontSize: 12, fontWeight: '700' },
   cardBody: { padding: 13 },
   cardTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   dish: { flex: 1, fontFamily: 'InstrumentSerif_400Regular', fontSize: 20, color: C.ink },
