@@ -97,13 +97,22 @@ export async function uploadPhoto(localUri: string, contentType = 'image/jpeg'):
   return data.publicUrl;
 }
 
+/** Качва няколко локални снимки и връща публичните им URL-и. */
+export async function uploadPhotos(localUris: string[]): Promise<string[]> {
+  const urls: string[] = [];
+  for (const uri of localUris.slice(0, 3)) {
+    urls.push(await uploadPhoto(uri));
+  }
+  return urls;
+}
+
 // ---------- Създаване ----------
 
 export async function createVenuePost(input: NewVenuePost): Promise<FeedPost> {
   const profile = await requireProfile();
   const userId = await getUserId();
   if (!userId) throw new Error('NO_AUTH');
-  const photo_url = input.photoUri ? await uploadPhoto(input.photoUri) : null;
+  const photo_urls = input.photoUris?.length ? await uploadPhotos(input.photoUris) : [];
 
   const { data, error } = await supabase
     .from('feed_posts')
@@ -111,7 +120,8 @@ export async function createVenuePost(input: NewVenuePost): Promise<FeedPost> {
       author_device_id: profile.device_id,
       user_id: userId,
       kind: 'venue',
-      photo_url,
+      photo_urls,
+      photo_url: photo_urls[0] ?? null,
       dish_name: input.dishName.trim(),
       comment: input.comment?.trim() || null,
       dish_rating: input.dishRating,
@@ -135,7 +145,7 @@ export async function createHomePost(input: NewHomePost): Promise<FeedPost> {
   const profile = await requireProfile();
   const userId = await getUserId();
   if (!userId) throw new Error('NO_AUTH');
-  const photo_url = input.photoUri ? await uploadPhoto(input.photoUri) : null;
+  const photo_urls = input.photoUris?.length ? await uploadPhotos(input.photoUris) : [];
 
   const { data, error } = await supabase
     .from('feed_posts')
@@ -143,7 +153,8 @@ export async function createHomePost(input: NewHomePost): Promise<FeedPost> {
       author_device_id: profile.device_id,
       user_id: userId,
       kind: 'home',
-      photo_url,
+      photo_urls,
+      photo_url: photo_urls[0] ?? null,
       dish_name: input.dishName.trim(),
       comment: input.comment?.trim() || null,
       dish_rating: input.dishRating,
@@ -235,12 +246,15 @@ export async function adoptCuratedPosts(): Promise<void> {
   try { await supabase.rpc('feed_adopt_curated'); } catch { /* тихо */ }
 }
 
-/** Качва нова снимка и я записва на поста (само за свои постове — RLS). */
-export async function updatePostPhoto(postId: string, localUri: string): Promise<string> {
-  const url = await uploadPhoto(localUri);
-  const { error } = await supabase.from('feed_posts').update({ photo_url: url }).eq('id', postId);
+/** Качва нови снимки (до 3) и ги записва на поста (само за свои постове — RLS). */
+export async function updatePostPhotos(postId: string, localUris: string[]): Promise<string[]> {
+  const urls = await uploadPhotos(localUris);
+  const { error } = await supabase
+    .from('feed_posts')
+    .update({ photo_urls: urls, photo_url: urls[0] ?? null })
+    .eq('id', postId);
   if (error) throw error;
-  return url;
+  return urls;
 }
 
 /** Предложения за заведения от вече публикуваните постове (без външно API). */
