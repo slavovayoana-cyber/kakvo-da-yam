@@ -1,7 +1,7 @@
 // Слой за връзка с Supabase за секцията „Какво APPна?".
 // Изисква таблиците от supabase/feed_schema.sql.
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { supabase, getDeviceId } from './supabase';
+import { supabase, getDeviceId, getUserId } from './supabase';
 import type {
   FeedPost, FeedProfile, NewVenuePost, NewHomePost,
   VenueFilters, HomeFilters, PlaceStat,
@@ -26,10 +26,12 @@ export async function getMyProfile(): Promise<FeedProfile | null> {
 
 export async function setNickname(nickname: string): Promise<FeedProfile> {
   const deviceId = await getDeviceId();
+  const userId = await getUserId();
+  if (!userId) throw new Error('NO_AUTH');
   const clean = nickname.trim();
   const { data, error } = await supabase
     .from('feed_profiles')
-    .upsert({ device_id: deviceId, nickname: clean }, { onConflict: 'device_id' })
+    .upsert({ device_id: deviceId, user_id: userId, nickname: clean }, { onConflict: 'device_id' })
     .select()
     .single();
   if (error) throw error;
@@ -73,12 +75,15 @@ export async function uploadPhoto(localUri: string, contentType = 'image/jpeg'):
 
 export async function createVenuePost(input: NewVenuePost): Promise<FeedPost> {
   const profile = await requireProfile();
+  const userId = await getUserId();
+  if (!userId) throw new Error('NO_AUTH');
   const photo_url = input.photoUri ? await uploadPhoto(input.photoUri) : null;
 
   const { data, error } = await supabase
     .from('feed_posts')
     .insert({
       author_device_id: profile.device_id,
+      user_id: userId,
       kind: 'venue',
       photo_url,
       dish_name: input.dishName.trim(),
@@ -102,12 +107,15 @@ export async function createVenuePost(input: NewVenuePost): Promise<FeedPost> {
 
 export async function createHomePost(input: NewHomePost): Promise<FeedPost> {
   const profile = await requireProfile();
+  const userId = await getUserId();
+  if (!userId) throw new Error('NO_AUTH');
   const photo_url = input.photoUri ? await uploadPhoto(input.photoUri) : null;
 
   const { data, error } = await supabase
     .from('feed_posts')
     .insert({
       author_device_id: profile.device_id,
+      user_id: userId,
       kind: 'home',
       photo_url,
       dish_name: input.dishName.trim(),
@@ -223,6 +231,8 @@ export async function getPlaceStats(placeKey: string): Promise<PlaceStat | null>
 
 export async function toggleLike(postId: string, currentlyLiked: boolean): Promise<boolean> {
   const deviceId = await getDeviceId();
+  const userId = await getUserId();
+  if (!userId) throw new Error('NO_AUTH');
   if (currentlyLiked) {
     const { error } = await supabase
       .from('feed_likes')
@@ -234,7 +244,7 @@ export async function toggleLike(postId: string, currentlyLiked: boolean): Promi
   }
   const { error } = await supabase
     .from('feed_likes')
-    .insert({ post_id: postId, device_id: deviceId });
+    .insert({ post_id: postId, device_id: deviceId, user_id: userId });
   if (error) throw error;
   return true;
 }
@@ -243,9 +253,10 @@ export async function toggleLike(postId: string, currentlyLiked: boolean): Promi
 
 export async function reportPost(postId: string, reason?: string): Promise<void> {
   const deviceId = await getDeviceId();
+  const userId = await getUserId();
   const { error } = await supabase
     .from('feed_reports')
-    .insert({ post_id: postId, device_id: deviceId, reason: reason ?? null });
+    .insert({ post_id: postId, device_id: deviceId, user_id: userId, reason: reason ?? null });
   if (error) throw error;
   // и скриваме локално веднага
   await hidePostLocally(postId);

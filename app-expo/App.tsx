@@ -40,6 +40,7 @@ import {
 } from './lib/journal';
 import { openMealNearby, openMealRecipe } from './lib/maps';
 import { runFirstLaunchSetup } from './lib/notifications';
+import { ensureAuth } from './lib/supabase';
 import { initAnalytics, Analytics } from './lib/analytics';
 import type {
   CoupleSession,
@@ -96,6 +97,7 @@ export default function App() {
     (async () => {
       await runFirstLaunchSetup();
       await initAnalytics();
+      ensureAuth().catch(() => {}); // невидим анонимен акаунт за feed-а
     })();
   }, []);
 
