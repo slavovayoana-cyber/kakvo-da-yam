@@ -247,8 +247,12 @@ export async function adoptCuratedPosts(): Promise<void> {
 }
 
 /** Качва нови снимки (до 3) и ги записва на поста (само за свои постове — RLS). */
-export async function updatePostPhotos(postId: string, localUris: string[]): Promise<string[]> {
-  const urls = await uploadPhotos(localUris);
+export async function updatePostPhotos(postId: string, uris: string[]): Promise<string[]> {
+  // Вече качените снимки (http/https) се запазват както са; качват се само новите локални.
+  const urls: string[] = [];
+  for (const uri of uris.slice(0, 3)) {
+    urls.push(/^https?:/.test(uri) ? uri : await uploadPhoto(uri));
+  }
   const { error } = await supabase
     .from('feed_posts')
     .update({ photo_urls: urls, photo_url: urls[0] ?? null })

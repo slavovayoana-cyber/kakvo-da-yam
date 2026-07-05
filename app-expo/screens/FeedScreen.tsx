@@ -112,18 +112,42 @@ export function FeedScreen({ onBack, onCompose, reloadKey = 0 }: Props) {
   useEffect(() => { getSavedIds().then((ids) => setSavedSet(new Set(ids))).catch(() => {}); }, [reloadKey]);
   useEffect(() => { adoptCuratedPosts(); }, []);
 
-  const changePhoto = async (p: FeedPost) => {
-    try {
-      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!perm.granted) { Alert.alert('Няма разрешение', 'Разреши достъп до снимките в настройките.'); return; }
-      const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsMultipleSelection: true, selectionLimit: 3, quality: 0.7 });
-      if (res.canceled || !res.assets?.length) return;
-      const urls = await updatePostPhotos(p.id, res.assets.map((a) => a.uri));
-      setDetailPost({ ...p, photo_url: urls[0] ?? null, photo_urls: urls });
-      setPosts((prev) => prev.map((x) => x.id === p.id ? { ...x, photo_url: urls[0] ?? null, photo_urls: urls } : x));
-    } catch {
-      Alert.alert('Опа', 'Смяната не успя. Можеш да сменяш снимки само на свои постове.');
-    }
+  // Взима една снимка с възможност за изрязване (crop работи само при 1 наведнъж).
+  const pickCropped = async (): Promise<string | null> => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) { Alert.alert('Няма разрешение', 'Разреши достъп до снимките в настройките.'); return null; }
+    const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [4, 3], quality: 0.7 });
+    if (res.canceled || !res.assets?.length) return null;
+    return res.assets[0].uri;
+  };
+
+  const applyPhotos = async (p: FeedPost, uris: string[]) => {
+    const urls = await updatePostPhotos(p.id, uris);
+    setDetailPost((d) => (d && d.id === p.id ? { ...d, photo_url: urls[0] ?? null, photo_urls: urls } : d));
+    setPosts((prev) => prev.map((x) => x.id === p.id ? { ...x, photo_url: urls[0] ?? null, photo_urls: urls } : x));
+  };
+
+  const changePhoto = (p: FeedPost) => {
+    const existing = p.photo_urls?.length ? p.photo_urls : (p.photo_url ? [p.photo_url] : []);
+    const addOne = async () => {
+      try {
+        if (existing.length >= 3) { Alert.alert('Лимит', 'Вече има 3 снимки. Избери „Замени всички", за да започнеш наново.'); return; }
+        const uri = await pickCropped();
+        if (uri) await applyPhotos(p, [...existing, uri]);
+      } catch { Alert.alert('Опа', 'Смяната не успя. Можеш да сменяш снимки само на свои постове.'); }
+    };
+    const replaceAll = async () => {
+      try {
+        const uri = await pickCropped();
+        if (uri) await applyPhotos(p, [uri]);
+      } catch { Alert.alert('Опа', 'Смяната не успя. Можеш да сменяш снимки само на свои постове.'); }
+    };
+    if (existing.length === 0) { addOne(); return; }
+    Alert.alert('Снимки', 'Всяка снимка можеш да изрежеш преди да я добавиш.', [
+      { text: `➕ Добави снимка (${existing.length}/3)`, onPress: addOne },
+      { text: '🔄 Замени всички (започни наново)', onPress: replaceAll },
+      { text: 'Отказ', style: 'cancel' as const },
+    ]);
   };
 
   const onSave = async (p: FeedPost) => {
