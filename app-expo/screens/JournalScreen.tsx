@@ -135,7 +135,7 @@ export function JournalScreen({ entries, onBack, onChange }: Props) {
       <ScrollView
         contentContainerStyle={[
           styles.scroll,
-          { paddingBottom: Math.max(insets.bottom, 32) },
+          { paddingBottom: 16 },
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -272,7 +272,7 @@ function SavedList({ posts, loading, inkColor }: { posts: FeedPost[]; loading: b
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, paddingTop: 56, paddingBottom: 24, overflow: 'hidden' },
+  root: { flex: 1, paddingTop: 56, overflow: 'hidden' },
   jseg: { flexDirection: 'row', gap: 6, backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: 999, padding: 4, marginBottom: 16 },
   jsegBtn: { flex: 1, alignItems: 'center', paddingVertical: 9, borderRadius: 999 },
   jsegOn: { backgroundColor: '#C2674A' },

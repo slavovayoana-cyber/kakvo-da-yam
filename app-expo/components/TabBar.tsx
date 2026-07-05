@@ -3,7 +3,7 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const C = {
-  bar: 'rgba(255,255,255,0.94)', line: 'rgba(59,42,34,0.10)',
+  bar: '#FBEEE3', line: 'rgba(59,42,34,0.08)',
   ink: '#3B2A22', inkSoft: '#9a8578', accent: '#C2674A', accentDeep: '#A94E33',
 };
 
