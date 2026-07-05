@@ -264,116 +264,120 @@ export function FeedScreen({ onBack, onCompose, reloadKey = 0 }: Props) {
       )}
 
       {/* Filter sheet */}
-      <Modal visible={showFilters} transparent animationType="slide" onRequestClose={() => setShowFilters(false)}>
-        <Pressable style={styles.backdrop} onPress={() => setShowFilters(false)} />
+      <Modal visible={showFilters} transparent animationType="slide" onRequestClose={() => { if (showCity) setShowCity(false); else setShowFilters(false); }}>
+        <Pressable style={styles.backdrop} onPress={() => { if (showCity) setShowCity(false); else setShowFilters(false); }} />
         <View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
-          <View style={styles.sheetHead}>
-            <Text style={styles.sheetTitle}>Филтри</Text>
-            <Pressable onPress={() => setShowFilters(false)} hitSlop={10}><Text style={styles.sheetX}>✕</Text></Pressable>
-          </View>
-          <ScrollView style={{ maxHeight: 420 }} contentContainerStyle={{ gap: 16, paddingBottom: 8 }}>
-            {kind === 'venue' ? (
-              <>
-                <View style={{ gap: 8 }}>
-                  <Text style={styles.fgLabel}>Град</Text>
-                  <Pressable onPress={() => { setCitySearch(''); setShowCity(true); }} style={styles.cityBtn}>
-                    <Text style={[styles.cityBtnTxt, !venueFilters.city && { color: C.inkSoft }]}>{venueFilters.city ?? 'Всички градове'}</Text>
-                    <Text style={styles.cityChevron}>▾</Text>
+          {showCity ? (
+            /* --- Изглед „Избери град" (в същия прозорец) --- */
+            <>
+              <View style={styles.sheetHead}>
+                <Pressable onPress={() => setShowCity(false)} hitSlop={10}><Text style={styles.sheetBack}>←</Text></Pressable>
+                <Text style={styles.sheetTitle}>Избери град</Text>
+                <View style={{ width: 24 }} />
+              </View>
+              <TextInput
+                value={citySearch} onChangeText={setCitySearch}
+                placeholder="Търси или напиши град…" placeholderTextColor={C.inkSoft}
+                autoFocus
+                style={styles.cityInput}
+              />
+              <ScrollView style={{ maxHeight: 340 }} keyboardShouldPersistTaps="handled">
+                <Pressable style={styles.cityItem} onPress={() => { setVenueFilters((f) => ({ ...f, city: undefined })); setShowCity(false); }}>
+                  <Text style={styles.cityItemTxt}>Всички градове</Text>
+                </Pressable>
+                {BG_CITIES.filter((c) => c.toLowerCase().includes(citySearch.trim().toLowerCase())).map((c) => (
+                  <Pressable key={c} style={styles.cityItem} onPress={() => { setVenueFilters((f) => ({ ...f, city: c })); setShowCity(false); }}>
+                    <Text style={styles.cityItemTxt}>{c}</Text>
                   </Pressable>
-                </View>
-                <FGroup label="Сортирай по">
-                  {SORTS.map((s) => (
-                    <FChip key={s.key} on={(venueFilters.sort ?? 'recent') === s.key}
-                      onPress={() => setVenueFilters((f) => ({ ...f, sort: s.key }))}>{s.label}</FChip>
-                  ))}
-                </FGroup>
-                <FGroup label="Кухня">
-                  {VENUE_CUISINES.map((c) => (
-                    <FChip key={c} on={venueFilters.cuisine === c}
-                      onPress={() => setVenueFilters((f) => ({ ...f, cuisine: f.cuisine === c ? undefined : c }))}>{c}</FChip>
-                  ))}
-                </FGroup>
-                <FGroup label="Тип място">
-                  {PLACE_TYPES.map((t) => (
-                    <FChip key={t.key} on={venueFilters.placeType === t.key}
-                      onPress={() => setVenueFilters((f) => ({ ...f, placeType: f.placeType === t.key ? undefined : t.key }))}>{t.label}</FChip>
-                  ))}
-                </FGroup>
-                <FGroup label="Само">
-                  <FChip on={venueFilters.minDishRating === 4}
-                    onPress={() => setVenueFilters((f) => ({ ...f, minDishRating: f.minDishRating ? undefined : 4 }))}>⭐ 4+</FChip>
-                  <FChip on={!!venueFilters.worthIt}
-                    onPress={() => setVenueFilters((f) => ({ ...f, worthIt: f.worthIt ? undefined : true }))}>💰 Струваше си</FChip>
-                </FGroup>
-              </>
-            ) : (
-              <>
-                <FGroup label="Сортирай по">
-                  {SORTS.map((s) => (
-                    <FChip key={s.key} on={(homeFilters.sort ?? 'recent') === s.key}
-                      onPress={() => setHomeFilters((f) => ({ ...f, sort: s.key }))}>{s.label}</FChip>
-                  ))}
-                </FGroup>
-                <FGroup label="Време">
-                  {PREPS.map((p) => (
-                    <FChip key={p.key} on={homeFilters.maxPrep === p.key}
-                      onPress={() => setHomeFilters((f) => ({ ...f, maxPrep: f.maxPrep === p.key ? undefined : p.key }))}>{p.label}</FChip>
-                  ))}
-                </FGroup>
-                <FGroup label="Трудност">
-                  {DIFFS.map((d) => (
-                    <FChip key={d.key} on={homeFilters.difficulty === d.key}
-                      onPress={() => setHomeFilters((f) => ({ ...f, difficulty: f.difficulty === d.key ? undefined : d.key }))}>{d.label}</FChip>
-                  ))}
-                </FGroup>
-                <FGroup label="Диета">
-                  {DIETS.map((d) => (
-                    <FChip key={d.key} on={homeFilters.diet === d.key}
-                      onPress={() => setHomeFilters((f) => ({ ...f, diet: f.diet === d.key ? undefined : d.key }))}>{d.label}</FChip>
-                  ))}
-                </FGroup>
-              </>
-            )}
-          </ScrollView>
-          <View style={styles.sheetFoot}>
-            <Pressable onPress={() => (kind === 'venue' ? setVenueFilters({}) : setHomeFilters({}))} style={styles.clearBtn}>
-              <Text style={styles.clearTxt}>Изчисти</Text>
-            </Pressable>
-            <Pressable onPress={() => setShowFilters(false)} style={styles.applyBtn}>
-              <Text style={styles.applyTxt}>Готово</Text>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
-
-      {/* City picker */}
-      <Modal visible={showCity} transparent animationType="fade" onRequestClose={() => setShowCity(false)}>
-        <Pressable style={styles.backdrop} onPress={() => setShowCity(false)} />
-        <View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
-          <View style={styles.sheetHead}>
-            <Text style={styles.sheetTitle}>Избери град</Text>
-            <Pressable onPress={() => setShowCity(false)} hitSlop={10}><Text style={styles.sheetX}>✕</Text></Pressable>
-          </View>
-          <TextInput
-            value={citySearch} onChangeText={setCitySearch}
-            placeholder="Търси или напиши град…" placeholderTextColor={C.inkSoft}
-            style={styles.cityInput}
-          />
-          <ScrollView style={{ maxHeight: 320 }} keyboardShouldPersistTaps="handled">
-            <Pressable style={styles.cityItem} onPress={() => { setVenueFilters((f) => ({ ...f, city: undefined })); setShowCity(false); }}>
-              <Text style={styles.cityItemTxt}>Всички градове</Text>
-            </Pressable>
-            {BG_CITIES.filter((c) => c.toLowerCase().includes(citySearch.trim().toLowerCase())).map((c) => (
-              <Pressable key={c} style={styles.cityItem} onPress={() => { setVenueFilters((f) => ({ ...f, city: c })); setShowCity(false); }}>
-                <Text style={styles.cityItemTxt}>{c}</Text>
-              </Pressable>
-            ))}
-            {citySearch.trim() && !BG_CITIES.some((c) => c.toLowerCase() === citySearch.trim().toLowerCase()) ? (
-              <Pressable style={styles.cityItem} onPress={() => { setVenueFilters((f) => ({ ...f, city: citySearch.trim() })); setShowCity(false); }}>
-                <Text style={[styles.cityItemTxt, { color: C.accentDeep, fontWeight: '700' }]}>Търси „{citySearch.trim()}"</Text>
-              </Pressable>
-            ) : null}
-          </ScrollView>
+                ))}
+                {citySearch.trim() && !BG_CITIES.some((c) => c.toLowerCase() === citySearch.trim().toLowerCase()) ? (
+                  <Pressable style={styles.cityItem} onPress={() => { setVenueFilters((f) => ({ ...f, city: citySearch.trim() })); setShowCity(false); }}>
+                    <Text style={[styles.cityItemTxt, { color: C.accentDeep, fontWeight: '700' }]}>Търси „{citySearch.trim()}"</Text>
+                  </Pressable>
+                ) : null}
+              </ScrollView>
+            </>
+          ) : (
+            /* --- Изглед „Филтри" --- */
+            <>
+              <View style={styles.sheetHead}>
+                <Text style={styles.sheetTitle}>Филтри</Text>
+                <Pressable onPress={() => setShowFilters(false)} hitSlop={10}><Text style={styles.sheetX}>✕</Text></Pressable>
+              </View>
+              <ScrollView style={{ maxHeight: 420 }} contentContainerStyle={{ gap: 16, paddingBottom: 8 }}>
+                {kind === 'venue' ? (
+                  <>
+                    <View style={{ gap: 8 }}>
+                      <Text style={styles.fgLabel}>Град</Text>
+                      <Pressable onPress={() => { setCitySearch(''); setShowCity(true); }} style={styles.cityBtn}>
+                        <Text style={[styles.cityBtnTxt, !venueFilters.city && { color: C.inkSoft }]}>{venueFilters.city ?? 'Всички градове'}</Text>
+                        <Text style={styles.cityChevron}>▾</Text>
+                      </Pressable>
+                    </View>
+                    <FGroup label="Сортирай по">
+                      {SORTS.map((s) => (
+                        <FChip key={s.key} on={(venueFilters.sort ?? 'recent') === s.key}
+                          onPress={() => setVenueFilters((f) => ({ ...f, sort: s.key }))}>{s.label}</FChip>
+                      ))}
+                    </FGroup>
+                    <FGroup label="Кухня">
+                      {VENUE_CUISINES.map((c) => (
+                        <FChip key={c} on={venueFilters.cuisine === c}
+                          onPress={() => setVenueFilters((f) => ({ ...f, cuisine: f.cuisine === c ? undefined : c }))}>{c}</FChip>
+                      ))}
+                    </FGroup>
+                    <FGroup label="Тип място">
+                      {PLACE_TYPES.map((t) => (
+                        <FChip key={t.key} on={venueFilters.placeType === t.key}
+                          onPress={() => setVenueFilters((f) => ({ ...f, placeType: f.placeType === t.key ? undefined : t.key }))}>{t.label}</FChip>
+                      ))}
+                    </FGroup>
+                    <FGroup label="Само">
+                      <FChip on={venueFilters.minDishRating === 4}
+                        onPress={() => setVenueFilters((f) => ({ ...f, minDishRating: f.minDishRating ? undefined : 4 }))}>⭐ 4+</FChip>
+                      <FChip on={!!venueFilters.worthIt}
+                        onPress={() => setVenueFilters((f) => ({ ...f, worthIt: f.worthIt ? undefined : true }))}>💰 Струваше си</FChip>
+                    </FGroup>
+                  </>
+                ) : (
+                  <>
+                    <FGroup label="Сортирай по">
+                      {SORTS.map((s) => (
+                        <FChip key={s.key} on={(homeFilters.sort ?? 'recent') === s.key}
+                          onPress={() => setHomeFilters((f) => ({ ...f, sort: s.key }))}>{s.label}</FChip>
+                      ))}
+                    </FGroup>
+                    <FGroup label="Време">
+                      {PREPS.map((p) => (
+                        <FChip key={p.key} on={homeFilters.maxPrep === p.key}
+                          onPress={() => setHomeFilters((f) => ({ ...f, maxPrep: f.maxPrep === p.key ? undefined : p.key }))}>{p.label}</FChip>
+                      ))}
+                    </FGroup>
+                    <FGroup label="Трудност">
+                      {DIFFS.map((d) => (
+                        <FChip key={d.key} on={homeFilters.difficulty === d.key}
+                          onPress={() => setHomeFilters((f) => ({ ...f, difficulty: f.difficulty === d.key ? undefined : d.key }))}>{d.label}</FChip>
+                      ))}
+                    </FGroup>
+                    <FGroup label="Диета">
+                      {DIETS.map((d) => (
+                        <FChip key={d.key} on={homeFilters.diet === d.key}
+                          onPress={() => setHomeFilters((f) => ({ ...f, diet: f.diet === d.key ? undefined : d.key }))}>{d.label}</FChip>
+                      ))}
+                    </FGroup>
+                  </>
+                )}
+              </ScrollView>
+              <View style={styles.sheetFoot}>
+                <Pressable onPress={() => (kind === 'venue' ? setVenueFilters({}) : setHomeFilters({}))} style={styles.clearBtn}>
+                  <Text style={styles.clearTxt}>Изчисти</Text>
+                </Pressable>
+                <Pressable onPress={() => setShowFilters(false)} style={styles.applyBtn}>
+                  <Text style={styles.applyTxt}>Готово</Text>
+                </Pressable>
+              </View>
+            </>
+          )}
         </View>
       </Modal>
 
@@ -591,6 +595,7 @@ const styles = StyleSheet.create({
   sheetHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
   sheetTitle: { fontFamily: 'InstrumentSerif_400Regular', fontSize: 24, color: C.ink },
   sheetX: { fontSize: 18, color: C.inkSoft },
+  sheetBack: { fontSize: 22, color: C.ink, fontWeight: '700' },
   fgLabel: { fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.6, color: C.inkSoft },
   fgChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   fchip: { paddingHorizontal: 13, paddingVertical: 8, borderRadius: 999, backgroundColor: C.chip, borderWidth: 1, borderColor: C.line },
