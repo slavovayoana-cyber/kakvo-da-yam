@@ -289,7 +289,7 @@ export function FeedComposeScreen({ onBack, onPosted }: Props) {
 
           <View style={styles.group}>
             <Text style={styles.lbl}>Кажи нещо (по избор)</Text>
-            <TextInput value={comment} onChangeText={setComment} placeholder="Струваше ли си? Какво да поръчат другите?" placeholderTextColor={C.inkSoft} style={[styles.input, styles.multi]} multiline maxLength={500} />
+            <TextInput value={comment} onChangeText={setComment} placeholder={kind === 'venue' ? 'Струваше ли си? Какво да поръчат другите?' : 'Съвет, трик или защо ти харесва?'} placeholderTextColor={C.inkSoft} style={[styles.input, styles.multi]} multiline maxLength={500} />
           </View>
         </ScrollView>
 
