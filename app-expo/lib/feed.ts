@@ -9,7 +9,33 @@ import type {
 
 const PHOTO_BUCKET = 'feed-photos';
 const HIDDEN_KEY = 'kakvodayam:feed_hidden:v1';
+const SAVED_KEY = 'kakvodayam:feed_saved:v1';
 const PAGE = 20;
+
+// ---------- Запазени рецепти (локално) ----------
+
+export async function getSavedIds(): Promise<string[]> {
+  try {
+    const raw = await AsyncStorage.getItem(SAVED_KEY);
+    return raw ? (JSON.parse(raw) as string[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Превключва „запазено" за пост; връща новото състояние (true = вече е запазено). */
+export async function toggleSave(postId: string): Promise<boolean> {
+  const ids = await getSavedIds();
+  const idx = ids.indexOf(postId);
+  if (idx >= 0) {
+    ids.splice(idx, 1);
+    await AsyncStorage.setItem(SAVED_KEY, JSON.stringify(ids));
+    return false;
+  }
+  ids.unshift(postId);
+  await AsyncStorage.setItem(SAVED_KEY, JSON.stringify(ids));
+  return true;
+}
 
 // ---------- Профил (прякор) ----------
 

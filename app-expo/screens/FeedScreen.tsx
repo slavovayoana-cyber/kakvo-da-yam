@@ -6,7 +6,9 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   listVenuePosts, listHomePosts, toggleLike, reportPost, hidePostLocally,
+  getSavedIds, toggleSave,
 } from '../lib/feed';
+import { addJournalEntry } from '../lib/journal';
 import type { FeedPost, PostKind, VenueFilters, HomeFilters, FeedSort, Difficulty } from '../lib/feedTypes';
 
 const C = {
@@ -69,8 +71,32 @@ export function FeedScreen({ onBack, onCompose, reloadKey = 0 }: Props) {
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [savedSet, setSavedSet] = useState<Set<string>>(new Set());
+  const [savedOnly, setSavedOnly] = useState(false);
 
   const activeCount = kind === 'venue' ? countVenue(venueFilters) : countHome(homeFilters);
+
+  useEffect(() => { getSavedIds().then((ids) => setSavedSet(new Set(ids))).catch(() => {}); }, [reloadKey]);
+
+  const onSave = async (p: FeedPost) => {
+    const nowSaved = await toggleSave(p.id);
+    setSavedSet((prev) => {
+      const next = new Set(prev);
+      if (nowSaved) next.add(p.id); else next.delete(p.id);
+      return next;
+    });
+  };
+
+  const onCooked = async (p: FeedPost) => {
+    try {
+      await addJournalEntry({ mealId: p.id, mealName: p.dish_name, mealEmoji: '🍲', moodId: 'comfort' });
+      Alert.alert('Браво! 🍽️', 'Записахме го в Дневника ти.');
+    } catch {
+      Alert.alert('Опа', 'Не успяхме да го запишем. Опитай пак.');
+    }
+  };
+
+  const visiblePosts = savedOnly ? posts.filter((p) => savedSet.has(p.id)) : posts;
 
   const load = useCallback(async () => {
     try {
@@ -148,6 +174,9 @@ export function FeedScreen({ onBack, onCompose, reloadKey = 0 }: Props) {
         <Pressable onPress={() => setShowFilters(true)} style={[styles.cr, styles.crFilt]}>
           <Text style={[styles.crTxt, styles.crTxtOn]}>⚙ Филтри{activeCount ? ` · ${activeCount}` : ''}</Text>
         </Pressable>
+        <Pressable onPress={() => setSavedOnly((v) => !v)} style={[styles.cr, savedOnly && styles.crOn]}>
+          <Text style={[styles.crTxt, savedOnly && styles.crTxtOn]}>💾 Запазени</Text>
+        </Pressable>
         {kind === 'venue'
           ? VENUE_CUISINES.map((c) => {
               const on = venueFilters.cuisine === c;
@@ -170,20 +199,20 @@ export function FeedScreen({ onBack, onCompose, reloadKey = 0 }: Props) {
       {/* Feed */}
       {loading ? (
         <View style={styles.center}><ActivityIndicator color={C.accent} /></View>
-      ) : posts.length === 0 ? (
+      ) : visiblePosts.length === 0 ? (
         <View style={styles.center}>
-          <Text style={styles.emptyEmoji}>🍽️</Text>
-          <Text style={styles.emptyTitle}>Все още няма постове</Text>
-          <Text style={styles.emptySub}>Бъди първата! Сподели какво яде.</Text>
+          <Text style={styles.emptyEmoji}>{savedOnly ? '💾' : '🍽️'}</Text>
+          <Text style={styles.emptyTitle}>{savedOnly ? 'Няма запазени тук' : 'Все още няма постове'}</Text>
+          <Text style={styles.emptySub}>{savedOnly ? 'Докосни 🔖 на рецепта, за да я запазиш.' : 'Бъди първата! Сподели какво яде.'}</Text>
         </View>
       ) : (
         <ScrollView
           contentContainerStyle={{ padding: 14, paddingBottom: 120 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.accent} />}
         >
-          {posts.map((p) => view === 'cards'
-            ? <PostCard key={p.id} post={p} onLike={() => onLike(p)} onMore={() => onMore(p)} />
-            : <PostRow key={p.id} post={p} onLike={() => onLike(p)} onMore={() => onMore(p)} />)}
+          {visiblePosts.map((p) => view === 'cards'
+            ? <PostCard key={p.id} post={p} saved={savedSet.has(p.id)} onLike={() => onLike(p)} onMore={() => onMore(p)} onSave={() => onSave(p)} onCooked={() => onCooked(p)} />
+            : <PostRow key={p.id} post={p} saved={savedSet.has(p.id)} onLike={() => onLike(p)} onMore={() => onMore(p)} onSave={() => onSave(p)} />)}
         </ScrollView>
       )}
 
@@ -288,7 +317,7 @@ function FChip({ on, onPress, children }: { on: boolean; onPress: () => void; ch
   );
 }
 
-function PostCard({ post, onLike, onMore }: { post: FeedPost; onLike: () => void; onMore: () => void }) {
+function PostCard({ post, saved, onLike, onMore, onSave, onCooked }: { post: FeedPost; saved: boolean; onLike: () => void; onMore: () => void; onSave: () => void; onCooked: () => void }) {
   const isVenue = post.kind === 'venue';
   return (
     <View style={styles.card}>
@@ -332,20 +361,31 @@ function PostCard({ post, onLike, onMore }: { post: FeedPost; onLike: () => void
           <Text style={styles.recipe} numberOfLines={6}>👩‍🍳 {post.steps}</Text>
         ) : null}
 
+        {!isVenue ? (
+          <Pressable onPress={onCooked} style={styles.cookedBtn}>
+            <Text style={styles.cookedTxt}>🍳 Готвих го</Text>
+          </Pressable>
+        ) : null}
+
         <View style={styles.foot}>
           <Text style={styles.who}>{post.author_nickname ?? 'Анонимен'}</Text>
-          <Pressable onPress={onLike} hitSlop={8}>
-            <Text style={[styles.like, post.liked_by_me && styles.likeOn]}>
-              {post.liked_by_me ? '❤️' : '🤍'} {post.like_count}
-            </Text>
-          </Pressable>
+          <View style={styles.footActions}>
+            <Pressable onPress={onSave} hitSlop={8}>
+              <Text style={[styles.save, saved && styles.saveOn]}>{saved ? '🔖' : '📑'}</Text>
+            </Pressable>
+            <Pressable onPress={onLike} hitSlop={8}>
+              <Text style={[styles.like, post.liked_by_me && styles.likeOn]}>
+                {post.liked_by_me ? '❤️' : '🤍'} {post.like_count}
+              </Text>
+            </Pressable>
+          </View>
         </View>
       </View>
     </View>
   );
 }
 
-function PostRow({ post, onLike, onMore }: { post: FeedPost; onLike: () => void; onMore: () => void }) {
+function PostRow({ post, saved, onLike, onMore, onSave }: { post: FeedPost; saved: boolean; onLike: () => void; onMore: () => void; onSave: () => void }) {
   const isVenue = post.kind === 'venue';
   return (
     <Pressable onLongPress={onMore} style={styles.lrow}>
@@ -365,6 +405,9 @@ function PostRow({ post, onLike, onMore }: { post: FeedPost; onLike: () => void;
           {!isVenue && post.prep_minutes ? ` · ⏱️ ${post.prep_minutes} мин` : ''}
         </Text>
       </View>
+      <Pressable onPress={onSave} hitSlop={8}>
+        <Text style={[styles.save, saved && styles.saveOn]}>{saved ? '🔖' : '📑'}</Text>
+      </Pressable>
       <Pressable onPress={onLike} hitSlop={8}>
         <Text style={[styles.like, post.liked_by_me && styles.likeOn]}>
           {post.liked_by_me ? '❤️' : '🤍'} {post.like_count}
@@ -446,9 +489,14 @@ const styles = StyleSheet.create({
   comment: { fontSize: 13.5, lineHeight: 20, color: C.ink, marginBottom: 8 },
   recipe: { fontSize: 12.5, lineHeight: 18, color: C.inkSoft, marginBottom: 6 },
   foot: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 2 },
+  footActions: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   who: { fontSize: 12.5, fontWeight: '700', color: C.ink },
   like: { fontSize: 13, fontWeight: '700', color: C.inkSoft },
   likeOn: { color: C.accent },
+  save: { fontSize: 16, color: C.inkSoft },
+  saveOn: { color: C.accent },
+  cookedBtn: { alignSelf: 'flex-start', backgroundColor: C.accent, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 9, marginBottom: 10 },
+  cookedTxt: { color: '#fff', fontSize: 13.5, fontWeight: '700' },
 
   lrow: { flexDirection: 'row', alignItems: 'center', gap: 11, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 16, padding: 8, marginBottom: 10 },
   lphoto: { width: 52, height: 52, borderRadius: 12, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: '#EEDFD2' },
