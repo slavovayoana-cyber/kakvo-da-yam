@@ -3,6 +3,10 @@
 //  Пуска се при нов пост (DB тригер feed_posts_moderate).
 //  Проверява снимките през Sightengine и записва mod_status.
 //
+//  Записът се прави през RPC feed_set_moderation (SECURITY DEFINER),
+//  защото подаваният ключ невинаги действа като service_role → RLS
+//  връщаше 403 при директен PATCH.
+//
 //  Тайни (Edge Functions → Secrets):
 //    SIGHTENGINE_USER, SIGHTENGINE_SECRET
 //  (SUPABASE_URL и SUPABASE_SERVICE_ROLE_KEY се подават автоматично.)
@@ -15,6 +19,8 @@ const SERVICE_KEY =
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
   Deno.env.get("SERVICE_ROLE_KEY") ??
   "";
+// Споделен таен код с DB функцията feed_set_moderation (не е потребителски ключ).
+const DB_SECRET = "kdy_mod_a7f3c9e21b";
 
 const MODELS = "nudity-2.1,gore-2.0,weapon,offensive-2.0,recreational_drug";
 const T = { nudity: 0.6, gore: 0.6, weapon: 0.7, offensive: 0.6, drugs: 0.7 };
@@ -47,17 +53,16 @@ async function checkImage(url: string): Promise<Verdict> {
   return { unsafe, labels: { nudity: nudityScore, gore, weapon, offensive, drugs } };
 }
 
-// Връща HTTP статуса на записа, за да можем да го видим при дебъг.
+// Записва решението през SECURITY DEFINER RPC (заобикаля RLS). Връща HTTP статуса.
 async function setStatus(id: string, status: string, labels: unknown): Promise<number> {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/feed_posts?id=eq.${id}`, {
-    method: "PATCH",
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/feed_set_moderation`, {
+    method: "POST",
     headers: {
       apikey: SERVICE_KEY,
       Authorization: `Bearer ${SERVICE_KEY}`,
       "Content-Type": "application/json",
-      Prefer: "return=minimal",
     },
-    body: JSON.stringify({ mod_status: status, mod_labels: labels }),
+    body: JSON.stringify({ p_id: id, p_status: status, p_labels: labels, p_secret: DB_SECRET }),
   });
   return res.status;
 }
@@ -77,7 +82,7 @@ Deno.serve(async (req) => {
 
     if (urls.length === 0) {
       const code = await setStatus(id, "approved", { note: "no photos" });
-      return new Response(`approved (no photos) | patch=${code}`, { status: 200 });
+      return new Response(`approved (no photos) | rpc=${code}`, { status: 200 });
     }
 
     const results: Verdict[] = [];
@@ -89,7 +94,7 @@ Deno.serve(async (req) => {
     const verdict = unsafe ? "rejected" : "approved";
     const code = await setStatus(id, verdict, { images: results.map((r) => r.labels) });
 
-    return new Response(`${verdict} | patch=${code}`, { status: 200 });
+    return new Response(`${verdict} | rpc=${code}`, { status: 200 });
   } catch (e) {
     return new Response(`error: ${String(e)}`, { status: 200 });
   }
