@@ -4,9 +4,10 @@ import {
   Alert, Image, RefreshControl, Modal,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as ImagePicker from 'expo-image-picker';
 import {
   listVenuePosts, listHomePosts, toggleLike, reportPost, hidePostLocally,
-  getSavedIds, toggleSave,
+  getSavedIds, toggleSave, adoptCuratedPosts, updatePostPhoto,
 } from '../lib/feed';
 import { addJournalEntry } from '../lib/journal';
 import type { FeedPost, PostKind, VenueFilters, HomeFilters, FeedSort, Difficulty } from '../lib/feedTypes';
@@ -99,6 +100,21 @@ export function FeedScreen({ onBack, onCompose, reloadKey = 0 }: Props) {
   const activeCount = kind === 'venue' ? countVenue(venueFilters) : countHome(homeFilters);
 
   useEffect(() => { getSavedIds().then((ids) => setSavedSet(new Set(ids))).catch(() => {}); }, [reloadKey]);
+  useEffect(() => { adoptCuratedPosts(); }, []);
+
+  const changePhoto = async (p: FeedPost) => {
+    try {
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) { Alert.alert('Няма разрешение', 'Разреши достъп до снимките в настройките.'); return; }
+      const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [4, 3], quality: 0.7 });
+      if (res.canceled || !res.assets?.[0]) return;
+      const url = await updatePostPhoto(p.id, res.assets[0].uri);
+      setDetailPost({ ...p, photo_url: url });
+      setPosts((prev) => prev.map((x) => x.id === p.id ? { ...x, photo_url: url } : x));
+    } catch {
+      Alert.alert('Опа', 'Смяната не успя. Можеш да сменяш снимки само на свои постове.');
+    }
+  };
 
   const onSave = async (p: FeedPost) => {
     const nowSaved = await toggleSave(p.id);
@@ -365,6 +381,9 @@ export function FeedScreen({ onBack, onCompose, reloadKey = 0 }: Props) {
                     <Text style={styles.saveBtnTxt}>{savedSet.has(detailPost.id) ? '🔖 Запазено' : '📑 Запази'}</Text>
                   </Pressable>
                 </View>
+                <Pressable onPress={() => changePhoto(detailPost)} style={styles.photoBtn}>
+                  <Text style={styles.photoBtnTxt}>📷 Промени снимка</Text>
+                </Pressable>
               </View>
             </ScrollView>
           </View>
@@ -572,6 +591,8 @@ const styles = StyleSheet.create({
   dActions: { flexDirection: 'row', gap: 10, marginTop: 8 },
   saveBtn: { flex: 1, borderWidth: 1, borderColor: C.line, borderRadius: 12, paddingVertical: 12, alignItems: 'center', backgroundColor: C.chip },
   saveBtnTxt: { fontSize: 14, fontWeight: '700', color: C.ink },
+  photoBtn: { borderWidth: 1, borderColor: C.line, borderRadius: 12, paddingVertical: 12, alignItems: 'center', backgroundColor: C.chip },
+  photoBtnTxt: { fontSize: 14, fontWeight: '700', color: C.accentDeep },
 
   lrow: { flexDirection: 'row', alignItems: 'center', gap: 11, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 16, padding: 8, marginBottom: 10 },
   lphoto: { width: 52, height: 52, borderRadius: 12, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: '#EEDFD2' },
