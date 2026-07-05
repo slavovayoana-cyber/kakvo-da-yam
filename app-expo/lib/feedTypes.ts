@@ -15,6 +15,7 @@ export interface FeedPost {
   author_device_id: string;
   kind: PostKind;
   photo_url: string | null;
+  photo_urls?: string[] | null;
   dish_name: string;
   comment: string | null;
   dish_rating: number;
@@ -51,7 +52,7 @@ export interface NewVenuePost {
   dishName: string;
   comment?: string;
   dishRating: number;
-  photoUri?: string;      // локален uri (качва се), иначе празно
+  photoUris?: string[];   // до 3 локални uri (качват се)
   placeName: string;
   placeCity?: string;
   placeMapsUrl?: string;
@@ -66,7 +67,7 @@ export interface NewHomePost {
   dishName: string;
   comment?: string;
   dishRating: number;
-  photoUri?: string;
+  photoUris?: string[];
   prepMinutes?: number;
   difficulty?: Difficulty;
   servings?: number;

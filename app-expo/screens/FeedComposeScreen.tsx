@@ -45,7 +45,7 @@ export function FeedComposeScreen({ onBack, onPosted }: Props) {
   const [nickname, setNick] = useState('');
   const [kind, setKind] = useState<PostKind>('venue');
   const [saving, setSaving] = useState(false);
-  const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [photoUris, setPhotoUris] = useState<string[]>([]);
 
   // common
   const [dishName, setDishName] = useState('');
@@ -89,6 +89,8 @@ export function FeedComposeScreen({ onBack, onPosted }: Props) {
   };
 
   const pickFrom = async (source: 'library' | 'camera') => {
+    const remaining = 3 - photoUris.length;
+    if (remaining <= 0) { Alert.alert('Лимит', 'Може до 3 снимки.'); return; }
     try {
       const perm = source === 'camera'
         ? await ImagePicker.requestCameraPermissionsAsync()
@@ -97,24 +99,22 @@ export function FeedComposeScreen({ onBack, onPosted }: Props) {
         Alert.alert('Няма разрешение', 'За да добавиш снимка, разреши достъп в настройките.');
         return;
       }
-      const opts: ImagePicker.ImagePickerOptions = {
-        mediaTypes: ['images'],
-        allowsEditing: true, aspect: [4, 3], quality: 0.7,
-      };
       const res = source === 'camera'
-        ? await ImagePicker.launchCameraAsync(opts)
-        : await ImagePicker.launchImageLibraryAsync(opts);
-      if (!res.canceled && res.assets?.[0]) setPhotoUri(res.assets[0].uri);
+        ? await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [4, 3], quality: 0.7 })
+        : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsMultipleSelection: true, selectionLimit: remaining, quality: 0.7 });
+      if (!res.canceled && res.assets?.length) {
+        const uris = res.assets.map((a) => a.uri);
+        setPhotoUris((prev) => [...prev, ...uris].slice(0, 3));
+      }
     } catch {
       Alert.alert('Проблем', 'Неуспешно избиране на снимка.');
     }
   };
 
   const choosePhoto = () => {
-    Alert.alert('Снимка', undefined, [
+    Alert.alert('Снимка', 'Може до 3 снимки', [
       { text: '📷 Направи снимка', onPress: () => pickFrom('camera') },
       { text: '🖼️ Избери от галерията', onPress: () => pickFrom('library') },
-      ...(photoUri ? [{ text: '🗑️ Махни снимката', style: 'destructive' as const, onPress: () => setPhotoUri(null) }] : []),
       { text: 'Отказ', style: 'cancel' as const },
     ]);
   };
@@ -136,7 +136,7 @@ export function FeedComposeScreen({ onBack, onPosted }: Props) {
         const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
           `${placeName} ${placeCity}`.trim())}`;
         await createVenuePost({
-          dishName, dishRating, comment, photoUri: photoUri || undefined,
+          dishName, dishRating, comment, photoUris: photoUris.length ? photoUris : undefined,
           placeName, placeCity: placeCity || undefined, placeMapsUrl: mapsUrl,
           placeRating: placeRating || undefined,
           worthIt: worthIt ?? undefined,
@@ -144,7 +144,7 @@ export function FeedComposeScreen({ onBack, onPosted }: Props) {
         });
       } else {
         await createHomePost({
-          dishName, dishRating, comment, photoUri: photoUri || undefined,
+          dishName, dishRating, comment, photoUris: photoUris.length ? photoUris : undefined,
           prepMinutes: prep ? parseInt(prep, 10) : undefined,
           difficulty: difficulty || undefined,
           servings: servings ? parseInt(servings, 10) : undefined,
@@ -187,17 +187,23 @@ export function FeedComposeScreen({ onBack, onPosted }: Props) {
             ))}
           </View>
 
-          {/* Photo */}
-          <Pressable onPress={choosePhoto} style={styles.photoStub}>
-            {photoUri ? (
-              <Image source={{ uri: photoUri }} style={styles.photoPreview} />
-            ) : (
-              <>
-                <Text style={{ fontSize: 30 }}>📷</Text>
-                <Text style={styles.photoStubTxt}>Добави снимка</Text>
-              </>
-            )}
-          </Pressable>
+          {/* Photos (до 3) */}
+          <View style={styles.photoRow}>
+            {photoUris.map((u, i) => (
+              <View key={i} style={styles.thumb}>
+                <Image source={{ uri: u }} style={styles.photoPreview} />
+                <Pressable style={styles.thumbX} onPress={() => setPhotoUris((prev) => prev.filter((_, j) => j !== i))} hitSlop={6}>
+                  <Text style={styles.thumbXtxt}>✕</Text>
+                </Pressable>
+              </View>
+            ))}
+            {photoUris.length < 3 ? (
+              <Pressable onPress={choosePhoto} style={styles.addThumb}>
+                <Text style={{ fontSize: 26 }}>📷</Text>
+                <Text style={styles.photoStubTxt}>Снимка</Text>
+              </Pressable>
+            ) : null}
+          </View>
 
           <View style={styles.group}>
             <Text style={styles.lbl}>Какво яде?</Text>
@@ -326,8 +332,12 @@ const styles = StyleSheet.create({
   segTxt: { fontSize: 14, fontWeight: '700', color: C.inkSoft },
   segTxtOn: { color: '#fff' },
 
-  photoStub: { height: 150, borderRadius: 16, borderWidth: 2, borderStyle: 'dashed', borderColor: C.line, alignItems: 'center', justifyContent: 'center', gap: 4, backgroundColor: C.chip, overflow: 'hidden' },
-  photoStubTxt: { fontSize: 12.5, color: C.inkSoft, fontWeight: '600' },
+  photoRow: { flexDirection: 'row', gap: 10, flexWrap: 'wrap' },
+  thumb: { width: 96, height: 96, borderRadius: 14, overflow: 'hidden', backgroundColor: C.chip },
+  addThumb: { width: 96, height: 96, borderRadius: 14, borderWidth: 2, borderStyle: 'dashed', borderColor: C.line, alignItems: 'center', justifyContent: 'center', gap: 2, backgroundColor: C.chip },
+  thumbX: { position: 'absolute', top: 4, right: 4, width: 22, height: 22, borderRadius: 11, backgroundColor: 'rgba(0,0,0,0.55)', alignItems: 'center', justifyContent: 'center' },
+  thumbXtxt: { color: '#fff', fontSize: 12, fontWeight: '700' },
+  photoStubTxt: { fontSize: 12, color: C.inkSoft, fontWeight: '600' },
   photoPreview: { width: '100%', height: '100%' },
 
   rowChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },

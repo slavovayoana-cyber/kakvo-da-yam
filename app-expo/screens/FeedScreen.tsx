@@ -1,13 +1,13 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator,
-  Alert, Image, RefreshControl, Modal,
+  Alert, Image, RefreshControl, Modal, Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import {
   listVenuePosts, listHomePosts, toggleLike, reportPost, hidePostLocally,
-  getSavedIds, toggleSave, adoptCuratedPosts, updatePostPhoto,
+  getSavedIds, toggleSave, adoptCuratedPosts, updatePostPhotos,
 } from '../lib/feed';
 import { addJournalEntry } from '../lib/journal';
 import type { FeedPost, PostKind, VenueFilters, HomeFilters, FeedSort, Difficulty } from '../lib/feedTypes';
@@ -106,11 +106,11 @@ export function FeedScreen({ onBack, onCompose, reloadKey = 0 }: Props) {
     try {
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!perm.granted) { Alert.alert('Няма разрешение', 'Разреши достъп до снимките в настройките.'); return; }
-      const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [4, 3], quality: 0.7 });
-      if (res.canceled || !res.assets?.[0]) return;
-      const url = await updatePostPhoto(p.id, res.assets[0].uri);
-      setDetailPost({ ...p, photo_url: url });
-      setPosts((prev) => prev.map((x) => x.id === p.id ? { ...x, photo_url: url } : x));
+      const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsMultipleSelection: true, selectionLimit: 3, quality: 0.7 });
+      if (res.canceled || !res.assets?.length) return;
+      const urls = await updatePostPhotos(p.id, res.assets.map((a) => a.uri));
+      setDetailPost({ ...p, photo_url: urls[0] ?? null, photo_urls: urls });
+      setPosts((prev) => prev.map((x) => x.id === p.id ? { ...x, photo_url: urls[0] ?? null, photo_urls: urls } : x));
     } catch {
       Alert.alert('Опа', 'Смяната не успя. Можеш да сменяш снимки само на свои постове.');
     }
@@ -340,9 +340,17 @@ export function FeedScreen({ onBack, onCompose, reloadKey = 0 }: Props) {
               <View style={{ width: 34 }} />
             </View>
             <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}>
-              <View style={styles.dPhoto}>
-                <FoodImage uri={detailPost.photo_url} emoji={foodEmoji(detailPost)} size="big" />
-              </View>
+              {(detailPost.photo_urls?.length ?? 0) > 1 ? (
+                <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} style={{ height: 240 }}>
+                  {detailPost.photo_urls!.map((u, i) => (
+                    <Image key={i} source={{ uri: u }} style={{ width: Dimensions.get('window').width, height: 240 }} resizeMode="cover" />
+                  ))}
+                </ScrollView>
+              ) : (
+                <View style={styles.dPhoto}>
+                  <FoodImage uri={detailPost.photo_urls?.[0] ?? detailPost.photo_url} emoji={foodEmoji(detailPost)} size="big" />
+                </View>
+              )}
               <View style={{ padding: 18, gap: 12 }}>
                 <Text style={styles.dTitle}>{detailPost.dish_name}</Text>
                 {detailPost.kind === 'venue' && detailPost.place_name ? (
@@ -416,7 +424,10 @@ function PostCard({ post, saved, onLike, onMore, onSave, onOpen }: { post: FeedP
   return (
     <Pressable style={styles.card} onPress={onOpen}>
       <View style={styles.photo}>
-        <FoodImage uri={post.photo_url} emoji={foodEmoji(post)} />
+        <FoodImage uri={post.photo_urls?.[0] ?? post.photo_url} emoji={foodEmoji(post)} />
+        {(post.photo_urls?.length ?? 0) > 1 ? (
+          <View style={styles.photoCount}><Text style={styles.photoCountTxt}>📷 {post.photo_urls!.length}</Text></View>
+        ) : null}
         {isVenue && post.worth_it ? (
           <View style={styles.worth}><Text style={styles.worthTxt}>💰 струваше си</Text></View>
         ) : null}
@@ -473,7 +484,7 @@ function PostRow({ post, saved, onLike, onMore, onSave, onOpen }: { post: FeedPo
   return (
     <Pressable onPress={onOpen} onLongPress={onMore} style={styles.lrow}>
       <View style={styles.lphoto}>
-        <FoodImage uri={post.photo_url} emoji={foodEmoji(post)} size="small" />
+        <FoodImage uri={post.photo_urls?.[0] ?? post.photo_url} emoji={foodEmoji(post)} size="small" />
       </View>
       <View style={styles.lbody}>
         <Text style={styles.ldish} numberOfLines={1}>
@@ -555,6 +566,8 @@ const styles = StyleSheet.create({
   photoImg: { width: '100%', height: '100%' },
   photoEmoji: { fontSize: 44 },
   worth: { position: 'absolute', right: 10, top: 10, backgroundColor: C.green, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 4 },
+  photoCount: { position: 'absolute', left: 10, top: 10, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 999, paddingHorizontal: 9, paddingVertical: 4 },
+  photoCountTxt: { color: '#fff', fontSize: 11, fontWeight: '700' },
   worthTxt: { color: '#fff', fontSize: 11, fontWeight: '700' },
   cardBody: { padding: 13 },
   cardTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
