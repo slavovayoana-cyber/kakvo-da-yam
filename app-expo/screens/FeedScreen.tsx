@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator,
-  Alert, Image, RefreshControl, Modal, Dimensions,
+  Alert, Image, RefreshControl, Modal, Dimensions, TextInput,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
@@ -37,9 +37,16 @@ const DIFFS: { key: Difficulty; label: string }[] = [
 const DIETS: { key: string; label: string }[] = [
   { key: 'postno', label: 'Постно' }, { key: 'vegetarian', label: 'Вегетарианско' }, { key: 'vegan', label: 'Веган' },
 ];
+const BG_CITIES = [
+  'София', 'Пловдив', 'Варна', 'Бургас', 'Русе', 'Стара Загора', 'Плевен', 'Сливен',
+  'Добрич', 'Шумен', 'Перник', 'Хасково', 'Ямбол', 'Пазарджик', 'Благоевград',
+  'Велико Търново', 'Враца', 'Габрово', 'Асеновград', 'Видин', 'Казанлък', 'Кюстендил',
+  'Кърджали', 'Монтана', 'Димитровград', 'Търговище', 'Ловеч', 'Силистра', 'Смолян',
+  'Банско', 'Несебър', 'Созопол',
+];
 
 function countVenue(f: VenueFilters) {
-  return [f.cuisine, f.placeType, f.minDishRating, f.worthIt, f.sort && f.sort !== 'recent' ? f.sort : undefined].filter(Boolean).length;
+  return [f.city, f.cuisine, f.placeType, f.minDishRating, f.worthIt, f.sort && f.sort !== 'recent' ? f.sort : undefined].filter(Boolean).length;
 }
 function countHome(f: HomeFilters) {
   return [f.maxPrep, f.difficulty, f.diet, f.sort && f.sort !== 'recent' ? f.sort : undefined].filter(Boolean).length;
@@ -90,6 +97,8 @@ export function FeedScreen({ onBack, onCompose, reloadKey = 0 }: Props) {
   const [venueFilters, setVenueFilters] = useState<VenueFilters>({});
   const [homeFilters, setHomeFilters] = useState<HomeFilters>({});
   const [showFilters, setShowFilters] = useState(false);
+  const [showCity, setShowCity] = useState(false);
+  const [citySearch, setCitySearch] = useState('');
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -265,6 +274,13 @@ export function FeedScreen({ onBack, onCompose, reloadKey = 0 }: Props) {
           <ScrollView style={{ maxHeight: 420 }} contentContainerStyle={{ gap: 16, paddingBottom: 8 }}>
             {kind === 'venue' ? (
               <>
+                <View style={{ gap: 8 }}>
+                  <Text style={styles.fgLabel}>Град</Text>
+                  <Pressable onPress={() => { setCitySearch(''); setShowCity(true); }} style={styles.cityBtn}>
+                    <Text style={[styles.cityBtnTxt, !venueFilters.city && { color: C.inkSoft }]}>{venueFilters.city ?? 'Всички градове'}</Text>
+                    <Text style={styles.cityChevron}>▾</Text>
+                  </Pressable>
+                </View>
                 <FGroup label="Сортирай по">
                   {SORTS.map((s) => (
                     <FChip key={s.key} on={(venueFilters.sort ?? 'recent') === s.key}
@@ -327,6 +343,37 @@ export function FeedScreen({ onBack, onCompose, reloadKey = 0 }: Props) {
               <Text style={styles.applyTxt}>Готово</Text>
             </Pressable>
           </View>
+        </View>
+      </Modal>
+
+      {/* City picker */}
+      <Modal visible={showCity} transparent animationType="fade" onRequestClose={() => setShowCity(false)}>
+        <Pressable style={styles.backdrop} onPress={() => setShowCity(false)} />
+        <View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
+          <View style={styles.sheetHead}>
+            <Text style={styles.sheetTitle}>Избери град</Text>
+            <Pressable onPress={() => setShowCity(false)} hitSlop={10}><Text style={styles.sheetX}>✕</Text></Pressable>
+          </View>
+          <TextInput
+            value={citySearch} onChangeText={setCitySearch}
+            placeholder="Търси или напиши град…" placeholderTextColor={C.inkSoft}
+            style={styles.cityInput}
+          />
+          <ScrollView style={{ maxHeight: 320 }} keyboardShouldPersistTaps="handled">
+            <Pressable style={styles.cityItem} onPress={() => { setVenueFilters((f) => ({ ...f, city: undefined })); setShowCity(false); }}>
+              <Text style={styles.cityItemTxt}>Всички градове</Text>
+            </Pressable>
+            {BG_CITIES.filter((c) => c.toLowerCase().includes(citySearch.trim().toLowerCase())).map((c) => (
+              <Pressable key={c} style={styles.cityItem} onPress={() => { setVenueFilters((f) => ({ ...f, city: c })); setShowCity(false); }}>
+                <Text style={styles.cityItemTxt}>{c}</Text>
+              </Pressable>
+            ))}
+            {citySearch.trim() && !BG_CITIES.some((c) => c.toLowerCase() === citySearch.trim().toLowerCase()) ? (
+              <Pressable style={styles.cityItem} onPress={() => { setVenueFilters((f) => ({ ...f, city: citySearch.trim() })); setShowCity(false); }}>
+                <Text style={[styles.cityItemTxt, { color: C.accentDeep, fontWeight: '700' }]}>Търси „{citySearch.trim()}"</Text>
+              </Pressable>
+            ) : null}
+          </ScrollView>
         </View>
       </Modal>
 
@@ -550,6 +597,12 @@ const styles = StyleSheet.create({
   fchipOn: { backgroundColor: C.accent, borderColor: C.accentDeep },
   fchipTxt: { fontSize: 13, fontWeight: '600', color: C.ink },
   fchipTxtOn: { color: '#fff' },
+  cityBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12 },
+  cityBtnTxt: { fontSize: 15, fontWeight: '600', color: C.ink },
+  cityChevron: { fontSize: 14, color: C.inkSoft },
+  cityInput: { backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11, fontSize: 15, color: C.ink, marginBottom: 8 },
+  cityItem: { paddingVertical: 12, paddingHorizontal: 6, borderBottomWidth: 1, borderBottomColor: C.line },
+  cityItemTxt: { fontSize: 15, color: C.ink },
   sheetFoot: { flexDirection: 'row', gap: 10, marginTop: 14 },
   clearBtn: { paddingHorizontal: 18, paddingVertical: 14, borderRadius: 14, borderWidth: 1, borderColor: C.line, backgroundColor: C.chip },
   clearTxt: { fontSize: 14, fontWeight: '700', color: C.inkSoft },
