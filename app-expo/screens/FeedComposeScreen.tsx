@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView, TextInput,
   Alert, ActivityIndicator, KeyboardAvoidingView, Platform, Image,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getMyProfile, setNickname, createVenuePost, createHomePost } from '../lib/feed';
+import { getMyProfile, setNickname, createVenuePost, createHomePost, searchPlaces } from '../lib/feed';
 import type { PostKind, Difficulty } from '../lib/feedTypes';
 
 const C = {
@@ -55,6 +55,8 @@ export function FeedComposeScreen({ onBack, onPosted }: Props) {
   // venue
   const [placeName, setPlaceName] = useState('');
   const [placeCity, setPlaceCity] = useState('');
+  const [placeSug, setPlaceSug] = useState<{ place_name: string; place_city: string | null; place_key: string }[]>([]);
+  const sugTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [placeRating, setPlaceRating] = useState(0);
   const [worthIt, setWorthIt] = useState<boolean | null>(null);
   const [cuisine, setCuisine] = useState<string | null>(null);
@@ -70,6 +72,21 @@ export function FeedComposeScreen({ onBack, onPosted }: Props) {
   useEffect(() => {
     getMyProfile().then((p) => setNeedNickname(!p)).catch(() => setNeedNickname(true));
   }, []);
+
+  const onPlaceNameChange = (t: string) => {
+    setPlaceName(t);
+    if (sugTimer.current) clearTimeout(sugTimer.current);
+    if (t.trim().length < 2) { setPlaceSug([]); return; }
+    sugTimer.current = setTimeout(() => {
+      searchPlaces(t).then(setPlaceSug).catch(() => setPlaceSug([]));
+    }, 250);
+  };
+
+  const pickSuggestion = (s: { place_name: string; place_city: string | null }) => {
+    setPlaceName(s.place_name);
+    if (s.place_city) setPlaceCity(s.place_city);
+    setPlaceSug([]);
+  };
 
   const pickFrom = async (source: 'library' | 'camera') => {
     try {
@@ -195,7 +212,16 @@ export function FeedComposeScreen({ onBack, onPosted }: Props) {
             <>
               <View style={styles.group}>
                 <Text style={styles.lbl}>Заведение</Text>
-                <TextInput value={placeName} onChangeText={setPlaceName} placeholder="Име на заведението" placeholderTextColor={C.inkSoft} style={styles.input} />
+                <TextInput value={placeName} onChangeText={onPlaceNameChange} placeholder="Име на заведението" placeholderTextColor={C.inkSoft} style={styles.input} />
+                {placeSug.length > 0 ? (
+                  <View style={styles.sugBox}>
+                    {placeSug.map((s) => (
+                      <Pressable key={s.place_key} onPress={() => pickSuggestion(s)} style={styles.sugItem}>
+                        <Text style={styles.sugTxt}>📍 {s.place_name}{s.place_city ? ` · ${s.place_city}` : ''}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                ) : null}
                 <TextInput value={placeCity} onChangeText={setPlaceCity} placeholder="Град (по избор)" placeholderTextColor={C.inkSoft} style={[styles.input, { marginTop: 8 }]} />
               </View>
               <View style={styles.group}>
@@ -289,6 +315,9 @@ const styles = StyleSheet.create({
   input: { backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: C.ink },
   small: { flex: 1 },
   multi: { minHeight: 72, textAlignVertical: 'top' },
+  sugBox: { marginTop: 6, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 12, overflow: 'hidden' },
+  sugItem: { paddingHorizontal: 14, paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: C.line },
+  sugTxt: { fontSize: 14, color: C.ink },
 
   seg: { flexDirection: 'row', backgroundColor: C.seg, borderRadius: 999, padding: 4, gap: 4 },
   segBtn: { flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 999 },
