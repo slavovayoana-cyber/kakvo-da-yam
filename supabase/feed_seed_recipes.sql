@@ -75,14 +75,6 @@ values
  E'1. Разбий яйцата със сол и пипер около минута — да влезе въздух.\n2. Разтопи маслото в тиган на среден огън.\n3. Изсипи яйцата, бъркай нежно 1-2 мин до полутечно.\n4. Поръси чедър и лук, сгъни на две и остави 30 сек да се разтопи.',
  '{закуска,вегетарианско}');
 
--- Снимки (стокови, по ключова дума; може да се заменят със собствени по-късно)
-update public.feed_posts set photo_url = 'https://loremflickr.com/800/600/grilled,cheese,sandwich?lock=11' where author_device_id='curator-kakvoappna' and dish_name like '%Полунощен крал%';
-update public.feed_posts set photo_url = 'https://loremflickr.com/800/600/halloumi,sandwich?lock=12'      where author_device_id='curator-kakvoappna' and dish_name like '%Зелена ярост%';
-update public.feed_posts set photo_url = 'https://loremflickr.com/800/600/chicken,sandwich?lock=13'       where author_device_id='curator-kakvoappna' and dish_name like '%Пилешки романс%';
-update public.feed_posts set photo_url = 'https://loremflickr.com/800/600/spaghetti,lemon,pasta?lock=14'  where author_device_id='curator-kakvoappna' and dish_name like '%Лимонена еуфория%';
-update public.feed_posts set photo_url = 'https://loremflickr.com/800/600/pasta,tomato,penne?lock=15'     where author_device_id='curator-kakvoappna' and dish_name like '%Огнен пипер%';
-update public.feed_posts set photo_url = 'https://loremflickr.com/800/600/iced,coffee,latte?lock=16'      where author_device_id='curator-kakvoappna' and dish_name like '%Леден облак%';
-update public.feed_posts set photo_url = 'https://loremflickr.com/800/600/smoothie,bowl,fruit?lock=17'    where author_device_id='curator-kakvoappna' and dish_name like '%Тропическа треска%';
-update public.feed_posts set photo_url = 'https://loremflickr.com/800/600/salad,coleslaw?lock=18'         where author_device_id='curator-kakvoappna' and dish_name like '%Хрупкав бунт%';
-update public.feed_posts set photo_url = 'https://loremflickr.com/800/600/brownie,chocolate,dessert?lock=19' where author_device_id='curator-kakvoappna' and dish_name like '%Шоколадов грях%';
-update public.feed_posts set photo_url = 'https://loremflickr.com/800/600/omelette,eggs,breakfast?lock=20'   where author_device_id='curator-kakvoappna' and dish_name like '%Събуди се%';
+-- Без стокови снимки — приложението показва подходящ икон по вид ястие.
+-- (Реални снимки се добавят най-добре със собствена камера при публикуване.)
+update public.feed_posts set photo_url = null where author_device_id = 'curator-kakvoappna';
