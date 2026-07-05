@@ -229,6 +229,20 @@ export async function listHomePosts(f: HomeFilters = {}, page = 0): Promise<Feed
   return enrich(data ?? []);
 }
 
+/** „Осиновява" курираните рецепти под текущия акаунт (веднъж), за да може
+ *  редакторът да им сменя снимките. Прави нищо, ако вече са осиновени. */
+export async function adoptCuratedPosts(): Promise<void> {
+  try { await supabase.rpc('feed_adopt_curated'); } catch { /* тихо */ }
+}
+
+/** Качва нова снимка и я записва на поста (само за свои постове — RLS). */
+export async function updatePostPhoto(postId: string, localUri: string): Promise<string> {
+  const url = await uploadPhoto(localUri);
+  const { error } = await supabase.from('feed_posts').update({ photo_url: url }).eq('id', postId);
+  if (error) throw error;
+  return url;
+}
+
 /** Предложения за заведения от вече публикуваните постове (без външно API). */
 export async function searchPlaces(query: string): Promise<{ place_name: string; place_city: string | null; place_key: string }[]> {
   const q = query.trim();
