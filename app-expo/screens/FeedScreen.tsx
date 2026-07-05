@@ -61,6 +61,19 @@ function Stars({ value }: { value: number | null | undefined }) {
   );
 }
 
+function foodEmoji(post: FeedPost): string {
+  if (post.kind === 'venue') return '🍽️';
+  const t = ((post.tags || []).join(' ') + ' ' + (post.dish_name || '')).toLowerCase();
+  if (t.includes('сандвич')) return '🥪';
+  if (t.includes('паста') || t.includes('спагет')) return '🍝';
+  if (t.includes('кафе')) return '☕';
+  if (t.includes('салат')) return '🥗';
+  if (t.includes('десерт') || t.includes('шоколад')) return '🍫';
+  if (t.includes('боул') || t.includes('смути')) return '🥣';
+  if (t.includes('закуск') || t.includes('яйц') || t.includes('омлет') || t.includes('шампион')) return '🍳';
+  return '🍲';
+}
+
 function FoodImage({ uri, emoji, size = 'card' }: { uri: string | null | undefined; emoji: string; size?: 'card' | 'small' | 'big' }) {
   const [err, setErr] = useState(false);
   if (!uri || err) {
@@ -312,7 +325,7 @@ export function FeedScreen({ onBack, onCompose, reloadKey = 0 }: Props) {
             </View>
             <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}>
               <View style={styles.dPhoto}>
-                <FoodImage uri={detailPost.photo_url} emoji={detailPost.kind === 'venue' ? '🍽️' : '🍲'} size="big" />
+                <FoodImage uri={detailPost.photo_url} emoji={foodEmoji(detailPost)} size="big" />
               </View>
               <View style={{ padding: 18, gap: 12 }}>
                 <Text style={styles.dTitle}>{detailPost.dish_name}</Text>
@@ -388,7 +401,7 @@ function PostCard({ post, saved, onLike, onMore, onSave, onOpen }: { post: FeedP
   return (
     <Pressable style={styles.card} onPress={onOpen}>
       <View style={styles.photo}>
-        <FoodImage uri={post.photo_url} emoji={isVenue ? '🍽️' : '🍲'} />
+        <FoodImage uri={post.photo_url} emoji={foodEmoji(post)} />
         {isVenue && post.worth_it ? (
           <View style={styles.worth}><Text style={styles.worthTxt}>💰 струваше си</Text></View>
         ) : null}
@@ -445,7 +458,7 @@ function PostRow({ post, saved, onLike, onMore, onSave, onOpen }: { post: FeedPo
   return (
     <Pressable onPress={onOpen} onLongPress={onMore} style={styles.lrow}>
       <View style={styles.lphoto}>
-        <FoodImage uri={post.photo_url} emoji={isVenue ? '🍽️' : '🍲'} size="small" />
+        <FoodImage uri={post.photo_url} emoji={foodEmoji(post)} size="small" />
       </View>
       <View style={styles.lbody}>
         <Text style={styles.ldish} numberOfLines={1}>
@@ -492,11 +505,11 @@ const styles = StyleSheet.create({
   segTxt: { fontSize: 14, fontWeight: '700', color: C.inkSoft },
   segTxtOn: { color: '#fff' },
 
-  crRow: { flexGrow: 0, marginTop: 2 },
-  crContent: { paddingHorizontal: 14, paddingVertical: 8, gap: 8, alignItems: 'center' },
-  cr: { paddingHorizontal: 13, paddingVertical: 7, borderRadius: 999, backgroundColor: C.chip, borderWidth: 1, borderColor: C.line },
+  crRow: { flexGrow: 0, height: 60, marginTop: 2 },
+  crContent: { paddingHorizontal: 14, gap: 8, alignItems: 'center' },
+  cr: { height: 38, justifyContent: 'center', paddingHorizontal: 14, borderRadius: 999, backgroundColor: C.chip, borderWidth: 1, borderColor: C.line },
   crOn: { backgroundColor: C.ink, borderColor: C.ink },
-  crTxt: { fontSize: 13, fontWeight: '600', color: C.ink },
+  crTxt: { fontSize: 13, lineHeight: 18, fontWeight: '600', color: C.ink },
   crTxtOn: { color: '#fff' },
   crFilt: { backgroundColor: C.accent, borderColor: C.accentDeep },
 
