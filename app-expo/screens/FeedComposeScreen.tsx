@@ -15,7 +15,7 @@ const C = {
   chip: 'rgba(255,255,255,0.65)', seg: 'rgba(59,42,34,0.06)',
 };
 
-const CUISINES = ['Скара', 'Българска', 'Fast food', 'Пица', 'Италианска', 'Азиатска', 'Морска', 'Кафене'];
+const CUISINES = ['Скара', 'Българска', 'Здравословна', 'Fast food', 'Пица', 'Италианска', 'Азиатска', 'Морска', 'Кафене'];
 const PLACE_TYPES: { key: string; label: string }[] = [
   { key: 'restaurant', label: '🍽️ Ресторант' }, { key: 'cafe', label: '☕ Кафене' },
   { key: 'bar', label: '🍸 Бар' }, { key: 'patisserie', label: '🧁 Сладкарница' },
