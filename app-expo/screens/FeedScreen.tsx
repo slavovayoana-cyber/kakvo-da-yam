@@ -134,11 +134,19 @@ export function FeedScreen({ onBack, onCompose, reloadKey = 0 }: Props) {
     }
   };
 
-  const submitPin = async () => {
-    const ok = await unlockAdmin(pinInput).catch(() => false);
-    if (ok) { setPinModal(false); setAdminOn(true); openAdmin(); }
-    else Alert.alert('Грешен код', 'Опитай пак.');
+  const tryUnlock = async (pin: string) => {
+    const ok = await unlockAdmin(pin).catch(() => false);
+    if (ok) { setPinModal(false); setPinInput(''); setAdminOn(true); openAdmin(); }
+    else { Alert.alert('Грешен код', 'Опитай пак.'); setPinInput(''); }
   };
+
+  const onPinChange = (v: string) => {
+    setPinInput(v);
+    // Отключва само̀ при въвеждане на пълния код (без нужда от бутон/клавиатура).
+    if (v.trim().length >= 6) tryUnlock(v.trim());
+  };
+
+  const submitPin = () => tryUnlock(pinInput);
 
   const openAdmin = async () => {
     setShowAdmin(true);
@@ -469,6 +477,7 @@ export function FeedScreen({ onBack, onCompose, reloadKey = 0 }: Props) {
 
       {/* PIN за скрит преглед */}
       <Modal visible={pinModal} transparent animationType="fade" onRequestClose={() => setPinModal(false)}>
+       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <Pressable style={styles.backdrop} onPress={() => setPinModal(false)} />
         <View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
           <View style={styles.sheetHead}>
@@ -476,15 +485,17 @@ export function FeedScreen({ onBack, onCompose, reloadKey = 0 }: Props) {
             <Pressable onPress={() => setPinModal(false)} hitSlop={10}><Text style={styles.sheetX}>✕</Text></Pressable>
           </View>
           <TextInput
-            value={pinInput} onChangeText={setPinInput}
+            value={pinInput} onChangeText={onPinChange}
             placeholder="Въведи PIN" placeholderTextColor={C.inkSoft}
             keyboardType="number-pad" secureTextEntry autoFocus
+            onSubmitEditing={submitPin}
             style={styles.cityInput}
           />
           <Pressable onPress={submitPin} style={[styles.applyBtn, { marginTop: 4 }]}>
             <Text style={styles.applyTxt}>Отключи</Text>
           </Pressable>
         </View>
+       </KeyboardAvoidingView>
       </Modal>
 
       {/* Скрит преглед (само за собственика) */}
