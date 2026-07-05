@@ -390,10 +390,6 @@ export function FeedScreen({ onBack, onCompose, reloadKey = 0 }: Props) {
         ) : null}
       </Modal>
 
-      {/* FAB */}
-      <Pressable onPress={onCompose} style={[styles.fab, { bottom: insets.bottom + 22 }]}>
-        <Text style={styles.fabTxt}>＋</Text>
-      </Pressable>
     </View>
   );
 }

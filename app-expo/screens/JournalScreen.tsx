@@ -1,7 +1,9 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import {
-  View, Text, Pressable, StyleSheet, ScrollView, Alert, Share, Platform,
+  View, Text, Pressable, StyleSheet, ScrollView, Alert, Share, Platform, ActivityIndicator,
 } from 'react-native';
+import { getSavedIds, getPostsByIds } from '../lib/feed';
+import type { FeedPost } from '../lib/feedTypes';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { captureRef } from 'react-native-view-shot';
@@ -87,6 +89,15 @@ export function JournalScreen({ entries, onBack, onChange }: Props) {
     );
   };
 
+  const [tab, setTab] = useState<'cooked' | 'saved'>('cooked');
+  const [saved, setSaved] = useState<FeedPost[]>([]);
+  const [loadingSaved, setLoadingSaved] = useState(false);
+  useEffect(() => {
+    if (tab !== 'saved') return;
+    setLoadingSaved(true);
+    getSavedIds().then(getPostsByIds).then(setSaved).catch(() => setSaved([])).finally(() => setLoadingSaved(false));
+  }, [tab]);
+
   const total = entries.length;
   const uniqueMeals = new Set(entries.map((e) => e.mealId)).size;
 
@@ -128,6 +139,19 @@ export function JournalScreen({ entries, onBack, onChange }: Props) {
         ]}
         showsVerticalScrollIndicator={false}
       >
+        <View style={styles.jseg}>
+          <Pressable onPress={() => { tapLight(); setTab('cooked'); }} style={[styles.jsegBtn, tab === 'cooked' && styles.jsegOn]}>
+            <Text style={[styles.jsegTxt, { color: theme.ink }, tab === 'cooked' && styles.jsegTxtOn]}>🍳 Сготвено</Text>
+          </Pressable>
+          <Pressable onPress={() => { tapLight(); setTab('saved'); }} style={[styles.jsegBtn, tab === 'saved' && styles.jsegOn]}>
+            <Text style={[styles.jsegTxt, { color: theme.ink }, tab === 'saved' && styles.jsegTxtOn]}>🔖 Запазени</Text>
+          </Pressable>
+        </View>
+
+        {tab === 'saved' ? (
+          <SavedList posts={saved} loading={loadingSaved} inkColor={theme.ink} />
+        ) : (
+        <>
         <PersonalityCard
           result={personalityResult}
           onShare={personalityResult.isReady ? sharePersonality : undefined}
@@ -206,6 +230,8 @@ export function JournalScreen({ entries, onBack, onChange }: Props) {
             </Text>
           </View>
         )}
+        </>
+        )}
       </ScrollView>
 
       <View style={styles.offscreen} pointerEvents="none">
@@ -215,8 +241,43 @@ export function JournalScreen({ entries, onBack, onChange }: Props) {
   );
 }
 
+function SavedList({ posts, loading, inkColor }: { posts: FeedPost[]; loading: boolean; inkColor: string }) {
+  if (loading) {
+    return <View style={{ paddingVertical: 50, alignItems: 'center' }}><ActivityIndicator color="#C2674A" /></View>;
+  }
+  if (!posts.length) {
+    return (
+      <View style={styles.empty}>
+        <Text style={styles.emptyEmoji}>🔖</Text>
+        <Text style={[styles.emptyTitle, { color: inkColor }]}>Няма запазени</Text>
+        <Text style={[styles.emptyText, { color: inkColor }]}>Докосни 🔖 на рецепта в „APPна",{'\n'}за да я запазиш тук.</Text>
+      </View>
+    );
+  }
+  return (
+    <View style={styles.list}>
+      {posts.map((p) => (
+        <View key={p.id} style={styles.entryCard}>
+          <View style={styles.entryEmoji}><Text style={{ fontSize: 30 }}>{p.kind === 'venue' ? '🍽️' : '🍲'}</Text></View>
+          <View style={styles.entryBody}>
+            <Text style={[styles.entryName, { color: inkColor }]} numberOfLines={1}>{p.dish_name}</Text>
+            <Text style={[styles.entryDate, { color: inkColor }]} numberOfLines={1}>
+              {p.kind === 'venue' ? (p.place_name || 'заведение') : `рецепта${p.prep_minutes ? ` · ${p.prep_minutes} мин` : ''}`}
+            </Text>
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   root: { flex: 1, paddingTop: 56, paddingBottom: 24, overflow: 'hidden' },
+  jseg: { flexDirection: 'row', gap: 6, backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: 999, padding: 4, marginBottom: 16 },
+  jsegBtn: { flex: 1, alignItems: 'center', paddingVertical: 9, borderRadius: 999 },
+  jsegOn: { backgroundColor: '#C2674A' },
+  jsegTxt: { fontFamily: 'Geist_600SemiBold', fontSize: 13.5, fontWeight: '600' },
+  jsegTxtOn: { color: '#fff' },
   topBar: {
     paddingHorizontal: 20,
     paddingTop: 10,
