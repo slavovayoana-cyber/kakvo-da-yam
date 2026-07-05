@@ -29,6 +29,7 @@ import { CoupleSwipeScreen } from './screens/CoupleSwipeScreen';
 import { CoupleMatchScreen } from './screens/CoupleMatchScreen';
 import { FeedScreen } from './screens/FeedScreen';
 import { FeedComposeScreen } from './screens/FeedComposeScreen';
+import { TabBar } from './components/TabBar';
 import { ShareCard } from './components/ShareCard';
 import { pickMeal, pickMealById, formatShareText } from './lib/mealPicker';
 import { SUMMER_MEAL_IDS } from './lib/seasonal';
@@ -306,6 +307,7 @@ export default function App() {
     <SafeAreaProvider>
     <View style={styles.root}>
       <StatusBar barStyle="dark-content" />
+      <View style={styles.screenWrap}>
       {screen === 'home' && (
         <HomeScreen
           selectedMood={selectedMood}
@@ -379,6 +381,17 @@ export default function App() {
         />
       )}
 
+      </View>
+      {['home', 'feed', 'journal', 'couple_lobby'].includes(screen) && (
+        <TabBar
+          active={screen === 'feed' ? 'feed' : screen === 'journal' ? 'journal' : screen === 'couple_lobby' ? 'couple' : 'home'}
+          onHome={goHome}
+          onFeed={openFeed}
+          onCompose={openFeedCompose}
+          onCouple={openCoupleLobby}
+          onJournal={openJournal}
+        />
+      )}
       {result && (
         <View style={styles.offscreen} pointerEvents="none">
           <ShareCard
@@ -396,6 +409,7 @@ export default function App() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#FCEBDD' },
+  screenWrap: { flex: 1 },
   loading: {
     flex: 1, alignItems: 'center', justifyContent: 'center',
     backgroundColor: '#FAF0E8',

@@ -256,6 +256,20 @@ export async function searchPlaces(query: string): Promise<{ place_name: string;
   return (data ?? []) as { place_name: string; place_city: string | null; place_key: string }[];
 }
 
+/** Зарежда постове по списък от id-та (за „Запазени" в Дневника), в реда на ids. */
+export async function getPostsByIds(ids: string[]): Promise<FeedPost[]> {
+  if (!ids.length) return [];
+  const { data, error } = await supabase
+    .from('feed_posts')
+    .select('*, author:feed_profiles(nickname)')
+    .in('id', ids)
+    .eq('status', 'active');
+  if (error) throw error;
+  const byId = new Map<string, FeedPost>();
+  (data ?? []).forEach((r: any) => byId.set(r.id, { ...r, author_nickname: r.author?.nickname ?? null }));
+  return ids.map((id) => byId.get(id)).filter(Boolean) as FeedPost[];
+}
+
 /** Обобщена статистика за заведение (среден рейтинг, брой постове). */
 export async function getPlaceStats(placeKey: string): Promise<PlaceStat | null> {
   const { data, error } = await supabase

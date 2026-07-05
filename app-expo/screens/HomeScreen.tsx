@@ -106,18 +106,6 @@ export function HomeScreen({
           </Text>
           <View style={styles.headerRight}>
             <Pressable
-              onPress={() => { tapSelection(); onOpenJournal(); }}
-              style={({ pressed }) => [
-                styles.journalBtn,
-                { borderColor: theme.colorDeep + '33', opacity: pressed ? 0.7 : 1 },
-              ]}
-              hitSlop={10}
-            >
-              <Text style={[styles.journalBtnText, { color: theme.ink }]}>
-                📔 Дневник{journalCount > 0 ? ` · ${journalCount}` : ''}
-              </Text>
-            </Pressable>
-            <Pressable
               onPress={() => { tapSelection(); onOpenSettings(); }}
               style={({ pressed }) => [
                 styles.settingsBtn,
@@ -354,38 +342,6 @@ export function HomeScreen({
             ]}
           >
             <Text style={styles.mainBtnText}>Избери за мен →</Text>
-          </Pressable>
-
-          {/* Couples mode button */}
-          <Pressable
-            onPress={() => { tapMedium(); onOpenCouple(); }}
-            style={({ pressed }) => [
-              styles.coupleBtn,
-              {
-                borderColor: theme.colorDeep + '55',
-                opacity: pressed ? 0.85 : 1,
-              },
-            ]}
-          >
-            <Text style={[styles.coupleBtnText, { color: theme.ink }]}>
-              👩‍❤️‍👨 Заедно решаваме
-            </Text>
-          </Pressable>
-
-          {/* Feed (Какво APPна?) button */}
-          <Pressable
-            onPress={() => { tapMedium(); onOpenFeed(); }}
-            style={({ pressed }) => [
-              styles.coupleBtn,
-              {
-                borderColor: theme.colorDeep + '55',
-                opacity: pressed ? 0.85 : 1,
-              },
-            ]}
-          >
-            <Text style={[styles.coupleBtnText, { color: theme.ink }]}>
-              🍴 Какво APPна? — виж какво ядоха
-            </Text>
           </Pressable>
 
           {/* Tagline */}
