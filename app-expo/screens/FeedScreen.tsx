@@ -1,13 +1,13 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator,
-  Alert, Image, RefreshControl,
+  Alert, Image, RefreshControl, Modal,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   listVenuePosts, listHomePosts, toggleLike, reportPost, hidePostLocally,
 } from '../lib/feed';
-import type { FeedPost, PostKind } from '../lib/feedTypes';
+import type { FeedPost, PostKind, VenueFilters, HomeFilters, FeedSort, Difficulty } from '../lib/feedTypes';
 
 const C = {
   bg: '#FBEFE6', card: '#FFFDFB', ink: '#3B2A22', inkSoft: '#8A7264',
@@ -16,8 +16,31 @@ const C = {
   chip: 'rgba(255,255,255,0.65)', seg: 'rgba(59,42,34,0.06)', green: '#6f9a45',
 };
 
-const VENUE_CUISINES = ['Скара', 'Българска', 'Fast food', 'Пица', 'Азиатска', 'Морска', 'Кафене'];
-const HOME_QUICK = ['До 30 мин', 'Постно', 'Десерт'];
+const VENUE_CUISINES = ['Скара', 'Българска', 'Fast food', 'Пица', 'Италианска', 'Азиатска', 'Морска'];
+const PLACE_TYPES: { key: string; label: string }[] = [
+  { key: 'restaurant', label: '🍽️ Ресторант' }, { key: 'cafe', label: '☕ Кафене' },
+  { key: 'bar', label: '🍸 Бар' }, { key: 'patisserie', label: '🧁 Сладкарница' },
+  { key: 'street', label: '🌭 Street food' },
+];
+const SORTS: { key: FeedSort; label: string }[] = [
+  { key: 'recent', label: 'Най-нови' }, { key: 'top', label: 'Топ оценени' }, { key: 'popular', label: 'Популярни' },
+];
+const PREPS: { key: number; label: string }[] = [
+  { key: 15, label: 'До 15 мин' }, { key: 30, label: 'До 30 мин' }, { key: 60, label: 'До 60 мин' },
+];
+const DIFFS: { key: Difficulty; label: string }[] = [
+  { key: 'easy', label: 'Лесно' }, { key: 'medium', label: 'Средно' }, { key: 'hard', label: 'Трудно' },
+];
+const DIETS: { key: string; label: string }[] = [
+  { key: 'postno', label: 'Постно' }, { key: 'vegetarian', label: 'Вегетарианско' }, { key: 'vegan', label: 'Веган' },
+];
+
+function countVenue(f: VenueFilters) {
+  return [f.cuisine, f.placeType, f.minDishRating, f.worthIt, f.sort && f.sort !== 'recent' ? f.sort : undefined].filter(Boolean).length;
+}
+function countHome(f: HomeFilters) {
+  return [f.maxPrep, f.difficulty, f.diet, f.sort && f.sort !== 'recent' ? f.sort : undefined].filter(Boolean).length;
+}
 
 type Props = {
   onBack: () => void;
@@ -40,23 +63,20 @@ export function FeedScreen({ onBack, onCompose, reloadKey = 0 }: Props) {
   const insets = useSafeAreaInsets();
   const [kind, setKind] = useState<PostKind>('venue');
   const [view, setView] = useState<'cards' | 'list'>('cards');
-  const [quick, setQuick] = useState<string | null>(null);
+  const [venueFilters, setVenueFilters] = useState<VenueFilters>({});
+  const [homeFilters, setHomeFilters] = useState<HomeFilters>({});
+  const [showFilters, setShowFilters] = useState(false);
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  const activeCount = kind === 'venue' ? countVenue(venueFilters) : countHome(homeFilters);
+
   const load = useCallback(async () => {
     try {
-      let data: FeedPost[];
-      if (kind === 'venue') {
-        data = await listVenuePosts(quick ? { cuisine: quick } : {});
-      } else {
-        const f: any = {};
-        if (quick === 'До 30 мин') f.maxPrep = 30;
-        else if (quick === 'Постно') f.diet = 'postno';
-        // 'Десерт' би бил таг — оставяме за по-късно
-        data = await listHomePosts(f);
-      }
+      const data = kind === 'venue'
+        ? await listVenuePosts(venueFilters)
+        : await listHomePosts(homeFilters);
       setPosts(data);
     } catch (e) {
       Alert.alert('Проблем', 'Неуспешно зареждане. Провери връзката.');
@@ -64,7 +84,7 @@ export function FeedScreen({ onBack, onCompose, reloadKey = 0 }: Props) {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [kind, quick]);
+  }, [kind, venueFilters, homeFilters]);
 
   useEffect(() => { setLoading(true); load(); }, [load, reloadKey]);
 
@@ -94,8 +114,6 @@ export function FeedScreen({ onBack, onCompose, reloadKey = 0 }: Props) {
     ]);
   };
 
-  const quickChips = kind === 'venue' ? VENUE_CUISINES : HOME_QUICK;
-
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       {/* Header */}
@@ -117,7 +135,7 @@ export function FeedScreen({ onBack, onCompose, reloadKey = 0 }: Props) {
       {/* Segmented */}
       <View style={styles.seg}>
         {(['venue', 'home'] as PostKind[]).map((k) => (
-          <Pressable key={k} onPress={() => { setKind(k); setQuick(null); }} style={[styles.segBtn, kind === k && styles.segBtnOn]}>
+          <Pressable key={k} onPress={() => setKind(k)} style={[styles.segBtn, kind === k && styles.segBtnOn]}>
             <Text style={[styles.segTxt, kind === k && styles.segTxtOn]}>
               {k === 'venue' ? '🍴 Заведения' : '🍲 Вкъщи'}
             </Text>
@@ -125,16 +143,28 @@ export function FeedScreen({ onBack, onCompose, reloadKey = 0 }: Props) {
         ))}
       </View>
 
-      {/* Quick filters */}
+      {/* Quick filters + Филтри */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.crRow} contentContainerStyle={styles.crContent}>
-        {quickChips.map((c) => {
-          const on = quick === c;
-          return (
-            <Pressable key={c} onPress={() => setQuick(on ? null : c)} style={[styles.cr, on && styles.crOn]}>
-              <Text style={[styles.crTxt, on && styles.crTxtOn]}>{c}</Text>
-            </Pressable>
-          );
-        })}
+        <Pressable onPress={() => setShowFilters(true)} style={[styles.cr, styles.crFilt]}>
+          <Text style={[styles.crTxt, styles.crTxtOn]}>⚙ Филтри{activeCount ? ` · ${activeCount}` : ''}</Text>
+        </Pressable>
+        {kind === 'venue'
+          ? VENUE_CUISINES.map((c) => {
+              const on = venueFilters.cuisine === c;
+              return (
+                <Pressable key={c} onPress={() => setVenueFilters((f) => ({ ...f, cuisine: on ? undefined : c }))} style={[styles.cr, on && styles.crOn]}>
+                  <Text style={[styles.crTxt, on && styles.crTxtOn]}>{c}</Text>
+                </Pressable>
+              );
+            })
+          : PREPS.map((p) => {
+              const on = homeFilters.maxPrep === p.key;
+              return (
+                <Pressable key={p.key} onPress={() => setHomeFilters((f) => ({ ...f, maxPrep: on ? undefined : p.key }))} style={[styles.cr, on && styles.crOn]}>
+                  <Text style={[styles.crTxt, on && styles.crTxtOn]}>{p.label}</Text>
+                </Pressable>
+              );
+            })}
       </ScrollView>
 
       {/* Feed */}
@@ -157,11 +187,104 @@ export function FeedScreen({ onBack, onCompose, reloadKey = 0 }: Props) {
         </ScrollView>
       )}
 
+      {/* Filter sheet */}
+      <Modal visible={showFilters} transparent animationType="slide" onRequestClose={() => setShowFilters(false)}>
+        <Pressable style={styles.backdrop} onPress={() => setShowFilters(false)} />
+        <View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
+          <View style={styles.sheetHead}>
+            <Text style={styles.sheetTitle}>Филтри</Text>
+            <Pressable onPress={() => setShowFilters(false)} hitSlop={10}><Text style={styles.sheetX}>✕</Text></Pressable>
+          </View>
+          <ScrollView style={{ maxHeight: 420 }} contentContainerStyle={{ gap: 16, paddingBottom: 8 }}>
+            {kind === 'venue' ? (
+              <>
+                <FGroup label="Сортирай по">
+                  {SORTS.map((s) => (
+                    <FChip key={s.key} on={(venueFilters.sort ?? 'recent') === s.key}
+                      onPress={() => setVenueFilters((f) => ({ ...f, sort: s.key }))}>{s.label}</FChip>
+                  ))}
+                </FGroup>
+                <FGroup label="Кухня">
+                  {VENUE_CUISINES.map((c) => (
+                    <FChip key={c} on={venueFilters.cuisine === c}
+                      onPress={() => setVenueFilters((f) => ({ ...f, cuisine: f.cuisine === c ? undefined : c }))}>{c}</FChip>
+                  ))}
+                </FGroup>
+                <FGroup label="Тип място">
+                  {PLACE_TYPES.map((t) => (
+                    <FChip key={t.key} on={venueFilters.placeType === t.key}
+                      onPress={() => setVenueFilters((f) => ({ ...f, placeType: f.placeType === t.key ? undefined : t.key }))}>{t.label}</FChip>
+                  ))}
+                </FGroup>
+                <FGroup label="Само">
+                  <FChip on={venueFilters.minDishRating === 4}
+                    onPress={() => setVenueFilters((f) => ({ ...f, minDishRating: f.minDishRating ? undefined : 4 }))}>⭐ 4+</FChip>
+                  <FChip on={!!venueFilters.worthIt}
+                    onPress={() => setVenueFilters((f) => ({ ...f, worthIt: f.worthIt ? undefined : true }))}>💰 Струваше си</FChip>
+                </FGroup>
+              </>
+            ) : (
+              <>
+                <FGroup label="Сортирай по">
+                  {SORTS.map((s) => (
+                    <FChip key={s.key} on={(homeFilters.sort ?? 'recent') === s.key}
+                      onPress={() => setHomeFilters((f) => ({ ...f, sort: s.key }))}>{s.label}</FChip>
+                  ))}
+                </FGroup>
+                <FGroup label="Време">
+                  {PREPS.map((p) => (
+                    <FChip key={p.key} on={homeFilters.maxPrep === p.key}
+                      onPress={() => setHomeFilters((f) => ({ ...f, maxPrep: f.maxPrep === p.key ? undefined : p.key }))}>{p.label}</FChip>
+                  ))}
+                </FGroup>
+                <FGroup label="Трудност">
+                  {DIFFS.map((d) => (
+                    <FChip key={d.key} on={homeFilters.difficulty === d.key}
+                      onPress={() => setHomeFilters((f) => ({ ...f, difficulty: f.difficulty === d.key ? undefined : d.key }))}>{d.label}</FChip>
+                  ))}
+                </FGroup>
+                <FGroup label="Диета">
+                  {DIETS.map((d) => (
+                    <FChip key={d.key} on={homeFilters.diet === d.key}
+                      onPress={() => setHomeFilters((f) => ({ ...f, diet: f.diet === d.key ? undefined : d.key }))}>{d.label}</FChip>
+                  ))}
+                </FGroup>
+              </>
+            )}
+          </ScrollView>
+          <View style={styles.sheetFoot}>
+            <Pressable onPress={() => (kind === 'venue' ? setVenueFilters({}) : setHomeFilters({}))} style={styles.clearBtn}>
+              <Text style={styles.clearTxt}>Изчисти</Text>
+            </Pressable>
+            <Pressable onPress={() => setShowFilters(false)} style={styles.applyBtn}>
+              <Text style={styles.applyTxt}>Готово</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+
       {/* FAB */}
       <Pressable onPress={onCompose} style={[styles.fab, { bottom: insets.bottom + 22 }]}>
         <Text style={styles.fabTxt}>＋</Text>
       </Pressable>
     </View>
+  );
+}
+
+function FGroup({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <View style={{ gap: 8 }}>
+      <Text style={styles.fgLabel}>{label}</Text>
+      <View style={styles.fgChips}>{children}</View>
+    </View>
+  );
+}
+
+function FChip({ on, onPress, children }: { on: boolean; onPress: () => void; children: React.ReactNode }) {
+  return (
+    <Pressable onPress={onPress} style={[styles.fchip, on && styles.fchipOn]}>
+      <Text style={[styles.fchipTxt, on && styles.fchipTxtOn]}>{children}</Text>
+    </Pressable>
   );
 }
 
@@ -278,7 +401,25 @@ const styles = StyleSheet.create({
   cr: { paddingHorizontal: 13, paddingVertical: 7, borderRadius: 999, backgroundColor: C.chip, borderWidth: 1, borderColor: C.line },
   crOn: { backgroundColor: C.ink, borderColor: C.ink },
   crTxt: { fontSize: 13, fontWeight: '600', color: C.ink },
-  crTxtOn: { color: C.bg },
+  crTxtOn: { color: '#fff' },
+  crFilt: { backgroundColor: C.accent, borderColor: C.accentDeep },
+
+  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)' },
+  sheet: { backgroundColor: C.bg, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 18, paddingTop: 14 },
+  sheetHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
+  sheetTitle: { fontFamily: 'InstrumentSerif_400Regular', fontSize: 24, color: C.ink },
+  sheetX: { fontSize: 18, color: C.inkSoft },
+  fgLabel: { fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.6, color: C.inkSoft },
+  fgChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  fchip: { paddingHorizontal: 13, paddingVertical: 8, borderRadius: 999, backgroundColor: C.chip, borderWidth: 1, borderColor: C.line },
+  fchipOn: { backgroundColor: C.accent, borderColor: C.accentDeep },
+  fchipTxt: { fontSize: 13, fontWeight: '600', color: C.ink },
+  fchipTxtOn: { color: '#fff' },
+  sheetFoot: { flexDirection: 'row', gap: 10, marginTop: 14 },
+  clearBtn: { paddingHorizontal: 18, paddingVertical: 14, borderRadius: 14, borderWidth: 1, borderColor: C.line, backgroundColor: C.chip },
+  clearTxt: { fontSize: 14, fontWeight: '700', color: C.inkSoft },
+  applyBtn: { flex: 1, paddingVertical: 14, borderRadius: 14, backgroundColor: C.accent, alignItems: 'center' },
+  applyTxt: { color: '#fff', fontSize: 15, fontWeight: '700' },
 
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 30 },
   emptyEmoji: { fontSize: 48, marginBottom: 12 },
