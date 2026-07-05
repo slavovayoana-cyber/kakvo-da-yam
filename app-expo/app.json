@@ -2,7 +2,7 @@
   "expo": {
     "name": "Какво да ям?",
     "slug": "kakvo-da-yam-app",
-    "version": "1.0.2",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -61,6 +61,13 @@
           "advertiserIDCollectionEnabled": true,
           "autoLogAppEventsEnabled": true,
           "isAutoInitEnabled": true
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Разреши достъп до снимките, за да добавиш снимка на ястието към поста си в „Какво APPна?“.",
+          "cameraPermission": "Разреши достъп до камерата, за да снимаш ястието директно за поста си в „Какво APPна?“."
         }
       ],
       [

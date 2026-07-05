@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView, TextInput,
-  Alert, ActivityIndicator, KeyboardAvoidingView, Platform,
+  Alert, ActivityIndicator, KeyboardAvoidingView, Platform, Image,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getMyProfile, setNickname, createVenuePost, createHomePost } from '../lib/feed';
 import type { PostKind, Difficulty } from '../lib/feedTypes';
@@ -44,6 +45,7 @@ export function FeedComposeScreen({ onBack, onPosted }: Props) {
   const [nickname, setNick] = useState('');
   const [kind, setKind] = useState<PostKind>('venue');
   const [saving, setSaving] = useState(false);
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
 
   // common
   const [dishName, setDishName] = useState('');
@@ -69,6 +71,37 @@ export function FeedComposeScreen({ onBack, onPosted }: Props) {
     getMyProfile().then((p) => setNeedNickname(!p)).catch(() => setNeedNickname(true));
   }, []);
 
+  const pickFrom = async (source: 'library' | 'camera') => {
+    try {
+      const perm = source === 'camera'
+        ? await ImagePicker.requestCameraPermissionsAsync()
+        : await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert('Няма разрешение', 'За да добавиш снимка, разреши достъп в настройките.');
+        return;
+      }
+      const opts: ImagePicker.ImagePickerOptions = {
+        mediaTypes: ['images'],
+        allowsEditing: true, aspect: [4, 3], quality: 0.7,
+      };
+      const res = source === 'camera'
+        ? await ImagePicker.launchCameraAsync(opts)
+        : await ImagePicker.launchImageLibraryAsync(opts);
+      if (!res.canceled && res.assets?.[0]) setPhotoUri(res.assets[0].uri);
+    } catch {
+      Alert.alert('Проблем', 'Неуспешно избиране на снимка.');
+    }
+  };
+
+  const choosePhoto = () => {
+    Alert.alert('Снимка', undefined, [
+      { text: '📷 Направи снимка', onPress: () => pickFrom('camera') },
+      { text: '🖼️ Избери от галерията', onPress: () => pickFrom('library') },
+      ...(photoUri ? [{ text: '🗑️ Махни снимката', style: 'destructive' as const, onPress: () => setPhotoUri(null) }] : []),
+      { text: 'Отказ', style: 'cancel' as const },
+    ]);
+  };
+
   const submit = async () => {
     if (needNickname && nickname.trim().length < 2) {
       Alert.alert('Прякор', 'Избери си прякор (поне 2 букви), за да публикуваш.');
@@ -85,7 +118,7 @@ export function FeedComposeScreen({ onBack, onPosted }: Props) {
         const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
           `${placeName} ${placeCity}`.trim())}`;
         await createVenuePost({
-          dishName, dishRating, comment,
+          dishName, dishRating, comment, photoUri: photoUri || undefined,
           placeName, placeCity: placeCity || undefined, placeMapsUrl: mapsUrl,
           placeRating: placeRating || undefined,
           worthIt: worthIt ?? undefined,
@@ -93,7 +126,7 @@ export function FeedComposeScreen({ onBack, onPosted }: Props) {
         });
       } else {
         await createHomePost({
-          dishName, dishRating, comment,
+          dishName, dishRating, comment, photoUri: photoUri || undefined,
           prepMinutes: prep ? parseInt(prep, 10) : undefined,
           difficulty: difficulty || undefined,
           servings: servings ? parseInt(servings, 10) : undefined,
@@ -136,11 +169,17 @@ export function FeedComposeScreen({ onBack, onPosted }: Props) {
             ))}
           </View>
 
-          {/* Photo placeholder (Phase 3) */}
-          <View style={styles.photoStub}>
-            <Text style={{ fontSize: 30 }}>📷</Text>
-            <Text style={styles.photoStubTxt}>Снимки — идват скоро</Text>
-          </View>
+          {/* Photo */}
+          <Pressable onPress={choosePhoto} style={styles.photoStub}>
+            {photoUri ? (
+              <Image source={{ uri: photoUri }} style={styles.photoPreview} />
+            ) : (
+              <>
+                <Text style={{ fontSize: 30 }}>📷</Text>
+                <Text style={styles.photoStubTxt}>Добави снимка</Text>
+              </>
+            )}
+          </Pressable>
 
           <View style={styles.group}>
             <Text style={styles.lbl}>Какво яде?</Text>
@@ -257,8 +296,9 @@ const styles = StyleSheet.create({
   segTxt: { fontSize: 14, fontWeight: '700', color: C.inkSoft },
   segTxtOn: { color: '#fff' },
 
-  photoStub: { height: 96, borderRadius: 16, borderWidth: 2, borderStyle: 'dashed', borderColor: C.line, alignItems: 'center', justifyContent: 'center', gap: 4, backgroundColor: C.chip },
+  photoStub: { height: 150, borderRadius: 16, borderWidth: 2, borderStyle: 'dashed', borderColor: C.line, alignItems: 'center', justifyContent: 'center', gap: 4, backgroundColor: C.chip, overflow: 'hidden' },
   photoStubTxt: { fontSize: 12.5, color: C.inkSoft, fontWeight: '600' },
+  photoPreview: { width: '100%', height: '100%' },
 
   rowChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { paddingHorizontal: 13, paddingVertical: 8, borderRadius: 999, backgroundColor: C.chip, borderWidth: 1, borderColor: C.line },
