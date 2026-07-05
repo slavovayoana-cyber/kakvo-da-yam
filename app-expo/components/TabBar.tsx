@@ -32,7 +32,7 @@ export function TabBar({ active, onHome, onFeed, onCompose, onCouple, onJournal 
   return (
     <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 8) }]}>
       <Tab icon="🎲" label="Избери" on={active === 'home'} onPress={onHome} />
-      <Tab icon="🍴" label="APPна" on={active === 'feed'} onPress={onFeed} />
+      <Tab icon="🍴" label="Feed" on={active === 'feed'} onPress={onFeed} />
       <Pressable onPress={onCompose} style={styles.fab} hitSlop={6}>
         <Text style={styles.fabTxt}>＋</Text>
       </Pressable>
