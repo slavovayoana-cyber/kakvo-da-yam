@@ -213,7 +213,7 @@ export default function App() {
     setScreen('home');
   };
 
-  const openJournal = () => setScreen('journal');
+  const openJournal = () => { refreshJournal().catch(() => {}); setScreen('journal'); };
   const openSettings = () => setScreen('settings');
   const openFeed = () => setScreen('feed');
   const openFeedCompose = () => setScreen('feed_compose');

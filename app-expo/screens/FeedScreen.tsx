@@ -61,6 +61,14 @@ function Stars({ value }: { value: number | null | undefined }) {
   );
 }
 
+function FoodImage({ uri, emoji, size = 'card' }: { uri: string | null | undefined; emoji: string; size?: 'card' | 'small' | 'big' }) {
+  const [err, setErr] = useState(false);
+  if (!uri || err) {
+    return <Text style={{ fontSize: size === 'big' ? 64 : size === 'small' ? 24 : 44 }}>{emoji}</Text>;
+  }
+  return <Image source={{ uri }} style={styles.photoImg} onError={() => setErr(true)} resizeMode="cover" />;
+}
+
 export function FeedScreen({ onBack, onCompose, reloadKey = 0 }: Props) {
   const insets = useSafeAreaInsets();
   const [kind, setKind] = useState<PostKind>('venue');
@@ -73,6 +81,7 @@ export function FeedScreen({ onBack, onCompose, reloadKey = 0 }: Props) {
   const [refreshing, setRefreshing] = useState(false);
   const [savedSet, setSavedSet] = useState<Set<string>>(new Set());
   const [savedOnly, setSavedOnly] = useState(false);
+  const [detailPost, setDetailPost] = useState<FeedPost | null>(null);
 
   const activeCount = kind === 'venue' ? countVenue(venueFilters) : countHome(homeFilters);
 
@@ -211,8 +220,8 @@ export function FeedScreen({ onBack, onCompose, reloadKey = 0 }: Props) {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.accent} />}
         >
           {visiblePosts.map((p) => view === 'cards'
-            ? <PostCard key={p.id} post={p} saved={savedSet.has(p.id)} onLike={() => onLike(p)} onMore={() => onMore(p)} onSave={() => onSave(p)} onCooked={() => onCooked(p)} />
-            : <PostRow key={p.id} post={p} saved={savedSet.has(p.id)} onLike={() => onLike(p)} onMore={() => onMore(p)} onSave={() => onSave(p)} />)}
+            ? <PostCard key={p.id} post={p} saved={savedSet.has(p.id)} onLike={() => onLike(p)} onMore={() => onMore(p)} onSave={() => onSave(p)} onOpen={() => setDetailPost(p)} />
+            : <PostRow key={p.id} post={p} saved={savedSet.has(p.id)} onLike={() => onLike(p)} onMore={() => onMore(p)} onSave={() => onSave(p)} onOpen={() => setDetailPost(p)} />)}
         </ScrollView>
       )}
 
@@ -292,6 +301,63 @@ export function FeedScreen({ onBack, onCompose, reloadKey = 0 }: Props) {
         </View>
       </Modal>
 
+      {/* Detail */}
+      <Modal visible={!!detailPost} animationType="slide" onRequestClose={() => setDetailPost(null)}>
+        {detailPost ? (
+          <View style={[styles.root, { paddingTop: insets.top }]}>
+            <View style={styles.appbar}>
+              <Pressable onPress={() => setDetailPost(null)} hitSlop={10} style={styles.iconbtn}><Text style={styles.iconTxt}>←</Text></Pressable>
+              <Text style={styles.title} numberOfLines={1}>{detailPost.dish_name}</Text>
+              <View style={{ width: 34 }} />
+            </View>
+            <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}>
+              <View style={styles.dPhoto}>
+                <FoodImage uri={detailPost.photo_url} emoji={detailPost.kind === 'venue' ? '🍽️' : '🍲'} size="big" />
+              </View>
+              <View style={{ padding: 18, gap: 12 }}>
+                <Text style={styles.dTitle}>{detailPost.dish_name}</Text>
+                {detailPost.kind === 'venue' && detailPost.place_name ? (
+                  <Text style={styles.place}>📍 {detailPost.place_name}{detailPost.place_city ? ` · ${detailPost.place_city}` : ''}</Text>
+                ) : null}
+                {detailPost.kind === 'venue' ? (
+                  <View style={styles.rating2}>
+                    <View style={styles.rrow}><Text style={styles.rk}>🍴 Ястие</Text><Stars value={detailPost.dish_rating} /></View>
+                    {detailPost.place_rating ? <View style={styles.rrow}><Text style={styles.rk}>🏠 Място</Text><Stars value={detailPost.place_rating} /></View> : null}
+                  </View>
+                ) : (
+                  <View style={styles.metaRow}>
+                    {detailPost.prep_minutes ? <Text style={styles.metaChip}>⏱️ {detailPost.prep_minutes} мин</Text> : null}
+                    {detailPost.difficulty ? <Text style={styles.metaChip}>🔥 {diffLabel(detailPost.difficulty)}</Text> : null}
+                    {detailPost.servings ? <Text style={styles.metaChip}>🍽️ {detailPost.servings} порции</Text> : null}
+                  </View>
+                )}
+                {detailPost.comment ? <Text style={styles.comment}>{detailPost.comment}</Text> : null}
+                {detailPost.ingredients ? (
+                  <View style={{ gap: 4 }}>
+                    <Text style={styles.dSection}>🧂 Съставки</Text>
+                    <Text style={styles.dBody}>{detailPost.ingredients}</Text>
+                  </View>
+                ) : null}
+                {detailPost.steps ? (
+                  <View style={{ gap: 4 }}>
+                    <Text style={styles.dSection}>👩‍🍳 Приготвяне</Text>
+                    <Text style={styles.dBody}>{detailPost.steps}</Text>
+                  </View>
+                ) : null}
+                <View style={styles.dActions}>
+                  {detailPost.kind !== 'venue' ? (
+                    <Pressable onPress={() => onCooked(detailPost)} style={styles.cookedBtn}><Text style={styles.cookedTxt}>🍳 Готвих го</Text></Pressable>
+                  ) : null}
+                  <Pressable onPress={() => onSave(detailPost)} style={styles.saveBtn}>
+                    <Text style={styles.saveBtnTxt}>{savedSet.has(detailPost.id) ? '🔖 Запазено' : '📑 Запази'}</Text>
+                  </Pressable>
+                </View>
+              </View>
+            </ScrollView>
+          </View>
+        ) : null}
+      </Modal>
+
       {/* FAB */}
       <Pressable onPress={onCompose} style={[styles.fab, { bottom: insets.bottom + 22 }]}>
         <Text style={styles.fabTxt}>＋</Text>
@@ -317,14 +383,12 @@ function FChip({ on, onPress, children }: { on: boolean; onPress: () => void; ch
   );
 }
 
-function PostCard({ post, saved, onLike, onMore, onSave, onCooked }: { post: FeedPost; saved: boolean; onLike: () => void; onMore: () => void; onSave: () => void; onCooked: () => void }) {
+function PostCard({ post, saved, onLike, onMore, onSave, onOpen }: { post: FeedPost; saved: boolean; onLike: () => void; onMore: () => void; onSave: () => void; onOpen: () => void }) {
   const isVenue = post.kind === 'venue';
   return (
-    <View style={styles.card}>
+    <Pressable style={styles.card} onPress={onOpen}>
       <View style={styles.photo}>
-        {post.photo_url
-          ? <Image source={{ uri: post.photo_url }} style={styles.photoImg} />
-          : <Text style={styles.photoEmoji}>{isVenue ? '🍽️' : '🍲'}</Text>}
+        <FoodImage uri={post.photo_url} emoji={isVenue ? '🍽️' : '🍲'} />
         {isVenue && post.worth_it ? (
           <View style={styles.worth}><Text style={styles.worthTxt}>💰 струваше си</Text></View>
         ) : null}
@@ -353,18 +417,9 @@ function PostCard({ post, saved, onLike, onMore, onSave, onCooked }: { post: Fee
           </View>
         )}
 
-        {post.comment ? <Text style={styles.comment}>{post.comment}</Text> : null}
-        {!isVenue && post.ingredients ? (
-          <Text style={styles.recipe} numberOfLines={4}>🧂 {post.ingredients}</Text>
-        ) : null}
-        {!isVenue && post.steps ? (
-          <Text style={styles.recipe} numberOfLines={6}>👩‍🍳 {post.steps}</Text>
-        ) : null}
-
+        {post.comment ? <Text style={styles.comment} numberOfLines={2}>{post.comment}</Text> : null}
         {!isVenue ? (
-          <Pressable onPress={onCooked} style={styles.cookedBtn}>
-            <Text style={styles.cookedTxt}>🍳 Готвих го</Text>
-          </Pressable>
+          <Text style={styles.recipeLink}>📋 Виж рецептата →</Text>
         ) : null}
 
         <View style={styles.foot}>
@@ -381,18 +436,16 @@ function PostCard({ post, saved, onLike, onMore, onSave, onCooked }: { post: Fee
           </View>
         </View>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
-function PostRow({ post, saved, onLike, onMore, onSave }: { post: FeedPost; saved: boolean; onLike: () => void; onMore: () => void; onSave: () => void }) {
+function PostRow({ post, saved, onLike, onMore, onSave, onOpen }: { post: FeedPost; saved: boolean; onLike: () => void; onMore: () => void; onSave: () => void; onOpen: () => void }) {
   const isVenue = post.kind === 'venue';
   return (
-    <Pressable onLongPress={onMore} style={styles.lrow}>
+    <Pressable onPress={onOpen} onLongPress={onMore} style={styles.lrow}>
       <View style={styles.lphoto}>
-        {post.photo_url
-          ? <Image source={{ uri: post.photo_url }} style={styles.photoImg} />
-          : <Text style={styles.lphotoEmoji}>{isVenue ? '🍽️' : '🍲'}</Text>}
+        <FoodImage uri={post.photo_url} emoji={isVenue ? '🍽️' : '🍲'} size="small" />
       </View>
       <View style={styles.lbody}>
         <Text style={styles.ldish} numberOfLines={1}>
@@ -439,8 +492,8 @@ const styles = StyleSheet.create({
   segTxt: { fontSize: 14, fontWeight: '700', color: C.inkSoft },
   segTxtOn: { color: '#fff' },
 
-  crRow: { maxHeight: 52, marginTop: 4 },
-  crContent: { paddingHorizontal: 14, paddingVertical: 10, gap: 8 },
+  crRow: { flexGrow: 0, marginTop: 2 },
+  crContent: { paddingHorizontal: 14, paddingVertical: 8, gap: 8, alignItems: 'center' },
   cr: { paddingHorizontal: 13, paddingVertical: 7, borderRadius: 999, backgroundColor: C.chip, borderWidth: 1, borderColor: C.line },
   crOn: { backgroundColor: C.ink, borderColor: C.ink },
   crTxt: { fontSize: 13, fontWeight: '600', color: C.ink },
@@ -495,8 +548,17 @@ const styles = StyleSheet.create({
   likeOn: { color: C.accent },
   save: { fontSize: 16, color: C.inkSoft },
   saveOn: { color: C.accent },
-  cookedBtn: { alignSelf: 'flex-start', backgroundColor: C.accent, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 9, marginBottom: 10 },
-  cookedTxt: { color: '#fff', fontSize: 13.5, fontWeight: '700' },
+  cookedBtn: { backgroundColor: C.accent, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12, alignItems: 'center' },
+  cookedTxt: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  recipeLink: { fontSize: 13, fontWeight: '700', color: C.accentDeep, marginBottom: 8 },
+
+  dPhoto: { height: 240, alignItems: 'center', justifyContent: 'center', backgroundColor: '#EEDFD2' },
+  dTitle: { fontFamily: 'InstrumentSerif_400Regular', fontSize: 28, color: C.ink },
+  dSection: { fontSize: 13, fontWeight: '800', color: C.ink, marginTop: 4 },
+  dBody: { fontSize: 14.5, lineHeight: 22, color: C.ink },
+  dActions: { flexDirection: 'row', gap: 10, marginTop: 8 },
+  saveBtn: { flex: 1, borderWidth: 1, borderColor: C.line, borderRadius: 12, paddingVertical: 12, alignItems: 'center', backgroundColor: C.chip },
+  saveBtnTxt: { fontSize: 14, fontWeight: '700', color: C.ink },
 
   lrow: { flexDirection: 'row', alignItems: 'center', gap: 11, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 16, padding: 8, marginBottom: 10 },
   lphoto: { width: 52, height: 52, borderRadius: 12, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: '#EEDFD2' },
