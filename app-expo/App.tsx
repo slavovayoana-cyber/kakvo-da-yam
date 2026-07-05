@@ -27,6 +27,8 @@ import { SettingsScreen } from './screens/SettingsScreen';
 import { CoupleLobbyScreen } from './screens/CoupleLobbyScreen';
 import { CoupleSwipeScreen } from './screens/CoupleSwipeScreen';
 import { CoupleMatchScreen } from './screens/CoupleMatchScreen';
+import { FeedScreen } from './screens/FeedScreen';
+import { FeedComposeScreen } from './screens/FeedComposeScreen';
 import { ShareCard } from './components/ShareCard';
 import { pickMeal, pickMealById, formatShareText } from './lib/mealPicker';
 import { SUMMER_MEAL_IDS } from './lib/seasonal';
@@ -64,8 +66,9 @@ export default function App() {
   });
 
   const [screen, setScreen] = useState<
-    'home' | 'result' | 'journal' | 'settings' | 'couple_lobby' | 'couple_swipe' | 'couple_match'
+    'home' | 'result' | 'journal' | 'settings' | 'couple_lobby' | 'couple_swipe' | 'couple_match' | 'feed' | 'feed_compose'
   >('home');
+  const [feedReloadKey, setFeedReloadKey] = useState(0);
   const [selectedMood, setSelectedMood] = useState<Selection>('all');
   const [selectedTime, setSelectedTime] = useState<MealTime | null>(null);
   const [result, setResult] = useState<PickResult | null>(null);
@@ -210,6 +213,9 @@ export default function App() {
 
   const openJournal = () => setScreen('journal');
   const openSettings = () => setScreen('settings');
+  const openFeed = () => setScreen('feed');
+  const openFeedCompose = () => setScreen('feed_compose');
+  const onFeedPosted = () => { setFeedReloadKey((k) => k + 1); setScreen('feed'); };
 
   const doFindNearby = () => {
     if (!result) return;
@@ -309,9 +315,16 @@ export default function App() {
           onOpenJournal={openJournal}
           onOpenSettings={openSettings}
           onOpenCouple={openCoupleLobby}
+          onOpenFeed={openFeed}
           journalCount={journal.length}
           subtitleIdx={subtitleIdx}
         />
+      )}
+      {screen === 'feed' && (
+        <FeedScreen onBack={goHome} onCompose={openFeedCompose} reloadKey={feedReloadKey} />
+      )}
+      {screen === 'feed_compose' && (
+        <FeedComposeScreen onBack={openFeed} onPosted={onFeedPosted} />
       )}
       {screen === 'result' && result && (
         <ResultScreen

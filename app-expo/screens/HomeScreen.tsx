@@ -31,13 +31,14 @@ type Props = {
   onOpenJournal: () => void;
   onOpenSettings: () => void;
   onOpenCouple: () => void;
+  onOpenFeed: () => void;
   journalCount: number;
   subtitleIdx: number;
 };
 
 export function HomeScreen({
   selectedMood, setSelectedMood, selectedTime, setSelectedTime,
-  onPick, onPickSummer, onOpenJournal, onOpenSettings, onOpenCouple, journalCount, subtitleIdx,
+  onPick, onPickSummer, onOpenJournal, onOpenSettings, onOpenCouple, onOpenFeed, journalCount, subtitleIdx,
 }: Props) {
   const theme: MoodTheme = getTheme(selectedMood);
   const useMoodType = !!selectedMood && selectedMood !== 'all';
@@ -368,6 +369,22 @@ export function HomeScreen({
           >
             <Text style={[styles.coupleBtnText, { color: theme.ink }]}>
               👩‍❤️‍👨 Заедно решаваме
+            </Text>
+          </Pressable>
+
+          {/* Feed (Какво APPна?) button */}
+          <Pressable
+            onPress={() => { tapMedium(); onOpenFeed(); }}
+            style={({ pressed }) => [
+              styles.coupleBtn,
+              {
+                borderColor: theme.colorDeep + '55',
+                opacity: pressed ? 0.85 : 1,
+              },
+            ]}
+          >
+            <Text style={[styles.coupleBtnText, { color: theme.ink }]}>
+              🍴 Какво APPна? — виж какво ядоха
             </Text>
           </Pressable>
 
