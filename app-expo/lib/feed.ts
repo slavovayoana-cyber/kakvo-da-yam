@@ -195,6 +195,19 @@ export async function listHomePosts(f: HomeFilters = {}, page = 0): Promise<Feed
   return enrich(data ?? []);
 }
 
+/** Предложения за заведения от вече публикуваните постове (без външно API). */
+export async function searchPlaces(query: string): Promise<{ place_name: string; place_city: string | null; place_key: string }[]> {
+  const q = query.trim();
+  if (q.length < 2) return [];
+  const { data, error } = await supabase
+    .from('feed_place_stats')
+    .select('place_key, place_name, place_city')
+    .ilike('place_name', `%${q}%`)
+    .limit(6);
+  if (error) throw error;
+  return (data ?? []) as { place_name: string; place_city: string | null; place_key: string }[];
+}
+
 /** Обобщена статистика за заведение (среден рейтинг, брой постове). */
 export async function getPlaceStats(placeKey: string): Promise<PlaceStat | null> {
   const { data, error } = await supabase
