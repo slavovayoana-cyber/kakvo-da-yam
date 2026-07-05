@@ -156,11 +156,19 @@ export function FeedScreen({ onBack, onCompose, reloadKey = 0 }: Props) {
     finally { setAdminLoading(false); }
   };
 
-  const doAdminAct = async (p: FeedPost, action: 'approve' | 'hide') => {
-    try {
-      await adminAct(p.id, action);
-      setAdminPosts((prev) => prev.filter((x) => x.id !== p.id));
-    } catch { Alert.alert('Опа', 'Действието не успя.'); }
+  const doAdminAct = async (p: FeedPost, action: 'approve' | 'hide' | 'delete') => {
+    const run = async () => {
+      try {
+        await adminAct(p.id, action);
+        setAdminPosts((prev) => prev.filter((x) => x.id !== p.id));
+      } catch { Alert.alert('Опа', 'Действието не успя.'); }
+    };
+    if (action === 'delete') {
+      Alert.alert('Изтриване', `Да изтрия „${p.dish_name}" завинаги?`, [
+        { text: 'Отказ', style: 'cancel' },
+        { text: 'Изтрий', style: 'destructive', onPress: run },
+      ]);
+    } else run();
   };
 
   // Взима една снимка с възможност за изрязване (crop работи само при 1 наведнъж).
@@ -516,23 +524,36 @@ export function FeedScreen({ onBack, onCompose, reloadKey = 0 }: Props) {
             </View>
           ) : (
             <ScrollView contentContainerStyle={{ padding: 14, paddingBottom: 40, gap: 12 }}>
-              {adminPosts.map((p) => (
+              {adminPosts.map((p) => {
+                const flagged = p.mod_status === 'rejected' || p.mod_status === 'pending' || p.status === 'hidden';
+                const statusTxt = p.status === 'hidden' ? '🚩 скрита/докладвана'
+                  : p.mod_status === 'rejected' ? '🚫 спряна от AI'
+                  : p.mod_status === 'pending' ? '⏳ чака проверка'
+                  : '✅ публична';
+                return (
                 <View key={p.id} style={styles.admCard}>
-                  <FoodImage uri={p.photo_urls?.[0] ?? p.photo_url} emoji={foodEmoji(p)} size="small" />
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.admName} numberOfLines={1}>{p.dish_name}</Text>
-                    <Text style={styles.admMeta}>
-                      {p.mod_status === 'rejected' ? '🚫 спряна от AI' : p.mod_status === 'pending' ? '⏳ чака проверка' : '🚩 докладвана'}
-                      {p.place_name ? ` · ${p.place_name}` : ''}
-                    </Text>
-                    {p.comment ? <Text style={styles.admMeta} numberOfLines={2}>{p.comment}</Text> : null}
+                  <View style={styles.admTop}>
+                    <View style={styles.admThumb}>
+                      <FoodImage uri={p.photo_urls?.[0] ?? p.photo_url} emoji={foodEmoji(p)} size="small" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.admName} numberOfLines={1}>{p.dish_name}</Text>
+                      <Text style={[styles.admMeta, flagged && { color: C.accentDeep, fontWeight: '700' }]}>
+                        {statusTxt}{p.place_name ? ` · ${p.place_name}` : ''}
+                      </Text>
+                      {p.comment ? <Text style={styles.admMeta} numberOfLines={3}>„{p.comment}"</Text> : null}
+                    </View>
                   </View>
-                  <View style={{ gap: 6 }}>
-                    <Pressable onPress={() => doAdminAct(p, 'approve')} style={[styles.admBtn, styles.admApprove]}><Text style={styles.admBtnTxt}>Одобри</Text></Pressable>
+                  <View style={styles.admBtnRow}>
+                    {p.mod_status !== 'approved' || p.status !== 'active' ? (
+                      <Pressable onPress={() => doAdminAct(p, 'approve')} style={[styles.admBtn, styles.admApprove]}><Text style={styles.admBtnTxt}>✓ Одобри</Text></Pressable>
+                    ) : null}
                     <Pressable onPress={() => doAdminAct(p, 'hide')} style={[styles.admBtn, styles.admHide]}><Text style={styles.admBtnTxt}>Скрий</Text></Pressable>
+                    <Pressable onPress={() => doAdminAct(p, 'delete')} style={[styles.admBtn, styles.admDelete]}><Text style={styles.admBtnTxt}>🗑 Изтрий</Text></Pressable>
                   </View>
                 </View>
-              ))}
+                );
+              })}
             </ScrollView>
           )}
         </View>
@@ -792,13 +813,17 @@ const styles = StyleSheet.create({
   modBadge: { position: 'absolute', left: 10, bottom: 10, backgroundColor: 'rgba(0,0,0,0.62)', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
   modBadgeBad: { backgroundColor: 'rgba(178,34,34,0.85)' },
   modBadgeTxt: { color: '#fff', fontSize: 11, fontWeight: '700' },
-  admCard: { flexDirection: 'row', gap: 10, alignItems: 'center', backgroundColor: C.card, borderRadius: 14, borderWidth: 1, borderColor: C.line, padding: 10 },
+  admCard: { backgroundColor: C.card, borderRadius: 14, borderWidth: 1, borderColor: C.line, padding: 10, gap: 10 },
+  admTop: { flexDirection: 'row', gap: 10, alignItems: 'center' },
+  admThumb: { width: 56, height: 56, borderRadius: 10, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   admName: { fontSize: 15, fontWeight: '700', color: C.ink },
   admMeta: { fontSize: 12, color: C.inkSoft, marginTop: 2 },
-  admBtn: { borderRadius: 10, paddingHorizontal: 12, paddingVertical: 7, alignItems: 'center' },
+  admBtnRow: { flexDirection: 'row', gap: 8 },
+  admBtn: { flex: 1, borderRadius: 10, paddingVertical: 10, alignItems: 'center' },
   admApprove: { backgroundColor: C.green },
-  admHide: { backgroundColor: '#B22222' },
-  admBtnTxt: { color: '#fff', fontSize: 12, fontWeight: '700' },
+  admHide: { backgroundColor: '#9A7B4F' },
+  admDelete: { backgroundColor: '#B22222' },
+  admBtnTxt: { color: '#fff', fontSize: 13, fontWeight: '700' },
   cardBody: { padding: 13 },
   cardTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   dish: { flex: 1, fontFamily: 'InstrumentSerif_400Regular', fontSize: 20, color: C.ink },

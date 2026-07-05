@@ -402,7 +402,7 @@ export async function adminListPosts(): Promise<FeedPost[]> {
   return (data ?? []) as FeedPost[];
 }
 
-export async function adminAct(postId: string, action: 'approve' | 'hide'): Promise<void> {
+export async function adminAct(postId: string, action: 'approve' | 'hide' | 'delete'): Promise<void> {
   const { error } = await supabase.rpc('feed_admin_act', { p_id: postId, p_action: action, p_secret: ADMIN_SECRET });
   if (error) throw error;
 }

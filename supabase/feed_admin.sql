@@ -1,13 +1,12 @@
 -- ============================================================
 --  „Какво APPна?" — скрит екран за преглед (само за собственика)
---  Две функции: една чете чакащите/спрените/докладваните постове,
---  друга ги одобрява или скрива. И двете са защитени с таен код
---  (същия и в приложението). SECURITY DEFINER → заобикалят RLS.
+--  feed_admin_list: връща ВСИЧКИ постове (за да можеш да прегледаш и триеш кой да е).
+--  feed_admin_act:  approve (пусни) / hide (скрий) / delete (изтрий завинаги).
+--  Защитени с таен код. SECURITY DEFINER → заобикалят RLS.
 --
 --  Изпълни в Supabase → SQL Editor. Безопасно за повторно пускане.
 -- ============================================================
 
--- Списък с постове, които се нуждаят от внимание.
 create or replace function public.feed_admin_list(p_secret text)
 returns setof public.feed_posts
 language plpgsql security definer set search_path = public as $$
@@ -17,13 +16,14 @@ begin
   end if;
   return query
     select * from public.feed_posts
-    where mod_status in ('pending', 'rejected') or status = 'hidden'
-    order by created_at desc
-    limit 100;
+    order by
+      -- първо тези, които се нуждаят от внимание
+      (case when mod_status in ('pending','rejected') or status = 'hidden' then 0 else 1 end),
+      created_at desc
+    limit 300;
 end;
 $$;
 
--- Действие върху пост: 'approve' (пусни) или 'hide' (скрий).
 create or replace function public.feed_admin_act(p_id uuid, p_action text, p_secret text)
 returns void
 language plpgsql security definer set search_path = public as $$
@@ -35,6 +35,8 @@ begin
     update public.feed_posts set mod_status = 'approved', status = 'active' where id = p_id;
   elsif p_action = 'hide' then
     update public.feed_posts set status = 'hidden' where id = p_id;
+  elsif p_action = 'delete' then
+    delete from public.feed_posts where id = p_id;
   else
     raise exception 'bad action';
   end if;
