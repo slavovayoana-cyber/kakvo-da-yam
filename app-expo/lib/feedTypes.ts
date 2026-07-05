@@ -41,6 +41,7 @@ export interface FeedPost {
   tags: string[];
   like_count: number;
   status: string;
+  mod_status?: string;   // 'approved' | 'pending' | 'rejected'
   created_at: string;
 
   // попълва се от клиента

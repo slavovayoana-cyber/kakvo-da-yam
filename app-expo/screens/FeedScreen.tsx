@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import {
   listVenuePosts, listHomePosts, toggleLike, reportPost, hidePostLocally,
-  getSavedIds, toggleSave, adoptCuratedPosts, updatePostPhotos,
+  getSavedIds, toggleSave, adoptCuratedPosts, updatePostPhotos, blockAuthor,
 } from '../lib/feed';
 import { addJournalEntry } from '../lib/journal';
 import type { FeedPost, PostKind, VenueFilters, HomeFilters, FeedSort, Difficulty } from '../lib/feedTypes';
@@ -207,6 +207,15 @@ export function FeedScreen({ onBack, onCompose, reloadKey = 0 }: Props) {
       { text: 'Скрий', onPress: () => {
         hidePostLocally(p.id).catch(() => {});
         setPosts((prev) => prev.filter((x) => x.id !== p.id));
+      } },
+      { text: 'Блокирай този потребител', style: 'destructive', onPress: () => {
+        Alert.alert('Блокиране', `Няма да виждаш повече постове от ${p.author_nickname ?? 'този потребител'}.`, [
+          { text: 'Отказ', style: 'cancel' },
+          { text: 'Блокирай', style: 'destructive', onPress: () => {
+            blockAuthor(p.author_device_id).catch(() => {});
+            setPosts((prev) => prev.filter((x) => x.author_device_id !== p.author_device_id));
+          } },
+        ]);
       } },
       { text: 'Отказ', style: 'cancel' },
     ]);
@@ -509,6 +518,11 @@ function PostCard({ post, saved, onLike, onMore, onSave, onOpen }: { post: FeedP
         {isVenue && post.worth_it ? (
           <View style={styles.worth}><Text style={styles.worthTxt}>💰 струваше си</Text></View>
         ) : null}
+        {post.mod_status === 'pending' ? (
+          <View style={styles.modBadge}><Text style={styles.modBadgeTxt}>⏳ изчаква проверка</Text></View>
+        ) : post.mod_status === 'rejected' ? (
+          <View style={[styles.modBadge, styles.modBadgeBad]}><Text style={styles.modBadgeTxt}>🚫 спряна снимка</Text></View>
+        ) : null}
       </View>
       <View style={styles.cardBody}>
         <View style={styles.cardTop}>
@@ -654,6 +668,9 @@ const styles = StyleSheet.create({
   photoCount: { position: 'absolute', left: 10, top: 10, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 999, paddingHorizontal: 9, paddingVertical: 4 },
   photoCountTxt: { color: '#fff', fontSize: 11, fontWeight: '700' },
   worthTxt: { color: '#fff', fontSize: 11, fontWeight: '700' },
+  modBadge: { position: 'absolute', left: 10, bottom: 10, backgroundColor: 'rgba(0,0,0,0.62)', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
+  modBadgeBad: { backgroundColor: 'rgba(178,34,34,0.85)' },
+  modBadgeTxt: { color: '#fff', fontSize: 11, fontWeight: '700' },
   cardBody: { padding: 13 },
   cardTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   dish: { flex: 1, fontFamily: 'InstrumentSerif_400Regular', fontSize: 20, color: C.ink },

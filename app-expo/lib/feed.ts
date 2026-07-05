@@ -10,6 +10,7 @@ import type {
 const PHOTO_BUCKET = 'feed-photos';
 const HIDDEN_KEY = 'kakvodayam:feed_hidden:v1';
 const SAVED_KEY = 'kakvodayam:feed_saved:v1';
+const BLOCKED_KEY = 'kakvodayam:feed_blocked_authors:v1';
 const PAGE = 20;
 
 // ---------- Запазени рецепти (локално) ----------
@@ -120,6 +121,7 @@ export async function createVenuePost(input: NewVenuePost): Promise<FeedPost> {
       author_device_id: profile.device_id,
       user_id: userId,
       kind: 'venue',
+      mod_status: 'pending',   // изчаква AI проверка на снимките
       photo_urls,
       photo_url: photo_urls[0] ?? null,
       dish_name: input.dishName.trim(),
@@ -153,6 +155,7 @@ export async function createHomePost(input: NewHomePost): Promise<FeedPost> {
       author_device_id: profile.device_id,
       user_id: userId,
       kind: 'home',
+      mod_status: 'pending',   // изчаква AI проверка на снимките
       photo_urls,
       photo_url: photo_urls[0] ?? null,
       dish_name: input.dishName.trim(),
@@ -184,8 +187,9 @@ function applySort(query: any, sort: string | undefined) {
 async function enrich(rows: any[]): Promise<FeedPost[]> {
   const deviceId = await getDeviceId();
   const hidden = await getHiddenIds();
+  const blocked = await getBlockedAuthors();
   const posts: FeedPost[] = rows
-    .filter((r) => !hidden.includes(r.id))
+    .filter((r) => !hidden.includes(r.id) && !blocked.includes(r.author_device_id))
     .map((r) => ({
       ...r,
       author_nickname: r.author?.nickname ?? null,
@@ -349,5 +353,23 @@ export async function hidePostLocally(postId: string): Promise<void> {
   if (!ids.includes(postId)) {
     ids.push(postId);
     await AsyncStorage.setItem(HIDDEN_KEY, JSON.stringify(ids));
+  }
+}
+
+// Блокиране на потребител (локално): скрива всичките му постове.
+async function getBlockedAuthors(): Promise<string[]> {
+  try {
+    const raw = await AsyncStorage.getItem(BLOCKED_KEY);
+    return raw ? (JSON.parse(raw) as string[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function blockAuthor(authorDeviceId: string): Promise<void> {
+  const ids = await getBlockedAuthors();
+  if (!ids.includes(authorDeviceId)) {
+    ids.push(authorDeviceId);
+    await AsyncStorage.setItem(BLOCKED_KEY, JSON.stringify(ids));
   }
 }
