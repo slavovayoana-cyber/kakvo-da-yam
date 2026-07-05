@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator,
   Alert, Image, RefreshControl, Modal, Dimensions, TextInput,
+  KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
@@ -265,6 +266,7 @@ export function FeedScreen({ onBack, onCompose, reloadKey = 0 }: Props) {
 
       {/* Filter sheet */}
       <Modal visible={showFilters} transparent animationType="slide" onRequestClose={() => { if (showCity) setShowCity(false); else setShowFilters(false); }}>
+       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <Pressable style={styles.backdrop} onPress={() => { if (showCity) setShowCity(false); else setShowFilters(false); }} />
         <View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
           {showCity ? (
@@ -379,6 +381,7 @@ export function FeedScreen({ onBack, onCompose, reloadKey = 0 }: Props) {
             </>
           )}
         </View>
+       </KeyboardAvoidingView>
       </Modal>
 
       {/* Detail */}
