@@ -5,8 +5,8 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getMyProfile, setNickname, createVenuePost, createHomePost, searchPlaces } from '../lib/feed';
-import type { PostKind, Difficulty } from '../lib/feedTypes';
+import { getMyProfile, setNickname, createVenuePost, createHomePost, updateVenuePost, updateHomePost, searchPlaces } from '../lib/feed';
+import type { PostKind, Difficulty, FeedPost } from '../lib/feedTypes';
 
 const C = {
   bg: '#FBEFE6', card: '#FFFDFB', ink: '#3B2A22', inkSoft: '#8A7264',
@@ -25,7 +25,7 @@ const DIFFS: { key: Difficulty; label: string }[] = [
   { key: 'easy', label: 'Лесно' }, { key: 'medium', label: 'Средно' }, { key: 'hard', label: 'Трудно' },
 ];
 
-type Props = { onBack: () => void; onPosted: () => void };
+type Props = { onBack: () => void; onPosted: () => void; editPost?: FeedPost | null };
 
 function StarPicker({ value, onChange }: { value: number; onChange: (n: number) => void }) {
   return (
@@ -39,8 +39,9 @@ function StarPicker({ value, onChange }: { value: number; onChange: (n: number) 
   );
 }
 
-export function FeedComposeScreen({ onBack, onPosted }: Props) {
+export function FeedComposeScreen({ onBack, onPosted, editPost }: Props) {
   const insets = useSafeAreaInsets();
+  const isEdit = !!editPost;
   const [needNickname, setNeedNickname] = useState(false);
   const [nickname, setNick] = useState('');
   const [savedNick, setSavedNick] = useState('');
@@ -76,6 +77,31 @@ export function FeedComposeScreen({ onBack, onPosted }: Props) {
       else setNeedNickname(true);
     }).catch(() => setNeedNickname(true));
   }, []);
+
+  // Попълва формата при редакция на съществуващ пост.
+  useEffect(() => {
+    if (!editPost) return;
+    setKind(editPost.kind);
+    setDishName(editPost.dish_name ?? '');
+    setDishRating(editPost.dish_rating ?? 0);
+    setComment(editPost.comment ?? '');
+    const ph = editPost.photo_urls?.length ? editPost.photo_urls : (editPost.photo_url ? [editPost.photo_url] : []);
+    setPhotoUris(ph);
+    if (editPost.kind === 'venue') {
+      setPlaceName(editPost.place_name ?? '');
+      setPlaceCity(editPost.place_city ?? '');
+      setPlaceRating(editPost.place_rating ?? 0);
+      setWorthIt(editPost.worth_it ?? null);
+      setCuisine(editPost.cuisine ?? null);
+      setPlaceType(editPost.place_type ?? null);
+    } else {
+      setPrep(editPost.prep_minutes ? String(editPost.prep_minutes) : '');
+      setDifficulty(editPost.difficulty ?? null);
+      setServings(editPost.servings ? String(editPost.servings) : '');
+      setIngredients(editPost.ingredients ?? '');
+      setSteps(editPost.steps ?? '');
+    }
+  }, [editPost]);
 
   const saveNick = async () => {
     if (nickname.trim().length < 2) { Alert.alert('Прякор', 'Прякорът трябва да е поне 2 букви.'); return; }
@@ -151,25 +177,29 @@ export function FeedComposeScreen({ onBack, onPosted }: Props) {
       if (kind === 'venue') {
         const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
           `${placeName} ${placeCity}`.trim())}`;
-        await createVenuePost({
+        const payload = {
           dishName, dishRating, comment, photoUris: photoUris.length ? photoUris : undefined,
           placeName, placeCity: placeCity || undefined, placeMapsUrl: mapsUrl,
           placeRating: placeRating || undefined,
           worthIt: worthIt ?? undefined,
           cuisine: cuisine || undefined, placeType: placeType || undefined,
-        });
+        };
+        if (isEdit && editPost) await updateVenuePost(editPost.id, payload);
+        else await createVenuePost(payload);
       } else {
-        await createHomePost({
+        const payload = {
           dishName, dishRating, comment, photoUris: photoUris.length ? photoUris : undefined,
           prepMinutes: prep ? parseInt(prep, 10) : undefined,
           difficulty: difficulty || undefined,
           servings: servings ? parseInt(servings, 10) : undefined,
           ingredients: ingredients || undefined, steps: steps || undefined,
-        });
+        };
+        if (isEdit && editPost) await updateHomePost(editPost.id, payload);
+        else await createHomePost(payload);
       }
       onPosted();
     } catch (e: any) {
-      Alert.alert('Проблем', 'Публикуването не успя. Опитай пак.');
+      Alert.alert('Проблем', isEdit ? 'Редакцията не успя. Опитай пак.' : 'Публикуването не успя. Опитай пак.');
       setSaving(false);
     }
   };
@@ -178,7 +208,7 @@ export function FeedComposeScreen({ onBack, onPosted }: Props) {
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <View style={styles.appbar}>
         <Pressable onPress={onBack} hitSlop={10} style={styles.iconbtn}><Text style={styles.iconTxt}>✕</Text></Pressable>
-        <Text style={styles.title}>Добави хапване</Text>
+        <Text style={styles.title}>{isEdit ? 'Редактирай поста' : 'Добави хапване'}</Text>
         <View style={{ width: 34 }} />
       </View>
 
@@ -320,7 +350,7 @@ export function FeedComposeScreen({ onBack, onPosted }: Props) {
 
         <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
           <Pressable onPress={submit} disabled={saving} style={[styles.publish, saving && { opacity: 0.7 }]}>
-            {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.publishTxt}>Публикувай</Text>}
+            {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.publishTxt}>{isEdit ? 'Запази промените' : 'Публикувай'}</Text>}
           </Pressable>
         </View>
       </KeyboardAvoidingView>

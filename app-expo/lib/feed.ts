@@ -175,6 +175,56 @@ export async function createHomePost(input: NewHomePost): Promise<FeedPost> {
   return { ...(data as FeedPost), author_nickname: profile.nickname, liked_by_me: false };
 }
 
+// ---------- Редактиране на съществуващ пост ----------
+
+// Качва само новите локални снимки; вече качените (http) остават както са.
+async function uploadMixed(uris?: string[]): Promise<string[]> {
+  const out: string[] = [];
+  for (const u of (uris ?? []).slice(0, 3)) {
+    out.push(/^https?:/.test(u) ? u : await uploadPhoto(u));
+  }
+  return out;
+}
+
+export async function updateVenuePost(postId: string, input: NewVenuePost): Promise<void> {
+  const photo_urls = await uploadMixed(input.photoUris);
+  const { error } = await supabase.from('feed_posts').update({
+    mod_status: 'pending',   // след редакция минава пак през проверка
+    photo_urls, photo_url: photo_urls[0] ?? null,
+    dish_name: input.dishName.trim(),
+    comment: input.comment?.trim() || null,
+    dish_rating: input.dishRating,
+    place_name: input.placeName.trim(),
+    place_city: input.placeCity?.trim() || null,
+    place_key: makePlaceKey(input.placeName, input.placeCity),
+    place_rating: input.placeRating ?? null,
+    worth_it: input.worthIt ?? null,
+    cuisine: input.cuisine ?? null,
+    place_type: input.placeType ?? null,
+    tags: input.tags ?? [],
+  }).eq('id', postId);
+  if (error) throw error;
+}
+
+export async function updateHomePost(postId: string, input: NewHomePost): Promise<void> {
+  const photo_urls = await uploadMixed(input.photoUris);
+  const { error } = await supabase.from('feed_posts').update({
+    mod_status: 'pending',
+    photo_urls, photo_url: photo_urls[0] ?? null,
+    dish_name: input.dishName.trim(),
+    comment: input.comment?.trim() || null,
+    dish_rating: input.dishRating,
+    prep_minutes: input.prepMinutes ?? null,
+    difficulty: input.difficulty ?? null,
+    servings: input.servings ?? null,
+    diet: input.diet ?? null,
+    ingredients: input.ingredients?.trim() || null,
+    steps: input.steps?.trim() || null,
+    tags: input.tags ?? [],
+  }).eq('id', postId);
+  if (error) throw error;
+}
+
 // ---------- Четене ----------
 
 function applySort(query: any, sort: string | undefined) {
