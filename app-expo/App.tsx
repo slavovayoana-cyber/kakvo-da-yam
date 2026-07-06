@@ -71,6 +71,7 @@ export default function App() {
     'home' | 'result' | 'journal' | 'settings' | 'couple_lobby' | 'couple_swipe' | 'couple_match' | 'feed' | 'feed_compose'
   >('home');
   const [feedReloadKey, setFeedReloadKey] = useState(0);
+  const [editingPost, setEditingPost] = useState<import('./lib/feedTypes').FeedPost | null>(null);
   const [selectedMood, setSelectedMood] = useState<Selection>('all');
   const [selectedTime, setSelectedTime] = useState<MealTime | null>(null);
   const [result, setResult] = useState<PickResult | null>(null);
@@ -217,8 +218,9 @@ export default function App() {
   const openJournal = () => { refreshJournal().catch(() => {}); setScreen('journal'); };
   const openSettings = () => setScreen('settings');
   const openFeed = () => setScreen('feed');
-  const openFeedCompose = () => setScreen('feed_compose');
-  const onFeedPosted = () => { setFeedReloadKey((k) => k + 1); setScreen('feed'); };
+  const openFeedCompose = () => { setEditingPost(null); setScreen('feed_compose'); };
+  const openFeedEdit = (p: import('./lib/feedTypes').FeedPost) => { setEditingPost(p); setScreen('feed_compose'); };
+  const onFeedPosted = () => { setEditingPost(null); setFeedReloadKey((k) => k + 1); setScreen('feed'); };
 
   const doFindNearby = () => {
     if (!result) return;
@@ -325,10 +327,10 @@ export default function App() {
         />
       )}
       {screen === 'feed' && (
-        <FeedScreen onBack={goHome} onCompose={openFeedCompose} reloadKey={feedReloadKey} />
+        <FeedScreen onBack={goHome} onCompose={openFeedCompose} onEdit={openFeedEdit} reloadKey={feedReloadKey} />
       )}
       {screen === 'feed_compose' && (
-        <FeedComposeScreen onBack={openFeed} onPosted={onFeedPosted} />
+        <FeedComposeScreen onBack={openFeed} onPosted={onFeedPosted} editPost={editingPost} />
       )}
       {screen === 'result' && result && (
         <ResultScreen

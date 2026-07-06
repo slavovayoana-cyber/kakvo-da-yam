@@ -12,6 +12,7 @@ import {
   isAdminUnlocked, unlockAdmin, adminListPosts, adminAct, adminSetPhotos,
 } from '../lib/feed';
 import { addJournalEntry } from '../lib/journal';
+import { getDeviceId } from '../lib/supabase';
 import type { FeedPost, PostKind, VenueFilters, HomeFilters, FeedSort, Difficulty } from '../lib/feedTypes';
 
 const C = {
@@ -57,6 +58,7 @@ function countHome(f: HomeFilters) {
 type Props = {
   onBack: () => void;
   onCompose: () => void;
+  onEdit?: (p: FeedPost) => void;
   reloadKey?: number; // сменя се след публикуване, за да презареди
 };
 
@@ -92,8 +94,9 @@ function FoodImage({ uri, emoji, size = 'card' }: { uri: string | null | undefin
   return <Image source={{ uri }} style={styles.photoImg} onError={() => setErr(true)} resizeMode="cover" />;
 }
 
-export function FeedScreen({ onBack, onCompose, reloadKey = 0 }: Props) {
+export function FeedScreen({ onBack, onCompose, onEdit, reloadKey = 0 }: Props) {
   const insets = useSafeAreaInsets();
+  const [myDeviceId, setMyDeviceId] = useState<string | null>(null);
   const [kind, setKind] = useState<PostKind>('venue');
   const [view, setView] = useState<'cards' | 'list'>('cards');
   const [venueFilters, setVenueFilters] = useState<VenueFilters>({});
@@ -124,6 +127,7 @@ export function FeedScreen({ onBack, onCompose, reloadKey = 0 }: Props) {
   useEffect(() => { getSavedIds().then((ids) => setSavedSet(new Set(ids))).catch(() => {}); }, [reloadKey]);
   useEffect(() => { adoptCuratedPosts(); }, []);
   useEffect(() => { isAdminUnlocked().then(setAdminOn).catch(() => {}); }, []);
+  useEffect(() => { getDeviceId().then(setMyDeviceId).catch(() => {}); }, []);
 
   const onTitleTap = () => {
     tapRef.current += 1;
@@ -272,8 +276,10 @@ export function FeedScreen({ onBack, onCompose, reloadKey = 0 }: Props) {
   };
 
   const onMore = (p: FeedPost) => {
+    const canEdit = onEdit && (adminOn || (myDeviceId && p.author_device_id === myDeviceId));
     Alert.alert('Този пост', undefined, [
-      { text: 'Докладвай (неуместно)', style: 'destructive', onPress: () => {
+      ...(canEdit ? [{ text: '✏️ Редактирай', onPress: () => onEdit!(p) }] : []),
+      { text: 'Докладвай (неуместно)', style: 'destructive' as const, onPress: () => {
         reportPost(p.id).catch(() => {});
         setPosts((prev) => prev.filter((x) => x.id !== p.id));
       } },
