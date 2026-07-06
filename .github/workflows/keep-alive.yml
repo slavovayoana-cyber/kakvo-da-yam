@@ -1,0 +1,25 @@
+name: Будилник (Supabase да не заспива)
+
+# Прави леко запитване към базата 2 пъти седмично, за да брои като
+# активност — така безплатният Supabase проект никога не „заспива".
+# ВАЖНО: GitHub пуска графиците (schedule) само от основния клон (main),
+# затова този файл трябва да е в main, за да работи автоматично.
+
+on:
+  schedule:
+    - cron: "0 6 * * 1,4"   # понеделник и четвъртък, 06:00 UTC
+  workflow_dispatch:          # и ръчно, за тест
+
+jobs:
+  ping:
+    name: Пинг към Supabase
+    runs-on: ubuntu-latest
+    steps:
+      - name: Леко запитване към базата
+        run: |
+          code=$(curl -sS -o /dev/null -w "%{http_code}" \
+            "https://ozjrsivvcgrngvzejbtl.supabase.co/rest/v1/feed_profiles?select=device_id&limit=1" \
+            -H "apikey: sb_publishable_zTz8IVxsWorQoQ1E_1goxw_L4XU2uV5" \
+            -H "Authorization: Bearer sb_publishable_zTz8IVxsWorQoQ1E_1goxw_L4XU2uV5")
+          echo "HTTP статус: $code"
+          # 200 = ок; ако проектът е бил заспал, това го събужда.
