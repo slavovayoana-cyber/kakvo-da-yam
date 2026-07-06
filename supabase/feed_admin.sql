@@ -78,7 +78,24 @@ begin
 end;
 $$;
 
+-- ---------- Смяна на снимки като собственик (не се нулира) ----------
+create or replace function public.feed_admin_set_photos(p_id uuid, p_urls text[], p_secret text)
+returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if p_secret <> 'kdy_admin_9c1f7b3e' then
+    raise exception 'forbidden';
+  end if;
+  update public.feed_posts
+     set photo_urls = p_urls,
+         photo_url = coalesce(p_urls[1], null)
+   where id = p_id;
+end;
+$$;
+
 revoke all on function public.feed_admin_list(text) from public;
 revoke all on function public.feed_admin_act(uuid,text,text) from public;
+revoke all on function public.feed_admin_set_photos(uuid,text[],text) from public;
 grant execute on function public.feed_admin_list(text) to anon, authenticated;
 grant execute on function public.feed_admin_act(uuid,text,text) to anon, authenticated;
+grant execute on function public.feed_admin_set_photos(uuid,text[],text) to anon, authenticated;

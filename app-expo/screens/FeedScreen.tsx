@@ -9,7 +9,7 @@ import * as ImagePicker from 'expo-image-picker';
 import {
   listVenuePosts, listHomePosts, toggleLike, reportPost, hidePostLocally,
   getSavedIds, toggleSave, adoptCuratedPosts, updatePostPhotos, blockAuthor,
-  isAdminUnlocked, unlockAdmin, adminListPosts, adminAct,
+  isAdminUnlocked, unlockAdmin, adminListPosts, adminAct, adminSetPhotos,
 } from '../lib/feed';
 import { addJournalEntry } from '../lib/journal';
 import type { FeedPost, PostKind, VenueFilters, HomeFilters, FeedSort, Difficulty } from '../lib/feedTypes';
@@ -193,7 +193,9 @@ export function FeedScreen({ onBack, onCompose, reloadKey = 0 }: Props) {
   };
 
   const applyPhotos = async (p: FeedPost, uris: string[]) => {
-    const urls = await updatePostPhotos(p.id, uris);
+    // Като собственик (отключен админ) минаваме през защитена функция, която
+    // заобикаля RLS — така смяната се записва трайно и не се нулира.
+    const urls = adminOn ? await adminSetPhotos(p.id, uris) : await updatePostPhotos(p.id, uris);
     setDetailPost((d) => (d && d.id === p.id ? { ...d, photo_url: urls[0] ?? null, photo_urls: urls } : d));
     setPosts((prev) => prev.map((x) => x.id === p.id ? { ...x, photo_url: urls[0] ?? null, photo_urls: urls } : x));
   };

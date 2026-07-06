@@ -406,3 +406,15 @@ export async function adminAct(postId: string, action: 'approve' | 'hide' | 'del
   const { error } = await supabase.rpc('feed_admin_act', { p_id: postId, p_action: action, p_secret: ADMIN_SECRET });
   if (error) throw error;
 }
+
+/** Смяна на снимки като собственик (заобикаля RLS → не се нулират).
+ *  Качва само новите локални; вече качените http(s) остават. */
+export async function adminSetPhotos(postId: string, uris: string[]): Promise<string[]> {
+  const urls: string[] = [];
+  for (const uri of uris.slice(0, 3)) {
+    urls.push(/^https?:/.test(uri) ? uri : await uploadPhoto(uri));
+  }
+  const { error } = await supabase.rpc('feed_admin_set_photos', { p_id: postId, p_urls: urls, p_secret: ADMIN_SECRET });
+  if (error) throw error;
+  return urls;
+}
