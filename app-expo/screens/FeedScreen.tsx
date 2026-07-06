@@ -6,6 +6,9 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
+import * as Sharing from 'expo-sharing';
+import { captureRef } from 'react-native-view-shot';
+import { FeedShareCard } from '../components/FeedShareCard';
 import {
   listVenuePosts, listHomePosts, toggleLike, reportPost, hidePostLocally,
   getSavedIds, toggleSave, adoptCuratedPosts, updatePostPhotos, blockAuthor,
@@ -121,6 +124,8 @@ export function FeedScreen({ onBack, onCompose, onEdit, reloadKey = 0 }: Props) 
   const [pinInput, setPinInput] = useState('');
   const tapRef = useRef(0);
   const tapTimer = useRef<any>(null);
+  const [sharePost, setSharePost] = useState<FeedPost | null>(null);
+  const shareRef = useRef<any>(null);
 
   const activeCount = kind === 'venue' ? countVenue(venueFilters) : countHome(homeFilters);
 
@@ -234,6 +239,23 @@ export function FeedScreen({ onBack, onCompose, onEdit, reloadKey = 0 }: Props) 
       if (nowSaved) next.add(p.id); else next.delete(p.id);
       return next;
     });
+  };
+
+  const shareFeedPost = async (p: FeedPost) => {
+    try {
+      const photo = p.photo_urls?.[0] ?? p.photo_url;
+      if (photo) { try { await Image.prefetch(photo); } catch { /* без снимка ще ползва емоджи */ } }
+      setSharePost(p);
+      await new Promise((r) => setTimeout(r, 500)); // изчаква картата да се нарисува
+      const uri = await captureRef(shareRef, { format: 'png', quality: 1, result: 'tmpfile', width: 540, height: 960 });
+      setSharePost(null);
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: p.dish_name, UTI: 'public.png' });
+      }
+    } catch {
+      setSharePost(null);
+      Alert.alert('Опа', 'Споделянето не успя. Опитай пак.');
+    }
   };
 
   const openMaps = (p: FeedPost) => {
@@ -691,6 +713,9 @@ export function FeedScreen({ onBack, onCompose, onEdit, reloadKey = 0 }: Props) 
                     <Text style={styles.saveBtnTxt}>{savedSet.has(detailPost.id) ? '🔖 Запазено' : '📑 Запази'}</Text>
                   </Pressable>
                 </View>
+                <Pressable onPress={() => shareFeedPost(detailPost)} style={styles.shareBtn}>
+                  <Text style={styles.shareBtnTxt}>📤 Сподели</Text>
+                </Pressable>
                 <Pressable onPress={() => changePhoto(detailPost)} style={styles.photoBtn}>
                   <Text style={styles.photoBtnTxt}>📷 Промени снимка</Text>
                 </Pressable>
@@ -704,6 +729,13 @@ export function FeedScreen({ onBack, onCompose, onEdit, reloadKey = 0 }: Props) 
           </View>
         ) : null}
       </Modal>
+
+      {/* Скрита карта за споделяне (рисува се извън екрана и се снима) */}
+      {sharePost ? (
+        <View style={styles.shareOffscreen} pointerEvents="none">
+          <FeedShareCard ref={shareRef} post={sharePost} />
+        </View>
+      ) : null}
 
     </View>
   );
@@ -1006,6 +1038,9 @@ const styles = StyleSheet.create({
   photoBtnTxt: { fontSize: 14, fontWeight: '700', color: C.accentDeep },
   editBtn: { borderRadius: 12, paddingVertical: 12, alignItems: 'center', backgroundColor: C.accent, marginTop: 10 },
   editBtnTxt: { fontSize: 14, fontWeight: '700', color: '#fff' },
+  shareBtn: { borderRadius: 12, paddingVertical: 12, alignItems: 'center', backgroundColor: C.green, marginTop: 10 },
+  shareBtnTxt: { fontSize: 14, fontWeight: '700', color: '#fff' },
+  shareOffscreen: { position: 'absolute', left: -10000, top: 0 },
 
   lrow: { flexDirection: 'row', alignItems: 'center', gap: 11, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 16, padding: 8, marginBottom: 10 },
   lphoto: { width: 52, height: 52, borderRadius: 12, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: '#EEDFD2' },
