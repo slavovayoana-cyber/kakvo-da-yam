@@ -212,7 +212,7 @@ export function FeedComposeScreen({ onBack, onPosted, editPost }: Props) {
         <View style={{ width: 34 }} />
       </View>
 
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+      <KeyboardAvoidingView behavior="padding" keyboardVerticalOffset={8} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: insets.bottom + 100, gap: 16 }} keyboardShouldPersistTaps="handled">
 
           <View style={styles.group}>

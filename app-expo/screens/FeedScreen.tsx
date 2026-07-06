@@ -393,7 +393,7 @@ export function FeedScreen({ onBack, onCompose, onEdit, reloadKey = 0 }: Props) 
 
       {/* Filter sheet */}
       <Modal visible={showFilters} transparent animationType="slide" onRequestClose={() => { if (showCity) setShowCity(false); else setShowFilters(false); }}>
-       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+       <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
         <Pressable style={styles.backdrop} onPress={() => { if (showCity) setShowCity(false); else setShowFilters(false); }} />
         <View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
           {showCity ? (
@@ -513,7 +513,7 @@ export function FeedScreen({ onBack, onCompose, onEdit, reloadKey = 0 }: Props) 
 
       {/* PIN за скрит преглед */}
       <Modal visible={pinModal} transparent animationType="fade" onRequestClose={() => setPinModal(false)}>
-       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+       <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
         <Pressable style={styles.backdrop} onPress={() => setPinModal(false)} />
         <View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
           <View style={styles.sheetHead}>
