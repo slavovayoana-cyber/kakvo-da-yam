@@ -30,7 +30,7 @@ export type MoodTheme = {
 export const MOOD_THEMES: Record<MoodId, MoodTheme> = {
   healthy_ish: {
     id: 'healthy_ish',
-    emoji: '🥗',
+    emoji: '🥑',
     name: 'Healthy-ish',
     tagline: 'Искам да се чувствам отговорно',
     color: '#9CAF88',
@@ -53,7 +53,7 @@ export const MOOD_THEMES: Record<MoodId, MoodTheme> = {
   },
   fancy: {
     id: 'fancy',
-    emoji: '💅',
+    emoji: '🥂',
     name: 'Fancy',
     tagline: 'Днес заслужавам нещо по-така',
     color: '#D4A5A5',
@@ -75,7 +75,7 @@ export const MOOD_THEMES: Record<MoodId, MoodTheme> = {
   },
   honest: {
     id: 'honest',
-    emoji: '😂',
+    emoji: '🔥',
     name: 'Honest',
     tagline: 'Кажи ми истината какво ми се яде',
     color: '#B8893D',
@@ -98,7 +98,7 @@ export const MOOD_THEMES: Record<MoodId, MoodTheme> = {
   },
   comfort: {
     id: 'comfort',
-    emoji: '🧸',
+    emoji: '🍜',
     name: 'Comfort',
     tagline: 'Искам нещо уютно и вкусно',
     color: '#B89B7A',
