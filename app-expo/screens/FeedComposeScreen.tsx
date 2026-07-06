@@ -19,7 +19,7 @@ const CUISINES = ['Скара', 'Българска', 'Здравословна'
 const PLACE_TYPES: { key: string; label: string }[] = [
   { key: 'restaurant', label: '🍽️ Ресторант' }, { key: 'cafe', label: '☕ Кафене' },
   { key: 'bar', label: '🍸 Бар' }, { key: 'patisserie', label: '🧁 Сладкарница' },
-  { key: 'street', label: '🌭 Street food' },
+  { key: 'brunch', label: '🥞 Брънч' }, { key: 'street', label: '🌭 Street food' },
 ];
 const DIFFS: { key: Difficulty; label: string }[] = [
   { key: 'easy', label: 'Лесно' }, { key: 'medium', label: 'Средно' }, { key: 'hard', label: 'Трудно' },
