@@ -1,0 +1,42 @@
+name: Подаване в магазина (App Store / Google Play)
+
+# Подава ПОСЛЕДНИЯ готов билд към съответния магазин.
+# Пуска се ръчно. Изисква EXPO_TOKEN (и настроени данни за магазина в eas.json).
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: "За кой магазин"
+        required: true
+        default: "ios"
+        type: choice
+        options:
+          - ios
+          - android
+
+jobs:
+  submit:
+    name: Подаване
+    runs-on: ubuntu-latest
+    steps:
+      - name: Изтегляне на кода
+        uses: actions/checkout@v5
+
+      - name: Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Инсталиране на EAS CLI
+        run: npm install -g eas-cli
+
+      - name: Инсталиране на зависимости
+        working-directory: app-expo
+        run: npm ci
+
+      - name: Подаване на последния билд
+        working-directory: app-expo
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: eas submit --platform ${{ inputs.platform }} --latest --profile production --non-interactive
