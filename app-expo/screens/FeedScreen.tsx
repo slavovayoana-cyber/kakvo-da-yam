@@ -366,12 +366,20 @@ export function FeedScreen({ onBack, onCompose, reloadKey = 0 }: Props) {
         </View>
       ) : (
         <ScrollView
-          contentContainerStyle={{ padding: 14, paddingBottom: 120 }}
+          contentContainerStyle={{ padding: 12, paddingBottom: 120 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.accent} />}
         >
-          {visiblePosts.map((p) => view === 'cards'
-            ? <PostCard key={p.id} post={p} saved={savedSet.has(p.id)} onLike={() => onLike(p)} onMore={() => onMore(p)} onSave={() => onSave(p)} onOpen={() => setDetailPost(p)} />
-            : <PostRow key={p.id} post={p} saved={savedSet.has(p.id)} onLike={() => onLike(p)} onMore={() => onMore(p)} onSave={() => onSave(p)} onOpen={() => setDetailPost(p)} />)}
+          {view === 'cards' ? (
+            <View style={styles.grid}>
+              {visiblePosts.map((p) => (
+                <GridCard key={p.id} post={p} saved={savedSet.has(p.id)} onLike={() => onLike(p)} onMore={() => onMore(p)} onSave={() => onSave(p)} onOpen={() => setDetailPost(p)} />
+              ))}
+            </View>
+          ) : (
+            visiblePosts.map((p) => (
+              <PostRow key={p.id} post={p} saved={savedSet.has(p.id)} onLike={() => onLike(p)} onMore={() => onMore(p)} onSave={() => onSave(p)} onOpen={() => setDetailPost(p)} />
+            ))
+          )}
         </ScrollView>
       )}
 
@@ -762,6 +770,47 @@ function PostCard({ post, saved, onLike, onMore, onSave, onOpen }: { post: FeedP
   );
 }
 
+function GridCard({ post, saved, onLike, onMore, onSave, onOpen }: { post: FeedPost; saved: boolean; onLike: () => void; onMore: () => void; onSave: () => void; onOpen: () => void }) {
+  const isVenue = post.kind === 'venue';
+  const nPhotos = post.photo_urls?.length ?? (post.photo_url ? 1 : 0);
+  return (
+    <Pressable style={styles.gcard} onPress={onOpen} onLongPress={onMore}>
+      <View style={styles.gphoto}>
+        <FoodImage uri={post.photo_urls?.[0] ?? post.photo_url} emoji={foodEmoji(post)} />
+        {nPhotos > 1 ? (
+          <View style={styles.gcount}><Text style={styles.gcountTxt}>📷 {nPhotos}</Text></View>
+        ) : null}
+        {isVenue && post.worth_it ? (
+          <View style={styles.gworth}><Text style={styles.gworthTxt}>💰</Text></View>
+        ) : null}
+        {post.mod_status === 'pending' ? (
+          <View style={styles.gmod}><Text style={styles.gmodTxt}>⏳</Text></View>
+        ) : post.mod_status === 'rejected' ? (
+          <View style={[styles.gmod, { backgroundColor: 'rgba(178,34,34,0.85)' }]}><Text style={styles.gmodTxt}>🚫</Text></View>
+        ) : null}
+        <Pressable onPress={onSave} hitSlop={8} style={styles.gsave}>
+          <Text style={{ fontSize: 15 }}>{saved ? '🔖' : '📑'}</Text>
+        </Pressable>
+      </View>
+      <View style={styles.gbody}>
+        <Text style={styles.gname} numberOfLines={2}>{post.dish_name}</Text>
+        <View style={styles.growRow}>
+          <Stars value={post.dish_rating} />
+        </View>
+        <Text style={styles.gmeta} numberOfLines={1}>
+          {isVenue ? `📍 ${post.place_name ?? ''}${post.place_city ? ` · ${post.place_city}` : ''}` : (post.prep_minutes ? `⏱️ ${post.prep_minutes} мин` : '🍲 рецепта')}
+        </Text>
+        <View style={styles.gfoot}>
+          <Text style={styles.gwho} numberOfLines={1}>{post.author_nickname ?? 'Анонимен'}</Text>
+          <Pressable onPress={onLike} hitSlop={8}>
+            <Text style={[styles.glike, post.liked_by_me && styles.likeOn]}>{post.liked_by_me ? '❤️' : '🤍'} {post.like_count}</Text>
+          </Pressable>
+        </View>
+      </View>
+    </Pressable>
+  );
+}
+
 function PostRow({ post, saved, onLike, onMore, onSave, onOpen }: { post: FeedPost; saved: boolean; onLike: () => void; onMore: () => void; onSave: () => void; onOpen: () => void }) {
   const isVenue = post.kind === 'venue';
   return (
@@ -851,6 +900,23 @@ const styles = StyleSheet.create({
   emptyTitle: { fontSize: 18, fontWeight: '700', color: C.ink, marginBottom: 4 },
   emptySub: { fontSize: 14, color: C.inkSoft, textAlign: 'center' },
 
+  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+  gcard: { width: '48.5%', backgroundColor: C.card, borderRadius: 16, borderWidth: 1, borderColor: C.line, overflow: 'hidden', marginBottom: 12 },
+  gphoto: { width: '100%', aspectRatio: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#EEDFD2' },
+  gcount: { position: 'absolute', left: 6, top: 6, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 999, paddingHorizontal: 7, paddingVertical: 2 },
+  gcountTxt: { color: '#fff', fontSize: 10, fontWeight: '700' },
+  gworth: { position: 'absolute', right: 6, top: 6, backgroundColor: C.green, borderRadius: 999, width: 24, height: 24, alignItems: 'center', justifyContent: 'center' },
+  gworthTxt: { fontSize: 12 },
+  gmod: { position: 'absolute', left: 6, bottom: 6, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 999, width: 24, height: 24, alignItems: 'center', justifyContent: 'center' },
+  gmodTxt: { fontSize: 12 },
+  gsave: { position: 'absolute', right: 6, bottom: 6, backgroundColor: 'rgba(255,255,255,0.9)', borderRadius: 999, width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
+  gbody: { padding: 9, gap: 3 },
+  gname: { fontSize: 14, fontWeight: '800', color: C.ink, lineHeight: 18 },
+  growRow: { flexDirection: 'row', alignItems: 'center' },
+  gmeta: { fontSize: 11, color: C.inkSoft },
+  gfoot: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
+  gwho: { fontSize: 11, color: C.inkSoft, fontWeight: '600', flex: 1 },
+  glike: { fontSize: 12, color: C.inkSoft, fontWeight: '700' },
   card: { backgroundColor: C.card, borderRadius: 20, borderWidth: 1, borderColor: C.line, overflow: 'hidden', marginBottom: 14 },
   photo: { height: 150, alignItems: 'center', justifyContent: 'center', backgroundColor: '#EEDFD2' },
   photoImg: { width: '100%', height: '100%' },
