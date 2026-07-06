@@ -1,0 +1,56 @@
+name: Официален билд (App Store + Google Play)
+
+# Прави нов инсталационен файл за магазините с ЦЕЛИЯ текущ код
+# (всички досегашни промени са включени). Пуска се ръчно от раздел Actions.
+#
+# Изисква таен ключ EXPO_TOKEN (същият като за OTA).
+# Билдът се прави в облака на Expo; готовите файлове се виждат на expo.dev.
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: "За коя система"
+        required: true
+        default: "all"
+        type: choice
+        options:
+          - all
+          - ios
+          - android
+      submit:
+        description: "Да подам ли автоматично за ревю след билда? (изисква настроени магазини)"
+        required: true
+        default: false
+        type: boolean
+
+jobs:
+  build:
+    name: Билд за продукция
+    runs-on: ubuntu-latest
+    steps:
+      - name: Изтегляне на кода
+        uses: actions/checkout@v5
+
+      - name: Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Инсталиране на EAS CLI
+        run: npm install -g eas-cli
+
+      - name: Инсталиране на зависимости
+        working-directory: app-expo
+        run: npm ci
+
+      - name: Билд (и по избор подаване)
+        working-directory: app-expo
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          if [ "${{ inputs.submit }}" = "true" ]; then
+            eas build --platform ${{ inputs.platform }} --profile production --non-interactive --auto-submit
+          else
+            eas build --platform ${{ inputs.platform }} --profile production --non-interactive
+          fi
