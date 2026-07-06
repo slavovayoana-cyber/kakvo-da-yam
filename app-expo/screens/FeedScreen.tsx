@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator,
   Alert, Image, RefreshControl, Modal, Dimensions, TextInput,
-  KeyboardAvoidingView, Platform,
+  KeyboardAvoidingView, Platform, Linking,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
@@ -234,6 +234,12 @@ export function FeedScreen({ onBack, onCompose, onEdit, reloadKey = 0 }: Props) 
       if (nowSaved) next.add(p.id); else next.delete(p.id);
       return next;
     });
+  };
+
+  const openMaps = (p: FeedPost) => {
+    const url = p.place_maps_url
+      || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${p.place_name ?? ''} ${p.place_city ?? ''}`.trim())}`;
+    Linking.openURL(url).catch(() => Alert.alert('Опа', 'Не успях да отворя картата.'));
   };
 
   const onCooked = async (p: FeedPost) => {
@@ -648,7 +654,9 @@ export function FeedScreen({ onBack, onCompose, onEdit, reloadKey = 0 }: Props) 
               <View style={{ padding: 18, gap: 12 }}>
                 <Text style={styles.dTitle}>{detailPost.dish_name}</Text>
                 {detailPost.kind === 'venue' && detailPost.place_name ? (
-                  <Text style={styles.place}>📍 {detailPost.place_name}{detailPost.place_city ? ` · ${detailPost.place_city}` : ''}</Text>
+                  <Pressable onPress={() => openMaps(detailPost)}>
+                    <Text style={[styles.place, styles.placeLink]}>📍 {detailPost.place_name}{detailPost.place_city ? ` · ${detailPost.place_city}` : ''}  ↗</Text>
+                  </Pressable>
                 ) : null}
                 {detailPost.kind === 'venue' ? (
                   <View style={styles.rating2}>
@@ -967,6 +975,7 @@ const styles = StyleSheet.create({
   dish: { flex: 1, fontFamily: 'InstrumentSerif_400Regular', fontSize: 20, color: C.ink },
   more: { fontSize: 20, color: C.inkSoft, paddingHorizontal: 6 },
   place: { fontSize: 12, color: C.accentDeep, fontWeight: '600', marginTop: 2, marginBottom: 6 },
+  placeLink: { fontSize: 14, textDecorationLine: 'underline' },
   rating2: { gap: 3, marginBottom: 8 },
   rrow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   rk: { fontSize: 12, fontWeight: '700', color: C.inkSoft, width: 62 },
