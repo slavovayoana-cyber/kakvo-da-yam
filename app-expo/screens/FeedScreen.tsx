@@ -686,6 +686,11 @@ export function FeedScreen({ onBack, onCompose, onEdit, reloadKey = 0 }: Props) 
                 <Pressable onPress={() => changePhoto(detailPost)} style={styles.photoBtn}>
                   <Text style={styles.photoBtnTxt}>📷 Промени снимка</Text>
                 </Pressable>
+                {onEdit && (adminOn || (myDeviceId && detailPost.author_device_id === myDeviceId)) ? (
+                  <Pressable onPress={() => { const p = detailPost; setDetailPost(null); onEdit(p); }} style={styles.editBtn}>
+                    <Text style={styles.editBtnTxt}>✏️ Редактирай поста</Text>
+                  </Pressable>
+                ) : null}
               </View>
             </ScrollView>
           </View>
@@ -990,6 +995,8 @@ const styles = StyleSheet.create({
   saveBtnTxt: { fontSize: 14, fontWeight: '700', color: C.ink },
   photoBtn: { borderWidth: 1, borderColor: C.line, borderRadius: 12, paddingVertical: 12, alignItems: 'center', backgroundColor: C.chip },
   photoBtnTxt: { fontSize: 14, fontWeight: '700', color: C.accentDeep },
+  editBtn: { borderRadius: 12, paddingVertical: 12, alignItems: 'center', backgroundColor: C.accent, marginTop: 10 },
+  editBtnTxt: { fontSize: 14, fontWeight: '700', color: '#fff' },
 
   lrow: { flexDirection: 'row', alignItems: 'center', gap: 11, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 16, padding: 8, marginBottom: 10 },
   lphoto: { width: 52, height: 52, borderRadius: 12, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: '#EEDFD2' },
