@@ -56,6 +56,22 @@ async function checkImage(url: string): Promise<Shot> {
   return { decision: "ok", labels };
 }
 
+// --- Проверка на текста за псувни/обиди (на български) ---
+// Думите се сравняват като НАЧАЛО на дума (хваща и склонения), за да не
+// хващаме грешно нормални думи (напр. „курабийки" не съвпада с „курв").
+const BG_BAD_ROOTS = [
+  "курв", "пичк", "путк", "гъз", "еб", "мамка", "майнат", "копел",
+  "шиба", "педер", "педал", "негър", "негро", "идиот", "тъпак",
+  "дебил", "кретен", "педофил", "фашист", "лайн", "боклук",
+  "простак", "малоумник", "изверг",
+];
+
+function checkText(...parts: (string | null | undefined)[]): boolean {
+  const text = parts.filter(Boolean).join(" ").toLowerCase();
+  const tokens = text.split(/[^\p{L}]+/u).filter(Boolean);
+  return tokens.some((tok) => BG_BAD_ROOTS.some((root) => tok.startsWith(root)));
+}
+
 async function setStatus(id: string, status: string, labels: unknown): Promise<number> {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/feed_set_moderation`, {
     method: "POST",
@@ -76,25 +92,24 @@ Deno.serve(async (req) => {
     const urls: string[] = Array.isArray(record.photo_urls) && record.photo_urls.length
       ? record.photo_urls : (record.photo_url ? [record.photo_url] : []);
 
-    // Няма снимка → пускаме (няма какво да проверяваме визуално).
-    if (urls.length === 0) {
-      const code = await setStatus(id, "approved", { note: "no photos" });
-      return new Response(`approved (no photos) | rpc=${code}`, { status: 200 });
-    }
+    // Проверка на текста (важи и когато няма снимка).
+    const textBad = checkText(record.dish_name, record.comment, record.ingredients, record.steps);
 
+    // Проверка на снимките.
     const shots: Shot[] = [];
     for (const u of urls) {
       try { shots.push(await checkImage(u)); }
       catch (e) { shots.push({ decision: "review", labels: { error: String(e) } }); }
     }
 
-    // Най-строгото решение сред всички снимки печели.
+    // Най-строгото решение печели: спряна снимка → rejected;
+    // гранична снимка ИЛИ псувня в текста → pending (за твой преглед).
     let verdict = "approved";
     if (shots.some((s) => s.decision === "reject")) verdict = "rejected";
-    else if (shots.some((s) => s.decision === "review")) verdict = "pending";
+    else if (textBad || shots.some((s) => s.decision === "review")) verdict = "pending";
 
-    const code = await setStatus(id, verdict, { images: shots.map((s) => s.labels) });
-    return new Response(`${verdict} | rpc=${code}`, { status: 200 });
+    const code = await setStatus(id, verdict, { textBad, images: shots.map((s) => s.labels) });
+    return new Response(`${verdict} | text=${textBad} | rpc=${code}`, { status: 200 });
   } catch (e) {
     return new Response(`error: ${String(e)}`, { status: 200 });
   }

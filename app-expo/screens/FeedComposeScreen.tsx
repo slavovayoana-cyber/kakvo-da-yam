@@ -19,7 +19,7 @@ const CUISINES = ['Скара', 'Българска', 'Здравословна'
 const PLACE_TYPES: { key: string; label: string }[] = [
   { key: 'restaurant', label: '🍽️ Ресторант' }, { key: 'cafe', label: '☕ Кафене' },
   { key: 'bar', label: '🍸 Бар' }, { key: 'patisserie', label: '🧁 Сладкарница' },
-  { key: 'street', label: '🌭 Street food' },
+  { key: 'brunch', label: '🥞 Брънч' }, { key: 'street', label: '🌭 Street food' },
 ];
 const DIFFS: { key: Difficulty; label: string }[] = [
   { key: 'easy', label: 'Лесно' }, { key: 'medium', label: 'Средно' }, { key: 'hard', label: 'Трудно' },
@@ -43,6 +43,7 @@ export function FeedComposeScreen({ onBack, onPosted }: Props) {
   const insets = useSafeAreaInsets();
   const [needNickname, setNeedNickname] = useState(false);
   const [nickname, setNick] = useState('');
+  const [savedNick, setSavedNick] = useState('');
   const [kind, setKind] = useState<PostKind>('venue');
   const [saving, setSaving] = useState(false);
   const [photoUris, setPhotoUris] = useState<string[]>([]);
@@ -70,8 +71,21 @@ export function FeedComposeScreen({ onBack, onPosted }: Props) {
   const [steps, setSteps] = useState('');
 
   useEffect(() => {
-    getMyProfile().then((p) => setNeedNickname(!p)).catch(() => setNeedNickname(true));
+    getMyProfile().then((p) => {
+      if (p) { setNick(p.nickname); setSavedNick(p.nickname); setNeedNickname(false); }
+      else setNeedNickname(true);
+    }).catch(() => setNeedNickname(true));
   }, []);
+
+  const saveNick = async () => {
+    if (nickname.trim().length < 2) { Alert.alert('Прякор', 'Прякорът трябва да е поне 2 букви.'); return; }
+    try {
+      await setNickname(nickname.trim());
+      setSavedNick(nickname.trim());
+      setNeedNickname(false);
+      Alert.alert('Готово', 'Прякорът е сменен.');
+    } catch { Alert.alert('Опа', 'Смяната не успя. Опитай пак.'); }
+  };
 
   const onPlaceNameChange = (t: string) => {
     setPlaceName(t);
@@ -122,7 +136,7 @@ export function FeedComposeScreen({ onBack, onPosted }: Props) {
   };
 
   const submit = async () => {
-    if (needNickname && nickname.trim().length < 2) {
+    if (nickname.trim().length < 2) {
       Alert.alert('Прякор', 'Избери си прякор (поне 2 букви), за да публикуваш.');
       return;
     }
@@ -133,7 +147,7 @@ export function FeedComposeScreen({ onBack, onPosted }: Props) {
 
     setSaving(true);
     try {
-      if (needNickname) await setNickname(nickname.trim());
+      if (nickname.trim() !== savedNick) await setNickname(nickname.trim());
       if (kind === 'venue') {
         const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
           `${placeName} ${placeCity}`.trim())}`;
@@ -171,14 +185,17 @@ export function FeedComposeScreen({ onBack, onPosted }: Props) {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: insets.bottom + 100, gap: 16 }} keyboardShouldPersistTaps="handled">
 
-          {needNickname ? (
-            <View style={styles.group}>
-              <Text style={styles.lbl}>Твоят прякор</Text>
+          <View style={styles.group}>
+            <Text style={styles.lbl}>Твоят прякор</Text>
+            <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
               <TextInput value={nickname} onChangeText={setNick} placeholder="напр. Мария" placeholderTextColor={C.inkSoft}
-                style={styles.input} maxLength={30} />
-              <Text style={styles.sub}>Показва се под постовете ти.</Text>
+                style={[styles.input, { flex: 1 }]} maxLength={30} />
+              {!needNickname && nickname.trim().length >= 2 && nickname.trim() !== savedNick ? (
+                <Pressable onPress={saveNick} style={styles.nickSave}><Text style={styles.nickSaveTxt}>Запази</Text></Pressable>
+              ) : null}
             </View>
-          ) : null}
+            <Text style={styles.sub}>Показва се под постовете ти{needNickname ? '.' : ' — можеш да го смениш тук.'}</Text>
+          </View>
 
           {/* Kind */}
           <View style={styles.seg}>
@@ -322,6 +339,8 @@ const styles = StyleSheet.create({
   lbl: { fontSize: 12, fontWeight: '700', color: C.inkSoft, textTransform: 'uppercase', letterSpacing: 0.6 },
   sub: { fontSize: 11.5, color: C.inkSoft },
   input: { backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: C.ink },
+  nickSave: { backgroundColor: C.accent, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12 },
+  nickSaveTxt: { color: '#fff', fontWeight: '700', fontSize: 14 },
   small: { flex: 1 },
   multi: { minHeight: 72, textAlignVertical: 'top' },
   sugBox: { marginTop: 6, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 12, overflow: 'hidden' },
