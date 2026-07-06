@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import {
   View, Text, Pressable, StyleSheet, ScrollView, Alert, Share, Platform, ActivityIndicator,
+  Image, Modal,
 } from 'react-native';
 import { getSavedIds, getPostsByIds } from '../lib/feed';
 import type { FeedPost } from '../lib/feedTypes';
@@ -92,6 +93,15 @@ export function JournalScreen({ entries, onBack, onChange }: Props) {
   const [tab, setTab] = useState<'cooked' | 'saved'>('cooked');
   const [saved, setSaved] = useState<FeedPost[]>([]);
   const [loadingSaved, setLoadingSaved] = useState(false);
+  const [detail, setDetail] = useState<FeedPost | null>(null);
+
+  // Отваря рецептата по id (за записи в „Сготвено", които идват от Feed).
+  const openById = async (id: string) => {
+    try {
+      const posts = await getPostsByIds([id]);
+      if (posts.length) setDetail(posts[0]);
+    } catch { /* не е рецепта от feed-а — нищо */ }
+  };
   useEffect(() => {
     if (tab !== 'saved') return;
     setLoadingSaved(true);
@@ -149,7 +159,7 @@ export function JournalScreen({ entries, onBack, onChange }: Props) {
         </View>
 
         {tab === 'saved' ? (
-          <SavedList posts={saved} loading={loadingSaved} inkColor={theme.ink} />
+          <SavedList posts={saved} loading={loadingSaved} inkColor={theme.ink} onOpen={setDetail} />
         ) : (
         <>
         <PersonalityCard
@@ -192,6 +202,7 @@ export function JournalScreen({ entries, onBack, onChange }: Props) {
               return (
                 <Pressable
                   key={entry.id}
+                  onPress={() => openById(entry.mealId)}
                   onLongPress={() => handleDelete(entry)}
                   style={({ pressed }) => [
                     styles.entryCard,
@@ -237,11 +248,13 @@ export function JournalScreen({ entries, onBack, onChange }: Props) {
       <View style={styles.offscreen} pointerEvents="none">
         <PersonalityShareCard ref={cardRef} result={personalityResult} />
       </View>
+
+      {detail ? <RecipeDetail post={detail} onClose={() => setDetail(null)} /> : null}
     </View>
   );
 }
 
-function SavedList({ posts, loading, inkColor }: { posts: FeedPost[]; loading: boolean; inkColor: string }) {
+function SavedList({ posts, loading, inkColor, onOpen }: { posts: FeedPost[]; loading: boolean; inkColor: string; onOpen: (p: FeedPost) => void }) {
   if (loading) {
     return <View style={{ paddingVertical: 50, alignItems: 'center' }}><ActivityIndicator color="#C2674A" /></View>;
   }
@@ -257,17 +270,83 @@ function SavedList({ posts, loading, inkColor }: { posts: FeedPost[]; loading: b
   return (
     <View style={styles.list}>
       {posts.map((p) => (
-        <View key={p.id} style={styles.entryCard}>
-          <View style={styles.entryEmoji}><Text style={{ fontSize: 30 }}>{p.kind === 'venue' ? '🍽️' : '🍲'}</Text></View>
+        <Pressable key={p.id} onPress={() => onOpen(p)} style={({ pressed }) => [styles.entryCard, { opacity: pressed ? 0.85 : 1 }]}>
+          <View style={styles.entryEmoji}>
+            {p.photo_urls?.[0] || p.photo_url
+              ? <Image source={{ uri: p.photo_urls?.[0] ?? p.photo_url ?? undefined }} style={styles.savedThumb} resizeMode="cover" />
+              : <Text style={{ fontSize: 30 }}>{p.kind === 'venue' ? '🍽️' : '🍲'}</Text>}
+          </View>
           <View style={styles.entryBody}>
             <Text style={[styles.entryName, { color: inkColor }]} numberOfLines={1}>{p.dish_name}</Text>
             <Text style={[styles.entryDate, { color: inkColor }]} numberOfLines={1}>
               {p.kind === 'venue' ? (p.place_name || 'заведение') : `рецепта${p.prep_minutes ? ` · ${p.prep_minutes} мин` : ''}`}
             </Text>
           </View>
-        </View>
+          <Text style={{ color: inkColor, fontSize: 20, opacity: 0.4 }}>›</Text>
+        </Pressable>
       ))}
     </View>
+  );
+}
+
+function RecipeDetail({ post, onClose }: { post: FeedPost; onClose: () => void }) {
+  const insets = useSafeAreaInsets();
+  const isVenue = post.kind === 'venue';
+  const photos = post.photo_urls?.length ? post.photo_urls : (post.photo_url ? [post.photo_url] : []);
+  const stars = (n: number | null | undefined) => '★'.repeat(n ?? 0) + '☆'.repeat(Math.max(0, 5 - (n ?? 0)));
+  return (
+    <Modal visible animationType="slide" onRequestClose={onClose}>
+      <View style={[styles.dRoot, { paddingTop: insets.top }]}>
+        <View style={styles.dBar}>
+          <Pressable onPress={onClose} hitSlop={10} style={styles.dBack}><Text style={styles.dBackTxt}>←</Text></Pressable>
+          <Text style={styles.dTitle} numberOfLines={1}>{post.dish_name}</Text>
+          <View style={{ width: 36 }} />
+        </View>
+        <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}>
+          {photos.length ? (
+            <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false}>
+              {photos.map((u, i) => <Image key={i} source={{ uri: u }} style={styles.dPhoto} resizeMode="cover" />)}
+            </ScrollView>
+          ) : (
+            <View style={styles.dNoPhoto}><Text style={{ fontSize: 64 }}>{isVenue ? '🍽️' : '🍲'}</Text></View>
+          )}
+          <View style={styles.dBody}>
+            <Text style={styles.dName}>{post.dish_name}</Text>
+            <Text style={styles.dAuthor}>от {post.author_nickname ?? 'Анонимен'}</Text>
+
+            {isVenue ? (
+              <View style={{ gap: 4, marginTop: 8 }}>
+                {post.place_name ? <Text style={styles.dMeta}>📍 {post.place_name}{post.place_city ? ` · ${post.place_city}` : ''}</Text> : null}
+                <Text style={styles.dMeta}>🍴 Ястие: <Text style={styles.dStars}>{stars(post.dish_rating)}</Text></Text>
+                {post.place_rating ? <Text style={styles.dMeta}>🏠 Място: <Text style={styles.dStars}>{stars(post.place_rating)}</Text></Text> : null}
+                {post.worth_it ? <Text style={styles.dMeta}>💰 Струваше си</Text> : null}
+              </View>
+            ) : (
+              <View style={styles.dChips}>
+                {post.prep_minutes ? <Text style={styles.dChip}>⏱️ {post.prep_minutes} мин</Text> : null}
+                {post.servings ? <Text style={styles.dChip}>🍽️ {post.servings} порции</Text> : null}
+                <Text style={styles.dChip}>🍴 {stars(post.dish_rating)}</Text>
+              </View>
+            )}
+
+            {post.comment ? <Text style={styles.dComment}>„{post.comment}"</Text> : null}
+
+            {!isVenue && post.ingredients ? (
+              <>
+                <Text style={styles.dSection}>🧂 Съставки</Text>
+                <Text style={styles.dText}>{post.ingredients}</Text>
+              </>
+            ) : null}
+            {!isVenue && post.steps ? (
+              <>
+                <Text style={styles.dSection}>📋 Приготвяне</Text>
+                <Text style={styles.dText}>{post.steps}</Text>
+              </>
+            ) : null}
+          </View>
+        </ScrollView>
+      </View>
+    </Modal>
   );
 }
 
@@ -412,4 +491,23 @@ const styles = StyleSheet.create({
     left: -10000,
     top: 0,
   },
+  savedThumb: { width: 52, height: 52, borderRadius: 13 },
+  // Детайл на рецепта
+  dRoot: { flex: 1, backgroundColor: '#FBEEE3' },
+  dBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 10 },
+  dBack: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.7)', alignItems: 'center', justifyContent: 'center' },
+  dBackTxt: { fontSize: 20, color: '#3A2A20' },
+  dTitle: { flex: 1, textAlign: 'center', fontFamily: 'Fraunces_500Medium', fontSize: 18, color: '#3A2A20' },
+  dPhoto: { width: 360, height: 270, backgroundColor: '#EEDFD2' },
+  dNoPhoto: { height: 200, alignItems: 'center', justifyContent: 'center', backgroundColor: '#EEDFD2' },
+  dBody: { padding: 18 },
+  dName: { fontFamily: 'Fraunces_500Medium', fontSize: 26, color: '#3A2A20', lineHeight: 32 },
+  dAuthor: { fontFamily: 'Geist_600SemiBold', fontSize: 14, color: '#8A6A54', marginTop: 4 },
+  dMeta: { fontFamily: 'Geist_400Regular', fontSize: 15, color: '#5A4636', lineHeight: 22 },
+  dStars: { color: '#E0A72E' },
+  dChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },
+  dChip: { backgroundColor: 'rgba(255,255,255,0.7)', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, fontSize: 13, color: '#5A4636', fontWeight: '600', overflow: 'hidden' },
+  dComment: { fontFamily: 'Geist_400Regular', fontSize: 16, fontStyle: 'italic', color: '#3A2A20', lineHeight: 24, marginTop: 14 },
+  dSection: { fontFamily: 'Geist_600SemiBold', fontSize: 16, color: '#3A2A20', marginTop: 22, marginBottom: 8 },
+  dText: { fontFamily: 'Geist_400Regular', fontSize: 15, color: '#4A392C', lineHeight: 24 },
 });

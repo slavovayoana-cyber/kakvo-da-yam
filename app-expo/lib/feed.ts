@@ -10,6 +10,7 @@ import type {
 const PHOTO_BUCKET = 'feed-photos';
 const HIDDEN_KEY = 'kakvodayam:feed_hidden:v1';
 const SAVED_KEY = 'kakvodayam:feed_saved:v1';
+const BLOCKED_KEY = 'kakvodayam:feed_blocked_authors:v1';
 const PAGE = 20;
 
 // ---------- Запазени рецепти (локално) ----------
@@ -120,6 +121,7 @@ export async function createVenuePost(input: NewVenuePost): Promise<FeedPost> {
       author_device_id: profile.device_id,
       user_id: userId,
       kind: 'venue',
+      mod_status: 'pending',   // изчаква AI проверка на снимките
       photo_urls,
       photo_url: photo_urls[0] ?? null,
       dish_name: input.dishName.trim(),
@@ -153,6 +155,7 @@ export async function createHomePost(input: NewHomePost): Promise<FeedPost> {
       author_device_id: profile.device_id,
       user_id: userId,
       kind: 'home',
+      mod_status: 'pending',   // изчаква AI проверка на снимките
       photo_urls,
       photo_url: photo_urls[0] ?? null,
       dish_name: input.dishName.trim(),
@@ -184,8 +187,9 @@ function applySort(query: any, sort: string | undefined) {
 async function enrich(rows: any[]): Promise<FeedPost[]> {
   const deviceId = await getDeviceId();
   const hidden = await getHiddenIds();
+  const blocked = await getBlockedAuthors();
   const posts: FeedPost[] = rows
-    .filter((r) => !hidden.includes(r.id))
+    .filter((r) => !hidden.includes(r.id) && !blocked.includes(r.author_device_id))
     .map((r) => ({
       ...r,
       author_nickname: r.author?.nickname ?? null,
@@ -247,8 +251,12 @@ export async function adoptCuratedPosts(): Promise<void> {
 }
 
 /** Качва нови снимки (до 3) и ги записва на поста (само за свои постове — RLS). */
-export async function updatePostPhotos(postId: string, localUris: string[]): Promise<string[]> {
-  const urls = await uploadPhotos(localUris);
+export async function updatePostPhotos(postId: string, uris: string[]): Promise<string[]> {
+  // Вече качените снимки (http/https) се запазват както са; качват се само новите локални.
+  const urls: string[] = [];
+  for (const uri of uris.slice(0, 3)) {
+    urls.push(/^https?:/.test(uri) ? uri : await uploadPhoto(uri));
+  }
   const { error } = await supabase
     .from('feed_posts')
     .update({ photo_urls: urls, photo_url: urls[0] ?? null })
@@ -346,4 +354,67 @@ export async function hidePostLocally(postId: string): Promise<void> {
     ids.push(postId);
     await AsyncStorage.setItem(HIDDEN_KEY, JSON.stringify(ids));
   }
+}
+
+// Блокиране на потребител (локално): скрива всичките му постове.
+async function getBlockedAuthors(): Promise<string[]> {
+  try {
+    const raw = await AsyncStorage.getItem(BLOCKED_KEY);
+    return raw ? (JSON.parse(raw) as string[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function blockAuthor(authorDeviceId: string): Promise<void> {
+  const ids = await getBlockedAuthors();
+  if (!ids.includes(authorDeviceId)) {
+    ids.push(authorDeviceId);
+    await AsyncStorage.setItem(BLOCKED_KEY, JSON.stringify(ids));
+  }
+}
+
+// ---------- Скрит преглед (само за собственика) ----------
+// Тайни кодове (същите и в supabase/feed_admin.sql). PIN отключва екрана
+// локално; ADMIN_SECRET оторизира действията в базата.
+const ADMIN_SECRET = 'kdy_admin_9c1f7b3e';
+export const ADMIN_PIN = '204060';
+const ADMIN_UNLOCK_KEY = 'kakvodayam:admin_unlocked:v1';
+
+export async function isAdminUnlocked(): Promise<boolean> {
+  try { return (await AsyncStorage.getItem(ADMIN_UNLOCK_KEY)) === '1'; } catch { return false; }
+}
+
+export async function unlockAdmin(pin: string): Promise<boolean> {
+  if (pin.trim() !== ADMIN_PIN) return false;
+  await AsyncStorage.setItem(ADMIN_UNLOCK_KEY, '1');
+  return true;
+}
+
+export async function lockAdmin(): Promise<void> {
+  await AsyncStorage.removeItem(ADMIN_UNLOCK_KEY);
+}
+
+/** Постове за преглед: чакащи AI, спрени, или скрити от доклади. */
+export async function adminListPosts(): Promise<FeedPost[]> {
+  const { data, error } = await supabase.rpc('feed_admin_list', { p_secret: ADMIN_SECRET });
+  if (error) throw error;
+  return (data ?? []) as FeedPost[];
+}
+
+export async function adminAct(postId: string, action: 'approve' | 'hide' | 'delete' | 'ban'): Promise<void> {
+  const { error } = await supabase.rpc('feed_admin_act', { p_id: postId, p_action: action, p_secret: ADMIN_SECRET });
+  if (error) throw error;
+}
+
+/** Смяна на снимки като собственик (заобикаля RLS → не се нулират).
+ *  Качва само новите локални; вече качените http(s) остават. */
+export async function adminSetPhotos(postId: string, uris: string[]): Promise<string[]> {
+  const urls: string[] = [];
+  for (const uri of uris.slice(0, 3)) {
+    urls.push(/^https?:/.test(uri) ? uri : await uploadPhoto(uri));
+  }
+  const { error } = await supabase.rpc('feed_admin_set_photos', { p_id: postId, p_urls: urls, p_secret: ADMIN_SECRET });
+  if (error) throw error;
+  return urls;
 }

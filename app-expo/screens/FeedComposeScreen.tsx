@@ -99,9 +99,11 @@ export function FeedComposeScreen({ onBack, onPosted }: Props) {
         Alert.alert('Няма разрешение', 'За да добавиш снимка, разреши достъп в настройките.');
         return;
       }
+      // allowsEditing (изрязване) работи само при ЕДНА снимка наведнъж —
+      // затова добавяме по една, но с възможност да я кропнеш както искаш.
       const res = source === 'camera'
         ? await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [4, 3], quality: 0.7 })
-        : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsMultipleSelection: true, selectionLimit: remaining, quality: 0.7 });
+        : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [4, 3], quality: 0.7 });
       if (!res.canceled && res.assets?.length) {
         const uris = res.assets.map((a) => a.uri);
         setPhotoUris((prev) => [...prev, ...uris].slice(0, 3));

@@ -1,13 +1,15 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator,
   Alert, Image, RefreshControl, Modal, Dimensions, TextInput,
+  KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import {
   listVenuePosts, listHomePosts, toggleLike, reportPost, hidePostLocally,
-  getSavedIds, toggleSave, adoptCuratedPosts, updatePostPhotos,
+  getSavedIds, toggleSave, adoptCuratedPosts, updatePostPhotos, blockAuthor,
+  isAdminUnlocked, unlockAdmin, adminListPosts, adminAct, adminSetPhotos,
 } from '../lib/feed';
 import { addJournalEntry } from '../lib/journal';
 import type { FeedPost, PostKind, VenueFilters, HomeFilters, FeedSort, Difficulty } from '../lib/feedTypes';
@@ -106,23 +108,119 @@ export function FeedScreen({ onBack, onCompose, reloadKey = 0 }: Props) {
   const [savedOnly, setSavedOnly] = useState(false);
   const [detailPost, setDetailPost] = useState<FeedPost | null>(null);
 
+  // Скрит преглед (само за собственика)
+  const [adminOn, setAdminOn] = useState(false);
+  const [showAdmin, setShowAdmin] = useState(false);
+  const [adminPosts, setAdminPosts] = useState<FeedPost[]>([]);
+  const [adminLoading, setAdminLoading] = useState(false);
+  const [adminTab, setAdminTab] = useState<'review' | 'all'>('review');
+  const [pinModal, setPinModal] = useState(false);
+  const [pinInput, setPinInput] = useState('');
+  const tapRef = useRef(0);
+  const tapTimer = useRef<any>(null);
+
   const activeCount = kind === 'venue' ? countVenue(venueFilters) : countHome(homeFilters);
 
   useEffect(() => { getSavedIds().then((ids) => setSavedSet(new Set(ids))).catch(() => {}); }, [reloadKey]);
   useEffect(() => { adoptCuratedPosts(); }, []);
+  useEffect(() => { isAdminUnlocked().then(setAdminOn).catch(() => {}); }, []);
 
-  const changePhoto = async (p: FeedPost) => {
-    try {
-      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!perm.granted) { Alert.alert('Няма разрешение', 'Разреши достъп до снимките в настройките.'); return; }
-      const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsMultipleSelection: true, selectionLimit: 3, quality: 0.7 });
-      if (res.canceled || !res.assets?.length) return;
-      const urls = await updatePostPhotos(p.id, res.assets.map((a) => a.uri));
-      setDetailPost({ ...p, photo_url: urls[0] ?? null, photo_urls: urls });
-      setPosts((prev) => prev.map((x) => x.id === p.id ? { ...x, photo_url: urls[0] ?? null, photo_urls: urls } : x));
-    } catch {
-      Alert.alert('Опа', 'Смяната не успя. Можеш да сменяш снимки само на свои постове.');
+  const onTitleTap = () => {
+    tapRef.current += 1;
+    if (tapTimer.current) clearTimeout(tapTimer.current);
+    tapTimer.current = setTimeout(() => { tapRef.current = 0; }, 1500);
+    if (tapRef.current >= 7) {
+      tapRef.current = 0;
+      if (adminOn) openAdmin(); else { setPinInput(''); setPinModal(true); }
     }
+  };
+
+  const tryUnlock = async (pin: string) => {
+    const ok = await unlockAdmin(pin).catch(() => false);
+    if (ok) { setPinModal(false); setPinInput(''); setAdminOn(true); openAdmin(); }
+    else { Alert.alert('Грешен код', 'Опитай пак.'); setPinInput(''); }
+  };
+
+  const onPinChange = (v: string) => {
+    setPinInput(v);
+    // Отключва само̀ при въвеждане на пълния код (без нужда от бутон/клавиатура).
+    if (v.trim().length >= 6) tryUnlock(v.trim());
+  };
+
+  const submitPin = () => tryUnlock(pinInput);
+
+  const openAdmin = async () => {
+    setShowAdmin(true);
+    setAdminLoading(true);
+    try { setAdminPosts(await adminListPosts()); }
+    catch { Alert.alert('Опа', 'Неуспешно зареждане.'); }
+    finally { setAdminLoading(false); }
+  };
+
+  const doAdminAct = async (p: FeedPost, action: 'approve' | 'hide' | 'delete' | 'ban') => {
+    const run = async (removeAuthor = false) => {
+      try {
+        await adminAct(p.id, action);
+        setAdminPosts((prev) => prev.filter((x) => removeAuthor ? x.author_device_id !== p.author_device_id : x.id !== p.id));
+      } catch { Alert.alert('Опа', 'Действието не успя.'); }
+    };
+    if (action === 'delete') {
+      Alert.alert('Изтриване', `Да изтрия „${p.dish_name}" завинаги?`, [
+        { text: 'Отказ', style: 'cancel' },
+        { text: 'Изтрий', style: 'destructive', onPress: () => run() },
+      ]);
+    } else if (action === 'ban') {
+      Alert.alert('Блокиране на автора',
+        `${p.author_nickname ?? 'Този потребител'} няма да може да публикува повече и всичките му постове ще се скрият. Сигурна ли си?`, [
+        { text: 'Отказ', style: 'cancel' },
+        { text: 'Блокирай', style: 'destructive', onPress: () => run(true) },
+      ]);
+    } else run();
+  };
+
+  const adminVisible = adminTab === 'review'
+    ? adminPosts.filter((p) => p.mod_status === 'pending' || p.mod_status === 'rejected' || p.status === 'hidden')
+    : adminPosts;
+  const reviewCount = adminPosts.filter((p) => p.mod_status === 'pending' || p.mod_status === 'rejected' || p.status === 'hidden').length;
+
+  // Взима една снимка с възможност за изрязване (crop работи само при 1 наведнъж).
+  const pickCropped = async (): Promise<string | null> => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) { Alert.alert('Няма разрешение', 'Разреши достъп до снимките в настройките.'); return null; }
+    const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [4, 3], quality: 0.7 });
+    if (res.canceled || !res.assets?.length) return null;
+    return res.assets[0].uri;
+  };
+
+  const applyPhotos = async (p: FeedPost, uris: string[]) => {
+    // Като собственик (отключен админ) минаваме през защитена функция, която
+    // заобикаля RLS — така смяната се записва трайно и не се нулира.
+    const urls = adminOn ? await adminSetPhotos(p.id, uris) : await updatePostPhotos(p.id, uris);
+    setDetailPost((d) => (d && d.id === p.id ? { ...d, photo_url: urls[0] ?? null, photo_urls: urls } : d));
+    setPosts((prev) => prev.map((x) => x.id === p.id ? { ...x, photo_url: urls[0] ?? null, photo_urls: urls } : x));
+  };
+
+  const changePhoto = (p: FeedPost) => {
+    const existing = p.photo_urls?.length ? p.photo_urls : (p.photo_url ? [p.photo_url] : []);
+    const addOne = async () => {
+      try {
+        if (existing.length >= 3) { Alert.alert('Лимит', 'Вече има 3 снимки. Избери „Замени всички", за да започнеш наново.'); return; }
+        const uri = await pickCropped();
+        if (uri) await applyPhotos(p, [...existing, uri]);
+      } catch { Alert.alert('Опа', 'Смяната не успя. Можеш да сменяш снимки само на свои постове.'); }
+    };
+    const replaceAll = async () => {
+      try {
+        const uri = await pickCropped();
+        if (uri) await applyPhotos(p, [uri]);
+      } catch { Alert.alert('Опа', 'Смяната не успя. Можеш да сменяш снимки само на свои постове.'); }
+    };
+    if (existing.length === 0) { addOne(); return; }
+    Alert.alert('Снимки', 'Всяка снимка можеш да изрежеш преди да я добавиш.', [
+      { text: `➕ Добави снимка (${existing.length}/3)`, onPress: addOne },
+      { text: '🔄 Замени всички (започни наново)', onPress: replaceAll },
+      { text: 'Отказ', style: 'cancel' as const },
+    ]);
   };
 
   const onSave = async (p: FeedPost) => {
@@ -183,6 +281,15 @@ export function FeedScreen({ onBack, onCompose, reloadKey = 0 }: Props) {
         hidePostLocally(p.id).catch(() => {});
         setPosts((prev) => prev.filter((x) => x.id !== p.id));
       } },
+      { text: 'Блокирай този потребител', style: 'destructive', onPress: () => {
+        Alert.alert('Блокиране', `Няма да виждаш повече постове от ${p.author_nickname ?? 'този потребител'}.`, [
+          { text: 'Отказ', style: 'cancel' },
+          { text: 'Блокирай', style: 'destructive', onPress: () => {
+            blockAuthor(p.author_device_id).catch(() => {});
+            setPosts((prev) => prev.filter((x) => x.author_device_id !== p.author_device_id));
+          } },
+        ]);
+      } },
       { text: 'Отказ', style: 'cancel' },
     ]);
   };
@@ -194,8 +301,15 @@ export function FeedScreen({ onBack, onCompose, reloadKey = 0 }: Props) {
         <Pressable onPress={onBack} hitSlop={10} style={styles.iconbtn}>
           <Text style={styles.iconTxt}>←</Text>
         </Pressable>
-        <Text style={styles.title}>Какво <Text style={{ color: C.accent }}>APP</Text>на?</Text>
+        <Pressable onPress={onTitleTap}>
+          <Text style={styles.title}>Какво <Text style={{ color: C.accent }}>APP</Text>на?</Text>
+        </Pressable>
         <View style={styles.viewtoggle}>
+          {adminOn ? (
+            <Pressable onPress={openAdmin} hitSlop={8} style={styles.vbtn}>
+              <Text style={styles.vtxt}>🛡</Text>
+            </Pressable>
+          ) : null}
           <Pressable onPress={() => setView('cards')} style={[styles.vbtn, view === 'cards' && styles.vbtnOn]}>
             <Text style={[styles.vtxt, view === 'cards' && styles.vtxtOn]}>▦</Text>
           </Pressable>
@@ -254,126 +368,253 @@ export function FeedScreen({ onBack, onCompose, reloadKey = 0 }: Props) {
         </View>
       ) : (
         <ScrollView
-          contentContainerStyle={{ padding: 14, paddingBottom: 120 }}
+          contentContainerStyle={{ padding: 12, paddingBottom: 120 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.accent} />}
         >
-          {visiblePosts.map((p) => view === 'cards'
-            ? <PostCard key={p.id} post={p} saved={savedSet.has(p.id)} onLike={() => onLike(p)} onMore={() => onMore(p)} onSave={() => onSave(p)} onOpen={() => setDetailPost(p)} />
-            : <PostRow key={p.id} post={p} saved={savedSet.has(p.id)} onLike={() => onLike(p)} onMore={() => onMore(p)} onSave={() => onSave(p)} onOpen={() => setDetailPost(p)} />)}
+          {view === 'cards' ? (
+            <View style={styles.grid}>
+              {visiblePosts.map((p) => (
+                <GridCard key={p.id} post={p} saved={savedSet.has(p.id)} onLike={() => onLike(p)} onMore={() => onMore(p)} onSave={() => onSave(p)} onOpen={() => setDetailPost(p)} />
+              ))}
+            </View>
+          ) : (
+            visiblePosts.map((p) => (
+              <PostRow key={p.id} post={p} saved={savedSet.has(p.id)} onLike={() => onLike(p)} onMore={() => onMore(p)} onSave={() => onSave(p)} onOpen={() => setDetailPost(p)} />
+            ))
+          )}
         </ScrollView>
       )}
 
       {/* Filter sheet */}
-      <Modal visible={showFilters} transparent animationType="slide" onRequestClose={() => setShowFilters(false)}>
-        <Pressable style={styles.backdrop} onPress={() => setShowFilters(false)} />
+      <Modal visible={showFilters} transparent animationType="slide" onRequestClose={() => { if (showCity) setShowCity(false); else setShowFilters(false); }}>
+       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <Pressable style={styles.backdrop} onPress={() => { if (showCity) setShowCity(false); else setShowFilters(false); }} />
         <View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
-          <View style={styles.sheetHead}>
-            <Text style={styles.sheetTitle}>Филтри</Text>
-            <Pressable onPress={() => setShowFilters(false)} hitSlop={10}><Text style={styles.sheetX}>✕</Text></Pressable>
-          </View>
-          <ScrollView style={{ maxHeight: 420 }} contentContainerStyle={{ gap: 16, paddingBottom: 8 }}>
-            {kind === 'venue' ? (
-              <>
-                <View style={{ gap: 8 }}>
-                  <Text style={styles.fgLabel}>Град</Text>
-                  <Pressable onPress={() => { setCitySearch(''); setShowCity(true); }} style={styles.cityBtn}>
-                    <Text style={[styles.cityBtnTxt, !venueFilters.city && { color: C.inkSoft }]}>{venueFilters.city ?? 'Всички градове'}</Text>
-                    <Text style={styles.cityChevron}>▾</Text>
+          {showCity ? (
+            /* --- Изглед „Избери град" (в същия прозорец) --- */
+            <>
+              <View style={styles.sheetHead}>
+                <Pressable onPress={() => setShowCity(false)} hitSlop={10}><Text style={styles.sheetBack}>←</Text></Pressable>
+                <Text style={styles.sheetTitle}>Избери град</Text>
+                <View style={{ width: 24 }} />
+              </View>
+              <TextInput
+                value={citySearch} onChangeText={setCitySearch}
+                placeholder="Търси или напиши град…" placeholderTextColor={C.inkSoft}
+                autoFocus
+                style={styles.cityInput}
+              />
+              <ScrollView style={{ maxHeight: 340 }} keyboardShouldPersistTaps="handled">
+                <Pressable style={styles.cityItem} onPress={() => { setVenueFilters((f) => ({ ...f, city: undefined })); setShowCity(false); }}>
+                  <Text style={styles.cityItemTxt}>Всички градове</Text>
+                </Pressable>
+                {BG_CITIES.filter((c) => c.toLowerCase().includes(citySearch.trim().toLowerCase())).map((c) => (
+                  <Pressable key={c} style={styles.cityItem} onPress={() => { setVenueFilters((f) => ({ ...f, city: c })); setShowCity(false); }}>
+                    <Text style={styles.cityItemTxt}>{c}</Text>
                   </Pressable>
-                </View>
-                <FGroup label="Сортирай по">
-                  {SORTS.map((s) => (
-                    <FChip key={s.key} on={(venueFilters.sort ?? 'recent') === s.key}
-                      onPress={() => setVenueFilters((f) => ({ ...f, sort: s.key }))}>{s.label}</FChip>
-                  ))}
-                </FGroup>
-                <FGroup label="Кухня">
-                  {VENUE_CUISINES.map((c) => (
-                    <FChip key={c} on={venueFilters.cuisine === c}
-                      onPress={() => setVenueFilters((f) => ({ ...f, cuisine: f.cuisine === c ? undefined : c }))}>{c}</FChip>
-                  ))}
-                </FGroup>
-                <FGroup label="Тип място">
-                  {PLACE_TYPES.map((t) => (
-                    <FChip key={t.key} on={venueFilters.placeType === t.key}
-                      onPress={() => setVenueFilters((f) => ({ ...f, placeType: f.placeType === t.key ? undefined : t.key }))}>{t.label}</FChip>
-                  ))}
-                </FGroup>
-                <FGroup label="Само">
-                  <FChip on={venueFilters.minDishRating === 4}
-                    onPress={() => setVenueFilters((f) => ({ ...f, minDishRating: f.minDishRating ? undefined : 4 }))}>⭐ 4+</FChip>
-                  <FChip on={!!venueFilters.worthIt}
-                    onPress={() => setVenueFilters((f) => ({ ...f, worthIt: f.worthIt ? undefined : true }))}>💰 Струваше си</FChip>
-                </FGroup>
-              </>
-            ) : (
-              <>
-                <FGroup label="Сортирай по">
-                  {SORTS.map((s) => (
-                    <FChip key={s.key} on={(homeFilters.sort ?? 'recent') === s.key}
-                      onPress={() => setHomeFilters((f) => ({ ...f, sort: s.key }))}>{s.label}</FChip>
-                  ))}
-                </FGroup>
-                <FGroup label="Време">
-                  {PREPS.map((p) => (
-                    <FChip key={p.key} on={homeFilters.maxPrep === p.key}
-                      onPress={() => setHomeFilters((f) => ({ ...f, maxPrep: f.maxPrep === p.key ? undefined : p.key }))}>{p.label}</FChip>
-                  ))}
-                </FGroup>
-                <FGroup label="Трудност">
-                  {DIFFS.map((d) => (
-                    <FChip key={d.key} on={homeFilters.difficulty === d.key}
-                      onPress={() => setHomeFilters((f) => ({ ...f, difficulty: f.difficulty === d.key ? undefined : d.key }))}>{d.label}</FChip>
-                  ))}
-                </FGroup>
-                <FGroup label="Диета">
-                  {DIETS.map((d) => (
-                    <FChip key={d.key} on={homeFilters.diet === d.key}
-                      onPress={() => setHomeFilters((f) => ({ ...f, diet: f.diet === d.key ? undefined : d.key }))}>{d.label}</FChip>
-                  ))}
-                </FGroup>
-              </>
-            )}
-          </ScrollView>
-          <View style={styles.sheetFoot}>
-            <Pressable onPress={() => (kind === 'venue' ? setVenueFilters({}) : setHomeFilters({}))} style={styles.clearBtn}>
-              <Text style={styles.clearTxt}>Изчисти</Text>
-            </Pressable>
-            <Pressable onPress={() => setShowFilters(false)} style={styles.applyBtn}>
-              <Text style={styles.applyTxt}>Готово</Text>
-            </Pressable>
-          </View>
+                ))}
+                {citySearch.trim() && !BG_CITIES.some((c) => c.toLowerCase() === citySearch.trim().toLowerCase()) ? (
+                  <Pressable style={styles.cityItem} onPress={() => { setVenueFilters((f) => ({ ...f, city: citySearch.trim() })); setShowCity(false); }}>
+                    <Text style={[styles.cityItemTxt, { color: C.accentDeep, fontWeight: '700' }]}>Търси „{citySearch.trim()}"</Text>
+                  </Pressable>
+                ) : null}
+              </ScrollView>
+            </>
+          ) : (
+            /* --- Изглед „Филтри" --- */
+            <>
+              <View style={styles.sheetHead}>
+                <Text style={styles.sheetTitle}>Филтри</Text>
+                <Pressable onPress={() => setShowFilters(false)} hitSlop={10}><Text style={styles.sheetX}>✕</Text></Pressable>
+              </View>
+              <ScrollView style={{ maxHeight: 420 }} contentContainerStyle={{ gap: 16, paddingBottom: 8 }}>
+                {kind === 'venue' ? (
+                  <>
+                    <View style={{ gap: 8 }}>
+                      <Text style={styles.fgLabel}>Град</Text>
+                      <Pressable onPress={() => { setCitySearch(''); setShowCity(true); }} style={styles.cityBtn}>
+                        <Text style={[styles.cityBtnTxt, !venueFilters.city && { color: C.inkSoft }]}>{venueFilters.city ?? 'Всички градове'}</Text>
+                        <Text style={styles.cityChevron}>▾</Text>
+                      </Pressable>
+                    </View>
+                    <FGroup label="Сортирай по">
+                      {SORTS.map((s) => (
+                        <FChip key={s.key} on={(venueFilters.sort ?? 'recent') === s.key}
+                          onPress={() => setVenueFilters((f) => ({ ...f, sort: s.key }))}>{s.label}</FChip>
+                      ))}
+                    </FGroup>
+                    <FGroup label="Кухня">
+                      {VENUE_CUISINES.map((c) => (
+                        <FChip key={c} on={venueFilters.cuisine === c}
+                          onPress={() => setVenueFilters((f) => ({ ...f, cuisine: f.cuisine === c ? undefined : c }))}>{c}</FChip>
+                      ))}
+                    </FGroup>
+                    <FGroup label="Тип място">
+                      {PLACE_TYPES.map((t) => (
+                        <FChip key={t.key} on={venueFilters.placeType === t.key}
+                          onPress={() => setVenueFilters((f) => ({ ...f, placeType: f.placeType === t.key ? undefined : t.key }))}>{t.label}</FChip>
+                      ))}
+                    </FGroup>
+                    <FGroup label="Само">
+                      <FChip on={venueFilters.minDishRating === 4}
+                        onPress={() => setVenueFilters((f) => ({ ...f, minDishRating: f.minDishRating ? undefined : 4 }))}>⭐ 4+</FChip>
+                      <FChip on={!!venueFilters.worthIt}
+                        onPress={() => setVenueFilters((f) => ({ ...f, worthIt: f.worthIt ? undefined : true }))}>💰 Струваше си</FChip>
+                    </FGroup>
+                  </>
+                ) : (
+                  <>
+                    <FGroup label="Сортирай по">
+                      {SORTS.map((s) => (
+                        <FChip key={s.key} on={(homeFilters.sort ?? 'recent') === s.key}
+                          onPress={() => setHomeFilters((f) => ({ ...f, sort: s.key }))}>{s.label}</FChip>
+                      ))}
+                    </FGroup>
+                    <FGroup label="Време">
+                      {PREPS.map((p) => (
+                        <FChip key={p.key} on={homeFilters.maxPrep === p.key}
+                          onPress={() => setHomeFilters((f) => ({ ...f, maxPrep: f.maxPrep === p.key ? undefined : p.key }))}>{p.label}</FChip>
+                      ))}
+                    </FGroup>
+                    <FGroup label="Трудност">
+                      {DIFFS.map((d) => (
+                        <FChip key={d.key} on={homeFilters.difficulty === d.key}
+                          onPress={() => setHomeFilters((f) => ({ ...f, difficulty: f.difficulty === d.key ? undefined : d.key }))}>{d.label}</FChip>
+                      ))}
+                    </FGroup>
+                    <FGroup label="Диета">
+                      {DIETS.map((d) => (
+                        <FChip key={d.key} on={homeFilters.diet === d.key}
+                          onPress={() => setHomeFilters((f) => ({ ...f, diet: f.diet === d.key ? undefined : d.key }))}>{d.label}</FChip>
+                      ))}
+                    </FGroup>
+                  </>
+                )}
+              </ScrollView>
+              <View style={styles.sheetFoot}>
+                <Pressable onPress={() => (kind === 'venue' ? setVenueFilters({}) : setHomeFilters({}))} style={styles.clearBtn}>
+                  <Text style={styles.clearTxt}>Изчисти</Text>
+                </Pressable>
+                <Pressable onPress={() => setShowFilters(false)} style={styles.applyBtn}>
+                  <Text style={styles.applyTxt}>Готово</Text>
+                </Pressable>
+              </View>
+            </>
+          )}
         </View>
+       </KeyboardAvoidingView>
       </Modal>
 
-      {/* City picker */}
-      <Modal visible={showCity} transparent animationType="fade" onRequestClose={() => setShowCity(false)}>
-        <Pressable style={styles.backdrop} onPress={() => setShowCity(false)} />
+      {/* PIN за скрит преглед */}
+      <Modal visible={pinModal} transparent animationType="fade" onRequestClose={() => setPinModal(false)}>
+       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <Pressable style={styles.backdrop} onPress={() => setPinModal(false)} />
         <View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
           <View style={styles.sheetHead}>
-            <Text style={styles.sheetTitle}>Избери град</Text>
-            <Pressable onPress={() => setShowCity(false)} hitSlop={10}><Text style={styles.sheetX}>✕</Text></Pressable>
+            <Text style={styles.sheetTitle}>Код за преглед</Text>
+            <Pressable onPress={() => setPinModal(false)} hitSlop={10}><Text style={styles.sheetX}>✕</Text></Pressable>
           </View>
           <TextInput
-            value={citySearch} onChangeText={setCitySearch}
-            placeholder="Търси или напиши град…" placeholderTextColor={C.inkSoft}
+            value={pinInput} onChangeText={onPinChange}
+            placeholder="Въведи PIN" placeholderTextColor={C.inkSoft}
+            keyboardType="number-pad" secureTextEntry autoFocus
+            onSubmitEditing={submitPin}
             style={styles.cityInput}
           />
-          <ScrollView style={{ maxHeight: 320 }} keyboardShouldPersistTaps="handled">
-            <Pressable style={styles.cityItem} onPress={() => { setVenueFilters((f) => ({ ...f, city: undefined })); setShowCity(false); }}>
-              <Text style={styles.cityItemTxt}>Всички градове</Text>
+          <Pressable onPress={submitPin} style={[styles.applyBtn, { marginTop: 4 }]}>
+            <Text style={styles.applyTxt}>Отключи</Text>
+          </Pressable>
+        </View>
+       </KeyboardAvoidingView>
+      </Modal>
+
+      {/* Скрит преглед (само за собственика) */}
+      <Modal visible={showAdmin} animationType="slide" onRequestClose={() => setShowAdmin(false)}>
+        <View style={[styles.root, { paddingTop: insets.top }]}>
+          <View style={styles.appbar}>
+            <Pressable onPress={() => setShowAdmin(false)} hitSlop={10} style={styles.iconbtn}><Text style={styles.iconTxt}>←</Text></Pressable>
+            <Text style={styles.title}>🛡 Модерация</Text>
+            <Pressable onPress={openAdmin} hitSlop={10} style={styles.iconbtn}><Text style={styles.iconTxt}>⟳</Text></Pressable>
+          </View>
+
+          {/* Табове */}
+          <View style={styles.admTabs}>
+            <Pressable onPress={() => setAdminTab('review')} style={[styles.admTab, adminTab === 'review' && styles.admTabOn]}>
+              <Text style={[styles.admTabTxt, adminTab === 'review' && styles.admTabTxtOn]}>⚠️ За преглед{reviewCount ? ` (${reviewCount})` : ''}</Text>
             </Pressable>
-            {BG_CITIES.filter((c) => c.toLowerCase().includes(citySearch.trim().toLowerCase())).map((c) => (
-              <Pressable key={c} style={styles.cityItem} onPress={() => { setVenueFilters((f) => ({ ...f, city: c })); setShowCity(false); }}>
-                <Text style={styles.cityItemTxt}>{c}</Text>
-              </Pressable>
-            ))}
-            {citySearch.trim() && !BG_CITIES.some((c) => c.toLowerCase() === citySearch.trim().toLowerCase()) ? (
-              <Pressable style={styles.cityItem} onPress={() => { setVenueFilters((f) => ({ ...f, city: citySearch.trim() })); setShowCity(false); }}>
-                <Text style={[styles.cityItemTxt, { color: C.accentDeep, fontWeight: '700' }]}>Търси „{citySearch.trim()}"</Text>
-              </Pressable>
-            ) : null}
-          </ScrollView>
+            <Pressable onPress={() => setAdminTab('all')} style={[styles.admTab, adminTab === 'all' && styles.admTabOn]}>
+              <Text style={[styles.admTabTxt, adminTab === 'all' && styles.admTabTxtOn]}>📋 Всички ({adminPosts.length})</Text>
+            </Pressable>
+          </View>
+
+          {adminLoading ? (
+            <View style={styles.center}><ActivityIndicator color={C.accent} /></View>
+          ) : adminVisible.length === 0 ? (
+            <View style={styles.center}>
+              <Text style={styles.emptyEmoji}>{adminTab === 'review' ? '✅' : '🍽️'}</Text>
+              <Text style={styles.emptyTitle}>{adminTab === 'review' ? 'Нищо за преглед' : 'Няма постове'}</Text>
+              <Text style={styles.emptySub}>{adminTab === 'review' ? 'Всичко е чисто в момента.' : ''}</Text>
+            </View>
+          ) : (
+            <ScrollView contentContainerStyle={{ padding: 14, paddingBottom: insets.bottom + 40, gap: 14 }}>
+              {adminVisible.map((p) => {
+                const photos = (p.photo_urls?.length ? p.photo_urls : (p.photo_url ? [p.photo_url] : []));
+                const isVenue = p.kind === 'venue';
+                const status = p.status === 'hidden'
+                  ? { txt: '🚩 Скрита / докладвана', bg: '#B22222' }
+                  : p.mod_status === 'rejected' ? { txt: '🚫 Спряна от AI', bg: '#B22222' }
+                  : p.mod_status === 'pending' ? { txt: '⏳ Чака преглед', bg: '#9A7B4F' }
+                  : { txt: '✅ Публична', bg: C.green };
+                const notPublic = p.mod_status !== 'approved' || p.status !== 'active';
+                return (
+                <View key={p.id} style={styles.admCard}>
+                  {/* статус лента */}
+                  <View style={[styles.admStatus, { backgroundColor: status.bg }]}>
+                    <Text style={styles.admStatusTxt}>{status.txt}</Text>
+                    <Text style={styles.admStatusTxt}>{isVenue ? '🍴 Заведение' : '🍲 Вкъщи'}</Text>
+                  </View>
+
+                  {/* снимки */}
+                  {photos.length ? (
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+                      {photos.map((u, i) => (
+                        <Image key={i} source={{ uri: u }} style={styles.admPhoto} resizeMode="cover" />
+                      ))}
+                    </ScrollView>
+                  ) : (
+                    <View style={styles.admNoPhoto}><Text style={{ fontSize: 40 }}>{foodEmoji(p)}</Text></View>
+                  )}
+
+                  {/* текст */}
+                  <Text style={styles.admName}>{p.dish_name}</Text>
+                  <Text style={styles.admAuthor}>от {p.author_nickname ?? 'Анонимен'}</Text>
+                  {isVenue && p.place_name ? (
+                    <Text style={styles.admMeta}>📍 {p.place_name}{p.place_city ? ` · ${p.place_city}` : ''}</Text>
+                  ) : null}
+                  <Text style={styles.admMeta}>
+                    🍴 Ястие: {'★'.repeat(p.dish_rating)}{isVenue && p.place_rating ? `   🏠 Място: ${'★'.repeat(p.place_rating)}` : ''}
+                  </Text>
+                  {p.comment ? <Text style={styles.admComment}>„{p.comment}"</Text> : null}
+                  {!isVenue && p.ingredients ? <Text style={styles.admMeta} numberOfLines={4}>🧂 {p.ingredients}</Text> : null}
+                  {!isVenue && p.steps ? <Text style={styles.admMeta} numberOfLines={6}>📋 {p.steps}</Text> : null}
+
+                  {/* действия */}
+                  <View style={styles.admBtnRow}>
+                    {notPublic ? (
+                      <Pressable onPress={() => doAdminAct(p, 'approve')} style={[styles.admBtn, styles.admApprove]}><Text style={styles.admBtnTxt}>✓ Одобри</Text></Pressable>
+                    ) : (
+                      <Pressable onPress={() => doAdminAct(p, 'hide')} style={[styles.admBtn, styles.admHide]}><Text style={styles.admBtnTxt}>🙈 Скрий</Text></Pressable>
+                    )}
+                    <Pressable onPress={() => doAdminAct(p, 'delete')} style={[styles.admBtn, styles.admDelete]}><Text style={styles.admBtnTxt}>🗑 Изтрий</Text></Pressable>
+                  </View>
+                  <Pressable onPress={() => doAdminAct(p, 'ban')} style={[styles.admBtn, styles.admBan, { marginTop: 8 }]}>
+                    <Text style={styles.admBtnTxt}>🚫 Блокирай автора (спри да публикува)</Text>
+                  </Pressable>
+                </View>
+                );
+              })}
+            </ScrollView>
+          )}
         </View>
       </Modal>
 
@@ -478,6 +719,11 @@ function PostCard({ post, saved, onLike, onMore, onSave, onOpen }: { post: FeedP
         {isVenue && post.worth_it ? (
           <View style={styles.worth}><Text style={styles.worthTxt}>💰 струваше си</Text></View>
         ) : null}
+        {post.mod_status === 'pending' ? (
+          <View style={styles.modBadge}><Text style={styles.modBadgeTxt}>⏳ изчаква проверка</Text></View>
+        ) : post.mod_status === 'rejected' ? (
+          <View style={[styles.modBadge, styles.modBadgeBad]}><Text style={styles.modBadgeTxt}>🚫 спряна снимка</Text></View>
+        ) : null}
       </View>
       <View style={styles.cardBody}>
         <View style={styles.cardTop}>
@@ -520,6 +766,47 @@ function PostCard({ post, saved, onLike, onMore, onSave, onOpen }: { post: FeedP
               </Text>
             </Pressable>
           </View>
+        </View>
+      </View>
+    </Pressable>
+  );
+}
+
+function GridCard({ post, saved, onLike, onMore, onSave, onOpen }: { post: FeedPost; saved: boolean; onLike: () => void; onMore: () => void; onSave: () => void; onOpen: () => void }) {
+  const isVenue = post.kind === 'venue';
+  const nPhotos = post.photo_urls?.length ?? (post.photo_url ? 1 : 0);
+  return (
+    <Pressable style={styles.gcard} onPress={onOpen} onLongPress={onMore}>
+      <View style={styles.gphoto}>
+        <FoodImage uri={post.photo_urls?.[0] ?? post.photo_url} emoji={foodEmoji(post)} />
+        {nPhotos > 1 ? (
+          <View style={styles.gcount}><Text style={styles.gcountTxt}>📷 {nPhotos}</Text></View>
+        ) : null}
+        {isVenue && post.worth_it ? (
+          <View style={styles.gworth}><Text style={styles.gworthTxt}>💰</Text></View>
+        ) : null}
+        {post.mod_status === 'pending' ? (
+          <View style={styles.gmod}><Text style={styles.gmodTxt}>⏳</Text></View>
+        ) : post.mod_status === 'rejected' ? (
+          <View style={[styles.gmod, { backgroundColor: 'rgba(178,34,34,0.85)' }]}><Text style={styles.gmodTxt}>🚫</Text></View>
+        ) : null}
+        <Pressable onPress={onSave} hitSlop={8} style={styles.gsave}>
+          <Text style={{ fontSize: 15 }}>{saved ? '🔖' : '📑'}</Text>
+        </Pressable>
+      </View>
+      <View style={styles.gbody}>
+        <Text style={styles.gname} numberOfLines={2}>{post.dish_name}</Text>
+        <View style={styles.growRow}>
+          <Stars value={post.dish_rating} />
+        </View>
+        <Text style={styles.gmeta} numberOfLines={1}>
+          {isVenue ? `📍 ${post.place_name ?? ''}${post.place_city ? ` · ${post.place_city}` : ''}` : (post.prep_minutes ? `⏱️ ${post.prep_minutes} мин` : '🍲 рецепта')}
+        </Text>
+        <View style={styles.gfoot}>
+          <Text style={styles.gwho} numberOfLines={1}>{post.author_nickname ?? 'Анонимен'}</Text>
+          <Pressable onPress={onLike} hitSlop={8}>
+            <Text style={[styles.glike, post.liked_by_me && styles.likeOn]}>{post.liked_by_me ? '❤️' : '🤍'} {post.like_count}</Text>
+          </Pressable>
         </View>
       </View>
     </Pressable>
@@ -591,6 +878,7 @@ const styles = StyleSheet.create({
   sheetHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
   sheetTitle: { fontFamily: 'InstrumentSerif_400Regular', fontSize: 24, color: C.ink },
   sheetX: { fontSize: 18, color: C.inkSoft },
+  sheetBack: { fontSize: 22, color: C.ink, fontWeight: '700' },
   fgLabel: { fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.6, color: C.inkSoft },
   fgChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   fchip: { paddingHorizontal: 13, paddingVertical: 8, borderRadius: 999, backgroundColor: C.chip, borderWidth: 1, borderColor: C.line },
@@ -614,6 +902,23 @@ const styles = StyleSheet.create({
   emptyTitle: { fontSize: 18, fontWeight: '700', color: C.ink, marginBottom: 4 },
   emptySub: { fontSize: 14, color: C.inkSoft, textAlign: 'center' },
 
+  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+  gcard: { width: '48.5%', backgroundColor: C.card, borderRadius: 16, borderWidth: 1, borderColor: C.line, overflow: 'hidden', marginBottom: 12 },
+  gphoto: { width: '100%', aspectRatio: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#EEDFD2' },
+  gcount: { position: 'absolute', left: 6, top: 6, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 999, paddingHorizontal: 7, paddingVertical: 2 },
+  gcountTxt: { color: '#fff', fontSize: 10, fontWeight: '700' },
+  gworth: { position: 'absolute', right: 6, top: 6, backgroundColor: C.green, borderRadius: 999, width: 24, height: 24, alignItems: 'center', justifyContent: 'center' },
+  gworthTxt: { fontSize: 12 },
+  gmod: { position: 'absolute', left: 6, bottom: 6, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 999, width: 24, height: 24, alignItems: 'center', justifyContent: 'center' },
+  gmodTxt: { fontSize: 12 },
+  gsave: { position: 'absolute', right: 6, bottom: 6, backgroundColor: 'rgba(255,255,255,0.9)', borderRadius: 999, width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
+  gbody: { padding: 9, gap: 3 },
+  gname: { fontSize: 14, fontWeight: '800', color: C.ink, lineHeight: 18 },
+  growRow: { flexDirection: 'row', alignItems: 'center' },
+  gmeta: { fontSize: 11, color: C.inkSoft },
+  gfoot: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
+  gwho: { fontSize: 11, color: C.inkSoft, fontWeight: '600', flex: 1 },
+  glike: { fontSize: 12, color: C.inkSoft, fontWeight: '700' },
   card: { backgroundColor: C.card, borderRadius: 20, borderWidth: 1, borderColor: C.line, overflow: 'hidden', marginBottom: 14 },
   photo: { height: 150, alignItems: 'center', justifyContent: 'center', backgroundColor: '#EEDFD2' },
   photoImg: { width: '100%', height: '100%' },
@@ -622,6 +927,30 @@ const styles = StyleSheet.create({
   photoCount: { position: 'absolute', left: 10, top: 10, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 999, paddingHorizontal: 9, paddingVertical: 4 },
   photoCountTxt: { color: '#fff', fontSize: 11, fontWeight: '700' },
   worthTxt: { color: '#fff', fontSize: 11, fontWeight: '700' },
+  modBadge: { position: 'absolute', left: 10, bottom: 10, backgroundColor: 'rgba(0,0,0,0.62)', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
+  modBadgeBad: { backgroundColor: 'rgba(178,34,34,0.85)' },
+  modBadgeTxt: { color: '#fff', fontSize: 11, fontWeight: '700' },
+  admTabs: { flexDirection: 'row', gap: 8, paddingHorizontal: 14, paddingBottom: 10 },
+  admTab: { flex: 1, borderRadius: 999, paddingVertical: 9, alignItems: 'center', backgroundColor: C.card, borderWidth: 1, borderColor: C.line },
+  admTabOn: { backgroundColor: C.accent, borderColor: C.accent },
+  admTabTxt: { fontSize: 13, fontWeight: '700', color: C.inkSoft },
+  admTabTxtOn: { color: '#fff' },
+  admCard: { backgroundColor: C.card, borderRadius: 16, borderWidth: 1, borderColor: C.line, padding: 12, gap: 8 },
+  admStatus: { flexDirection: 'row', justifyContent: 'space-between', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
+  admStatusTxt: { color: '#fff', fontSize: 12, fontWeight: '700' },
+  admPhoto: { width: 150, height: 112, borderRadius: 10, backgroundColor: C.bg },
+  admNoPhoto: { height: 90, borderRadius: 10, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' },
+  admName: { fontSize: 17, fontWeight: '800', color: C.ink, marginTop: 2 },
+  admAuthor: { fontSize: 13, color: C.inkSoft, fontWeight: '600' },
+  admMeta: { fontSize: 13, color: C.inkSoft },
+  admComment: { fontSize: 14, color: C.ink, fontStyle: 'italic', lineHeight: 20 },
+  admBtnRow: { flexDirection: 'row', gap: 8, marginTop: 4 },
+  admBtn: { flex: 1, borderRadius: 10, paddingVertical: 11, alignItems: 'center' },
+  admApprove: { backgroundColor: C.green },
+  admHide: { backgroundColor: '#9A7B4F' },
+  admDelete: { backgroundColor: '#B22222' },
+  admBan: { flex: 0, backgroundColor: '#5A2D2D' },
+  admBtnTxt: { color: '#fff', fontSize: 13, fontWeight: '700' },
   cardBody: { padding: 13 },
   cardTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   dish: { flex: 1, fontFamily: 'InstrumentSerif_400Regular', fontSize: 20, color: C.ink },
