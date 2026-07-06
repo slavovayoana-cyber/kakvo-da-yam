@@ -329,6 +329,9 @@ export function HomeScreen({
             </View>
           </View>
 
+          {/* Спейсър — бута бутона и надписа надолу, близо до долното меню */}
+          <View style={{ flexGrow: 1, minHeight: 16 }} />
+
           {/* Main button */}
           <Pressable
             onPress={() => { tapMedium(); onPick(); }}
