@@ -22,10 +22,17 @@ export const FeedShareCard = forwardRef<View, { post: FeedPost }>(({ post }, ref
         <LinearGradient colors={['#C2674A', '#8A4A33']} style={StyleSheet.absoluteFill} />
       )}
 
-      {/* Градиент за четимост (тъмно горе и долу) */}
+      {/* Топъл градиент за четимост (силен и плавен отдолу) */}
       <LinearGradient
-        colors={['rgba(0,0,0,0.55)', 'rgba(0,0,0,0.05)', 'rgba(0,0,0,0.05)', 'rgba(0,0,0,0.60)', 'rgba(0,0,0,0.90)']}
-        locations={[0, 0.2, 0.45, 0.72, 1]}
+        colors={[
+          'rgba(38,22,12,0.55)',
+          'rgba(38,22,12,0.12)',
+          'rgba(38,22,12,0.00)',
+          'rgba(38,22,12,0.35)',
+          'rgba(38,22,12,0.78)',
+          'rgba(30,17,9,0.96)',
+        ]}
+        locations={[0, 0.16, 0.42, 0.62, 0.82, 1]}
         style={StyleSheet.absoluteFill}
       />
 
