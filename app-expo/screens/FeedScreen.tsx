@@ -12,7 +12,7 @@ import { FeedShareCard } from '../components/FeedShareCard';
 import {
   listVenuePosts, listHomePosts, toggleLike, reportPost, hidePostLocally,
   getSavedIds, toggleSave, adoptCuratedPosts, updatePostPhotos, blockAuthor,
-  isAdminUnlocked, unlockAdmin, adminListPosts, adminAct, adminSetPhotos,
+  isAdminUnlocked, unlockAdmin, lockAdmin, adminListPosts, adminAct, adminSetPhotos,
 } from '../lib/feed';
 import { addJournalEntry } from '../lib/journal';
 import { getDeviceId } from '../lib/supabase';
@@ -164,6 +164,18 @@ export function FeedScreen({ onBack, onCompose, onEdit, reloadKey = 0 }: Props) 
     try { setAdminPosts(await adminListPosts()); }
     catch { Alert.alert('Опа', 'Неуспешно зареждане.'); }
     finally { setAdminLoading(false); }
+  };
+
+  const exitAdmin = () => {
+    Alert.alert('Изход от режим модератор',
+      'Щитът 🛡 ще изчезне от екрана. За да го върнеш, натисни заглавието „Какво APPна?" 7 пъти и въведи кода.', [
+      { text: 'Отказ', style: 'cancel' },
+      { text: 'Изход', style: 'destructive', onPress: async () => {
+        await lockAdmin().catch(() => {});
+        setAdminOn(false);
+        setShowAdmin(false);
+      } },
+    ]);
   };
 
   const doAdminAct = async (p: FeedPost, action: 'approve' | 'hide' | 'delete' | 'ban') => {
@@ -568,7 +580,10 @@ export function FeedScreen({ onBack, onCompose, onEdit, reloadKey = 0 }: Props) 
           <View style={styles.appbar}>
             <Pressable onPress={() => setShowAdmin(false)} hitSlop={10} style={styles.iconbtn}><Text style={styles.iconTxt}>←</Text></Pressable>
             <Text style={styles.title}>🛡 Модерация</Text>
-            <Pressable onPress={openAdmin} hitSlop={10} style={styles.iconbtn}><Text style={styles.iconTxt}>⟳</Text></Pressable>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Pressable onPress={openAdmin} hitSlop={10} style={styles.iconbtn}><Text style={styles.iconTxt}>⟳</Text></Pressable>
+              <Pressable onPress={exitAdmin} hitSlop={10} style={styles.iconbtn}><Text style={styles.iconTxt}>🔒</Text></Pressable>
+            </View>
           </View>
 
           {/* Табове */}
