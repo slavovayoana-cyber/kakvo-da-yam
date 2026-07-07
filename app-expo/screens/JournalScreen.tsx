@@ -319,7 +319,7 @@ function RecipeDetail({ post, onClose }: { post: FeedPost; onClose: () => void }
                 {post.place_name ? <Text style={styles.dMeta}>📍 {post.place_name}{post.place_city ? ` · ${post.place_city}` : ''}</Text> : null}
                 <Text style={styles.dMeta}>🍴 Ястие: <Text style={styles.dStars}>{stars(post.dish_rating)}</Text></Text>
                 {post.place_rating ? <Text style={styles.dMeta}>🏠 Място: <Text style={styles.dStars}>{stars(post.place_rating)}</Text></Text> : null}
-                {post.worth_it ? <Text style={styles.dMeta}>💰 Струваше си</Text> : null}
+                {post.worth_it ? <Text style={styles.dMeta}>👍 Струваше си</Text> : null}
               </View>
             ) : (
               <View style={styles.dChips}>

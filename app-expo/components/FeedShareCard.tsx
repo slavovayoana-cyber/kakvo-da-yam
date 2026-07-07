@@ -46,7 +46,7 @@ export const FeedShareCard = forwardRef<View, { post: FeedPost }>(({ post }, ref
       <View style={styles.bottom}>
         <View style={styles.starsRow}>
           <Text style={styles.stars}>{'★'.repeat(rating)}<Text style={styles.starsOff}>{'★'.repeat(Math.max(0, 5 - rating))}</Text></Text>
-          {isVenue && post.worth_it ? <Text style={styles.worth}>💰 струваше си</Text> : null}
+          {isVenue && post.worth_it ? <Text style={styles.worth}>👍 струваше си</Text> : null}
         </View>
 
         <Text style={[styles.name, { fontSize: nameSize, lineHeight: nameSize * 1.08 }]} numberOfLines={2}>{post.dish_name}</Text>
