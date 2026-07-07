@@ -252,6 +252,11 @@ export function FeedScreen({ onBack, onCompose, onEdit, reloadKey = 0 }: Props) 
     ]);
   };
 
+  const openDetail = (p: FeedPost) => {
+    Analytics.feedPostViewed(p.kind);
+    setDetailPost(p);
+  };
+
   const onSave = async (p: FeedPost) => {
     const nowSaved = await toggleSave(p.id);
     if (nowSaved) Analytics.feedPostSaved(p.kind);
@@ -438,12 +443,12 @@ export function FeedScreen({ onBack, onCompose, onEdit, reloadKey = 0 }: Props) 
           {view === 'cards' ? (
             <View style={styles.grid}>
               {visiblePosts.map((p) => (
-                <GridCard key={p.id} post={p} saved={savedSet.has(p.id)} onLike={() => onLike(p)} onMore={() => onMore(p)} onSave={() => onSave(p)} onOpen={() => setDetailPost(p)} />
+                <GridCard key={p.id} post={p} saved={savedSet.has(p.id)} onLike={() => onLike(p)} onMore={() => onMore(p)} onSave={() => onSave(p)} onOpen={() => openDetail(p)} />
               ))}
             </View>
           ) : (
             visiblePosts.map((p) => (
-              <PostRow key={p.id} post={p} saved={savedSet.has(p.id)} onLike={() => onLike(p)} onMore={() => onMore(p)} onSave={() => onSave(p)} onOpen={() => setDetailPost(p)} />
+              <PostRow key={p.id} post={p} saved={savedSet.has(p.id)} onLike={() => onLike(p)} onMore={() => onMore(p)} onSave={() => onSave(p)} onOpen={() => openDetail(p)} />
             ))
           )}
         </ScrollView>

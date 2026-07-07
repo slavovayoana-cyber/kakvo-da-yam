@@ -181,6 +181,10 @@ export const Analytics = {
   feedPostEdited(kind: 'venue' | 'home') {
     track('feed_post_edited', { kind });
   },
+  /** Отворен е конкретен пост/предложение (разглеждане на детайлите). */
+  feedPostViewed(kind: 'venue' | 'home') {
+    track('feed_post_viewed', { kind });
+  },
   /** Харесан пост (лайк). */
   feedPostLiked(kind: 'venue' | 'home') {
     track('feed_post_liked', { kind });
