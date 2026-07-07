@@ -45,4 +45,6 @@ jobs:
         working-directory: app-expo
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: eas update --branch "${{ inputs.branch }}" --message "${{ inputs.message }}" --non-interactive
+          UPDATE_BRANCH: ${{ inputs.branch }}
+          UPDATE_MESSAGE: ${{ inputs.message }}
+        run: eas update --branch "$UPDATE_BRANCH" --message "$UPDATE_MESSAGE" --non-interactive
