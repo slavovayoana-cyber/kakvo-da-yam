@@ -493,7 +493,7 @@ export function FeedScreen({ onBack, onCompose, onEdit, reloadKey = 0 }: Props) 
                       <FChip on={venueFilters.minDishRating === 4}
                         onPress={() => setVenueFilters((f) => ({ ...f, minDishRating: f.minDishRating ? undefined : 4 }))}>⭐ 4+</FChip>
                       <FChip on={!!venueFilters.worthIt}
-                        onPress={() => setVenueFilters((f) => ({ ...f, worthIt: f.worthIt ? undefined : true }))}>💰 Струваше си</FChip>
+                        onPress={() => setVenueFilters((f) => ({ ...f, worthIt: f.worthIt ? undefined : true }))}>👍 Струваше си</FChip>
                     </FGroup>
                   </>
                 ) : (
@@ -768,7 +768,7 @@ function PostCard({ post, saved, onLike, onMore, onSave, onOpen }: { post: FeedP
           <View style={styles.photoCount}><Text style={styles.photoCountTxt}>📷 {post.photo_urls!.length}</Text></View>
         ) : null}
         {isVenue && post.worth_it ? (
-          <View style={styles.worth}><Text style={styles.worthTxt}>💰 струваше си</Text></View>
+          <View style={styles.worth}><Text style={styles.worthTxt}>👍 струваше си</Text></View>
         ) : null}
         {post.mod_status === 'pending' ? (
           <View style={styles.modBadge}><Text style={styles.modBadgeTxt}>⏳ изчаква проверка</Text></View>
@@ -834,7 +834,7 @@ function GridCard({ post, saved, onLike, onMore, onSave, onOpen }: { post: FeedP
           <View style={styles.gcount}><Text style={styles.gcountTxt}>📷 {nPhotos}</Text></View>
         ) : null}
         {isVenue && post.worth_it ? (
-          <View style={styles.gworth}><Text style={styles.gworthTxt}>💰</Text></View>
+          <View style={styles.gworth}><Text style={styles.gworthTxt}>👍</Text></View>
         ) : null}
         {post.mod_status === 'pending' ? (
           <View style={styles.gmod}><Text style={styles.gmodTxt}>⏳</Text></View>
