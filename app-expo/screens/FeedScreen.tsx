@@ -132,6 +132,11 @@ export function FeedScreen({ onBack, onCompose, onEdit, reloadKey = 0 }: Props) 
   useEffect(() => { getSavedIds().then((ids) => setSavedSet(new Set(ids))).catch(() => {}); }, [reloadKey]);
   useEffect(() => { adoptCuratedPosts(); }, []);
   useEffect(() => { isAdminUnlocked().then(setAdminOn).catch(() => {}); }, []);
+  // Щом сме модератор — зареждаме списъка наум, за да покажем брояч на щита.
+  useEffect(() => {
+    if (!adminOn) return;
+    adminListPosts().then(setAdminPosts).catch(() => {});
+  }, [adminOn, reloadKey]);
   useEffect(() => { getDeviceId().then(setMyDeviceId).catch(() => {}); }, []);
 
   const onTitleTap = () => {
@@ -354,6 +359,11 @@ export function FeedScreen({ onBack, onCompose, onEdit, reloadKey = 0 }: Props) 
           {adminOn ? (
             <Pressable onPress={openAdmin} hitSlop={8} style={styles.vbtn}>
               <Text style={styles.vtxt}>🛡</Text>
+              {reviewCount > 0 ? (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeTxt}>{reviewCount > 9 ? '9+' : reviewCount}</Text>
+                </View>
+              ) : null}
             </Pressable>
           ) : null}
           <Pressable onPress={() => setView('cards')} style={[styles.vbtn, view === 'cards' && styles.vbtnOn]}>
@@ -922,6 +932,8 @@ const styles = StyleSheet.create({
   viewtoggle: { flexDirection: 'row', backgroundColor: C.seg, borderRadius: 999, padding: 3, gap: 2 },
   vbtn: { width: 30, height: 27, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
   vbtnOn: { backgroundColor: C.accent },
+  badge: { position: 'absolute', top: -3, right: -2, minWidth: 16, height: 16, borderRadius: 8, backgroundColor: '#E23B2E', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3, borderWidth: 1.5, borderColor: C.bg },
+  badgeTxt: { fontSize: 10, fontWeight: '800', color: '#fff' },
   vtxt: { fontSize: 14, color: C.inkSoft },
   vtxtOn: { color: '#fff' },
 
