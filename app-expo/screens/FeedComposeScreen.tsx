@@ -6,6 +6,7 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getMyProfile, setNickname, createVenuePost, createHomePost, updateVenuePost, updateHomePost, searchPlaces } from '../lib/feed';
+import { Analytics } from '../lib/analytics';
 import type { PostKind, Difficulty, FeedPost } from '../lib/feedTypes';
 
 const C = {
@@ -77,6 +78,9 @@ export function FeedComposeScreen({ onBack, onPosted, editPost }: Props) {
       else setNeedNickname(true);
     }).catch(() => setNeedNickname(true));
   }, []);
+
+  // Отчита, че екранът за нов/редактиран пост е отворен (намерение да публикува).
+  useEffect(() => { Analytics.feedComposeOpened(editPost?.kind ?? 'venue', !!editPost); }, []);
 
   // Попълва формата при редакция на съществуващ пост.
   useEffect(() => {
@@ -184,8 +188,8 @@ export function FeedComposeScreen({ onBack, onPosted, editPost }: Props) {
           worthIt: worthIt ?? undefined,
           cuisine: cuisine || undefined, placeType: placeType || undefined,
         };
-        if (isEdit && editPost) await updateVenuePost(editPost.id, payload);
-        else await createVenuePost(payload);
+        if (isEdit && editPost) { await updateVenuePost(editPost.id, payload); Analytics.feedPostEdited('venue'); }
+        else { await createVenuePost(payload); Analytics.feedPostCreated('venue', photoUris.length > 0, dishRating); }
       } else {
         const payload = {
           dishName, dishRating, comment, photoUris: photoUris.length ? photoUris : undefined,
@@ -194,8 +198,8 @@ export function FeedComposeScreen({ onBack, onPosted, editPost }: Props) {
           servings: servings ? parseInt(servings, 10) : undefined,
           ingredients: ingredients || undefined, steps: steps || undefined,
         };
-        if (isEdit && editPost) await updateHomePost(editPost.id, payload);
-        else await createHomePost(payload);
+        if (isEdit && editPost) { await updateHomePost(editPost.id, payload); Analytics.feedPostEdited('home'); }
+        else { await createHomePost(payload); Analytics.feedPostCreated('home', photoUris.length > 0, dishRating); }
       }
       onPosted();
     } catch (e: any) {

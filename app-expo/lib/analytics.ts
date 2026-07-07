@@ -161,4 +161,45 @@ export const Analytics = {
   notificationsEnabled(slots: string) {
     track('notifications_enabled', { slots });
   },
+
+  // ── „Какво APPна?" — социален фийд ───────────────────────────────────────
+  /** Отворен е социалният фийд (открити хора). */
+  feedOpened(kind: 'venue' | 'home') {
+    track('feed_opened', { kind });
+    trackMeta('feed_opened');
+  },
+  /** Натиснат е бутонът за нов пост (намерение да публикува). */
+  feedComposeOpened(kind: 'venue' | 'home', edit: boolean) {
+    track('feed_compose_opened', { kind, edit });
+  },
+  /** Успешно публикуван пост. */
+  feedPostCreated(kind: 'venue' | 'home', hasPhoto: boolean, rating: number) {
+    track('feed_post_created', { kind, has_photo: hasPhoto, rating });
+    trackMeta('feed_post_created');
+  },
+  /** Редактиран съществуващ пост. */
+  feedPostEdited(kind: 'venue' | 'home') {
+    track('feed_post_edited', { kind });
+  },
+  /** Харесан пост (лайк). */
+  feedPostLiked(kind: 'venue' | 'home') {
+    track('feed_post_liked', { kind });
+  },
+  /** Запазен пост. */
+  feedPostSaved(kind: 'venue' | 'home') {
+    track('feed_post_saved', { kind });
+  },
+  /** Споделен пост от фийда (картичка навън). */
+  feedPostShared(kind: 'venue' | 'home') {
+    track('feed_post_shared', { kind });
+    trackMeta('feed_post_shared');
+  },
+  /** Отворена локация на заведение в Google Maps. */
+  feedMapOpened() {
+    track('feed_map_opened');
+  },
+  /** Докладван пост. */
+  feedPostReported() {
+    track('feed_post_reported');
+  },
 };

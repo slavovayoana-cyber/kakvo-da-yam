@@ -16,6 +16,7 @@ import {
 } from '../lib/feed';
 import { addJournalEntry } from '../lib/journal';
 import { getDeviceId } from '../lib/supabase';
+import { Analytics } from '../lib/analytics';
 import type { FeedPost, PostKind, VenueFilters, HomeFilters, FeedSort, Difficulty } from '../lib/feedTypes';
 
 const C = {
@@ -138,6 +139,8 @@ export function FeedScreen({ onBack, onCompose, onEdit, reloadKey = 0 }: Props) 
     adminListPosts().then(setAdminPosts).catch(() => {});
   }, [adminOn, reloadKey]);
   useEffect(() => { getDeviceId().then(setMyDeviceId).catch(() => {}); }, []);
+  // Отчита отваряне на фийда (и превключване между „Заведения"/„Вкъщи").
+  useEffect(() => { Analytics.feedOpened(kind); }, [kind]);
 
   const onTitleTap = () => {
     tapRef.current += 1;
@@ -251,6 +254,7 @@ export function FeedScreen({ onBack, onCompose, onEdit, reloadKey = 0 }: Props) 
 
   const onSave = async (p: FeedPost) => {
     const nowSaved = await toggleSave(p.id);
+    if (nowSaved) Analytics.feedPostSaved(p.kind);
     setSavedSet((prev) => {
       const next = new Set(prev);
       if (nowSaved) next.add(p.id); else next.delete(p.id);
@@ -259,6 +263,7 @@ export function FeedScreen({ onBack, onCompose, onEdit, reloadKey = 0 }: Props) 
   };
 
   const shareFeedPost = async (p: FeedPost) => {
+    Analytics.feedPostShared(p.kind);
     try {
       const photo = p.photo_urls?.[0] ?? p.photo_url;
       if (photo) { try { await Image.prefetch(photo); } catch { /* без снимка ще ползва емоджи */ } }
@@ -276,6 +281,7 @@ export function FeedScreen({ onBack, onCompose, onEdit, reloadKey = 0 }: Props) 
   };
 
   const openMaps = (p: FeedPost) => {
+    Analytics.feedMapOpened();
     const url = p.place_maps_url
       || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${p.place_name ?? ''} ${p.place_city ?? ''}`.trim())}`;
     Linking.openURL(url).catch(() => Alert.alert('Опа', 'Не успях да отворя картата.'));
@@ -312,6 +318,7 @@ export function FeedScreen({ onBack, onCompose, onEdit, reloadKey = 0 }: Props) 
 
   const onLike = async (p: FeedPost) => {
     const liked = !!p.liked_by_me;
+    if (!liked) Analytics.feedPostLiked(p.kind);
     // оптимистично
     setPosts((prev) => prev.map((x) => x.id === p.id
       ? { ...x, liked_by_me: !liked, like_count: x.like_count + (liked ? -1 : 1) }
@@ -325,6 +332,7 @@ export function FeedScreen({ onBack, onCompose, onEdit, reloadKey = 0 }: Props) 
     Alert.alert('Този пост', undefined, [
       ...(canEdit ? [{ text: '✏️ Редактирай', onPress: () => onEdit!(p) }] : []),
       { text: 'Докладвай (неуместно)', style: 'destructive' as const, onPress: () => {
+        Analytics.feedPostReported();
         reportPost(p.id).catch(() => {});
         setPosts((prev) => prev.filter((x) => x.id !== p.id));
       } },
