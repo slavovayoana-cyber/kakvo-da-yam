@@ -915,7 +915,7 @@ function PostRow({ post, saved, onLike, onMore, onSave, onOpen }: { post: FeedPo
           {isVenue && post.place_name ? <Text style={styles.lcity}> · {post.place_name}</Text> : null}
         </Text>
         <Text style={styles.lrate}>
-          🍴 {post.dish_rating.toFixed(1)}
+          🍴 {(post.dish_rating ?? 0).toFixed(1)}
           {isVenue && post.place_rating ? ` · 🏠 ${post.place_rating.toFixed(1)}` : ''}
           {!isVenue && post.prep_minutes ? ` · ⏱️ ${post.prep_minutes} мин` : ''}
         </Text>
